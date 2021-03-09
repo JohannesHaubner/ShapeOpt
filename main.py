@@ -58,7 +58,8 @@ param = {"reg": 1e-3, # regularization parameter
          "Bary_D": geom_prop["barycenter_hold_all_domain"], # barycenter
          "Vol_O": geom_prop["volume_D_minus_obstacle"],
          "Bary_eps": 0.0, # slack for barycenter
-         "det_lb": 1e-2 # lower bound for determinant of transformation gradient
+         "det_lb": 2e-1, # lower bound for determinant of transformation gradient
+         "maxiter_IPOPT": 25
          } 
 print(xf.vector().max())
 #ctt.Extension(init_mfs).test_dof_to_deformation_precond()

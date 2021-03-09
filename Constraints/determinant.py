@@ -19,7 +19,7 @@ class Determinant_Constraint():
         self.Vd = Mesh_.get_Vd()
         self.Vn = Mesh_.get_Vn()
         self.eta = eta
-        self.scalingfactor = 1.0
+        self.scalingfactor = 1e7
         
     def eval(self,x):
         # x dof
@@ -27,14 +27,14 @@ class Determinant_Constraint():
         deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(x)
         dF = Identity(self.dim) + grad(deformation)
         Jhat = det(dF)
-        vol = self.scalingfactor * (assemble(inner(1/Jhat - 1/self.eta*Constant('1.0'), 1/Jhat)*dx))
+        vol = self.scalingfactor * (assemble(1.0/self.eta*(1/Jhat - 1/self.eta*Constant('1.0'))*dx))
         return vol
     
     def grad(self,x):
         deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(x)
         dF = Identity(self.dim) + grad(deformation)
         Jhat = det(dF)
-        form = inner(1/Jhat - 1/self.eta*Constant('1.0'), 1/Jhat)*dx
+        form = 1.0/self.eta*(1/Jhat - 1/self.eta*Constant('1.0'))*dx
         dform = assemble(derivative(form, deformation))
         dvolx = self.scalingfactor*ctt.Extension(self.Mesh_).dof_to_deformation_precond_chainrule(dform, 2)
         return dvolx

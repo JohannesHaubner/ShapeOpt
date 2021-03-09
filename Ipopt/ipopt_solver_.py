@@ -221,8 +221,8 @@ class IPOPTSolver(OptimizationSolver):
         max_float = np.finfo(np.double).max
         min_float = np.finfo(np.double).min
 
-        cl = [-0.01, -0.01, min_float]
-        cu = [0.01, 0.01, 0.0]
+        cl = [0.0, 0.0, min_float]
+        cu = [0.0, 0.0, 0.0]
 
         ub = np.array([max_float] * len(x0))
         lb = np.array([min_float] * len(x0))
@@ -239,7 +239,7 @@ class IPOPTSolver(OptimizationSolver):
 
         nlp.addOption('mu_strategy', 'adaptive')
         #nlp.addOption('derivative_test', 'first-order')
-        nlp.addOption('max_iter', 15)
+        nlp.addOption('max_iter', self.param["maxiter_IPOPT"])
         nlp.addOption('tol', 1e-3)
 
         x, info = nlp.solve(x0)
