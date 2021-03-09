@@ -5,7 +5,7 @@ import numpy as np
 import backend
 
 import Constraints.volume as Cv
-import Constraints.barycenter as Cb
+import Constraints.barycenter_ as Cb
 import Constraints.determinant as Cd
 
 from pyadjoint.optimization.optimization_solver import OptimizationSolver
@@ -139,7 +139,7 @@ class IPOPTSolver(OptimizationSolver):
             #
             # The callback for calculating the constraints
             print('evaluate constraint')
-            b_ct = Cb.Barycenter_Constraint(self.Mesh_, self.param["Vol_D"], self.param["Bary_D"]).eval(x, self.param["Bary_eps"])
+            b_ct = Cb.Barycenter_Constraint(self.Mesh_, self.param).eval(x)
             v_ct = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_O"]).eval(x)
             d_ct = Cd.Determinant_Constraint(self.Mesh_, self.param["det_lb"]).eval(x)
             return self.scale*np.array((v_ct, b_ct)) #, d_ct))
@@ -149,7 +149,7 @@ class IPOPTSolver(OptimizationSolver):
             # The callback for calculating the Jacobian
             #
             print('evaluate jacobian')
-            b_ct_d = Cb.Barycenter_Constraint(self.Mesh_, self.param["Vol_D"], self.param["Bary_D"]).grad(x, self.param["Bary_eps"])
+            b_ct_d = Cb.Barycenter_Constraint(self.Mesh_, self.param).grad(x)
             v_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_D"]).grad(x)
             d_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["det_lb"]).grad(x)
             return self.scale*np.concatenate((v_ct_d, b_ct_d)) #, d_ct_d))

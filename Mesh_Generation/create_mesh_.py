@@ -35,7 +35,11 @@ vol = L*H
 vol_D_minus_obs = vol - np.pi*r*r
 geom_prop = {"barycenter_hold_all_domain": [0.5*L, 0.5*H],
              "volume_hold_all_domain": vol,
-             "volume_D_minus_obstacle": vol_D_minus_obs
+             "volume_D_minus_obstacle": vol_D_minus_obs,
+             "volume_obstacle": np.pi*r*r,
+             "length_pipe": L,
+             "heigth_pipe": H,
+             "barycenter_obstacle": [ c[0], c[1]],
              }
 np.save('./Mesh_Generation/params.npy', params)
 np.save('./Mesh_Generation/geom_prop.npy', geom_prop)

@@ -12,7 +12,7 @@ import Tools.save_load_obj as tool
 import Control_to_Trafo.dof_to_trafo as ctt
 import Tools.settings_mesh as tsm
 import Constraints.volume as Cv
-import Constraints.barycenter as Cb
+import Constraints.barycenter_ as Cb
 import Constraints.determinant as Cd
 import Ipopt.ipopt_solver_ as ipopt_so
 import numpy as np
@@ -56,7 +56,10 @@ geom_prop = np.load('./Mesh_Generation/geom_prop.npy', allow_pickle='TRUE').item
 param = {"reg": 1e-3, # regularization parameter
          "Vol_D": geom_prop["volume_hold_all_domain"], # volume parameter
          "Bary_D": geom_prop["barycenter_hold_all_domain"], # barycenter
-         "Vol_O": geom_prop["volume_D_minus_obstacle"],
+         "Vol_O": geom_prop["volume_obstacle"],
+         "Bary_O": geom_prop["barycenter_obstacle"],
+         "L": geom_prop["length_pipe"],
+         "H": geom_prop["heigth_pipe"],
          "Bary_eps": 0.0, # slack for barycenter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient
          "maxiter_IPOPT": 25
@@ -65,7 +68,8 @@ print(xf.vector().max())
 #ctt.Extension(init_mfs).test_dof_to_deformation_precond()
 
 #Cv.Volume_Constraint(init_mfs, param["Vol_O"]).test()
-#Cb.Barycenter_Constraint(init_mfs, param["Vol_D"], param["Bary_D"]).test(0)
+#Cb.Barycenter_Constraint(init_mfs, param).test()
+#exit(0)
 #Cd.Determinant_Constraint(init_mfs, param["det_lb"]).test()
 
 Jred = ro_stokes.reduced_objective(mesh, boundaries,params, red_func=True)
