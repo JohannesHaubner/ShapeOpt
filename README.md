@@ -1,6 +1,7 @@
 # ShapeOpt
 
-mkdir Output
+```
+mkdir Output 
 cd Output
 mkdir MeshGeneration
 mkdir ReducedObjective
