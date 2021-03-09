@@ -79,7 +79,7 @@ def reduced_objective(mesh, boundaries, params, flag =False, red_func = False):
         return conditional(gt(r, eps), r - eps / 2, conditional(lt(r, 0), 0, r ** 2 / (2 * eps)))
     
     #objective function
-    J=assemble(inner(grad(u)*tFhati, grad(u)*tFhati)*tJhat*dx) #+0.5*gammaP * smoothmax(etaP - tJhat)**2*dx)  
+    J=assemble(inner(grad(u)*tFhati, grad(u)*tFhati)*tJhat*dx +0.5*gammaP * smoothmax(etaP - tJhat)**2*dx)  
     if flag:
       dJ = compute_gradient(J,Control(tu))
     

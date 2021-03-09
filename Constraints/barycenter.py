@@ -17,7 +17,7 @@ class Barycenter_Constraint():
         # describes the volume of the hold all domain (mesh + obstacle to be optimized)
         # Barycenter_mesh_and_obstacle is a vector that describes the barycenter
         # of the hold all domain
-        self.scalingfactor = 1e5
+        self.scalingfactor = 1.0
         self.Mesh_ = Mesh_
         self.dim = self.Mesh_.mesh.geometric_dimension()
         self.Vd = Mesh_.get_Vd()

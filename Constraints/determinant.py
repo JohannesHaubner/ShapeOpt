@@ -19,7 +19,7 @@ class Determinant_Constraint():
         self.Vd = Mesh_.get_Vd()
         self.Vn = Mesh_.get_Vn()
         self.eta = eta
-        self.scalingfactor = 1e7
+        self.scalingfactor = 1.0
         
     def eval(self,x):
         # x dof

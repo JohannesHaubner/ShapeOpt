@@ -25,6 +25,7 @@ class IPOPTSolver(OptimizationSolver):
             raise
         self.Mesh_ = Mesh_
         self.param = param
+        self.scalingfactor = 1e2
         self.Vd = self.Mesh_.get_Vd()
         OptimizationSolver.__init__(self, problem, parameters)
         self.rfn = ReducedFunctionalNumPy(self.problem.reduced_functional)
@@ -32,6 +33,7 @@ class IPOPTSolver(OptimizationSolver):
         self.rf = self.problem.reduced_functional
         self.problem_obj = self.create_problem_obj(self)
         self.dmesh = self.Mesh_.get_design_boundary_mesh()
+        
         #self.param.reg contains regularization parameter
         print('Initialization of IPOPTSolver finished')
 
@@ -104,12 +106,14 @@ class IPOPTSolver(OptimizationSolver):
             self.rf = outer.rf
             self.param = outer.param
             self.Vd = outer.Vd
+            self.scale = outer.scalingfactor
 
         def objective(self, x):
             #
             # The callback for calculating the objective
             #
             # x to deformation
+            print('evaluate objective')
             deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(x).vector()
             # evaluate reduced cost functional
             j1 = self.rfn(deformation) #self.rfn(deformation)
@@ -122,6 +126,7 @@ class IPOPTSolver(OptimizationSolver):
             # The callback for calculating the gradient
             #
             #print('evaluate derivative of objective funtion')
+            print('evaluate gradient')
             deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(x)
             new_params = [self.__copy_data(p.data()) for p in self.rfn.controls]
             self.rfn.set_local(new_params, deformation.vector().get_local())
@@ -133,19 +138,21 @@ class IPOPTSolver(OptimizationSolver):
         def constraints(self, x):
             #
             # The callback for calculating the constraints
+            print('evaluate constraint')
             b_ct = Cb.Barycenter_Constraint(self.Mesh_, self.param["Vol_D"], self.param["Bary_D"]).eval(x, self.param["Bary_eps"])
             v_ct = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_O"]).eval(x)
             d_ct = Cd.Determinant_Constraint(self.Mesh_, self.param["det_lb"]).eval(x)
-            return np.array((v_ct, b_ct, d_ct))
+            return self.scale*np.array((v_ct, b_ct)) #, d_ct))
 
         def jacobian(self, x):
             #
             # The callback for calculating the Jacobian
             #
+            print('evaluate jacobian')
             b_ct_d = Cb.Barycenter_Constraint(self.Mesh_, self.param["Vol_D"], self.param["Bary_D"]).grad(x, self.param["Bary_eps"])
             v_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_D"]).grad(x)
             d_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["det_lb"]).grad(x)
-            return np.concatenate((v_ct_d, b_ct_d, d_ct_d))
+            return self.scale*np.concatenate((v_ct_d, b_ct_d)) #, d_ct_d))
 
         #def hessianstructure(self):
         #    #
@@ -202,7 +209,7 @@ class IPOPTSolver(OptimizationSolver):
             #
             # Example for the use of the intermediate callback.
             #
-            #print("Objective value at iteration ", iter_count, " is ", obj_value)
+            print("Objective value at iteration ", iter_count, " is ", obj_value)
             return
 
         def __copy_data(self, m):
@@ -221,8 +228,8 @@ class IPOPTSolver(OptimizationSolver):
         max_float = np.finfo(np.double).max
         min_float = np.finfo(np.double).min
 
-        cl = [0.0, 0.0, min_float]
-        cu = [0.0, 0.0, 0.0]
+        cl = [0.0, 0.0] #, min_float]
+        cu = [0.0, 0.0] #, 0.0]
 
         ub = np.array([max_float] * len(x0))
         lb = np.array([min_float] * len(x0))
