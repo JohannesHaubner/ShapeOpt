@@ -1,0 +1,8 @@
+mkdir Output
+cd Output
+mkdir MeshGeneration
+mkdir ReducedObjective
+mkdir Tests
+cd Tests
+mkdir ForwardEquation
+
