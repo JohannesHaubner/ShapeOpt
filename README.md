@@ -3,16 +3,15 @@
 ShapeOpt is based on FEniCS, dolfin-adjoint and IPOPT.
 
 ```
-mkdir Output 
-cd Output
-mkdir MeshGeneration
-mkdir ReducedObjective
-mkdir Tests
-cd Tests
-mkdir ForwardEquation
+mkdir ShapeOpt/Output 
+mkdir ShapeOpt/Output/Mesh_Generation
+mkdir ShapeOpt/Output/ReducedObjective
+mkdir ShapeOpt/Output/Tests
+mkdir ShapeOpt/Output/Tests/ForwardEquation
+mkdir ShapeOpt/Output/Tests/SettingsMesh
 
 python3 ShapeOpt/MeshGeneraton/create_mesh_.py
-python3 main.py
+python3 ShapeOpt/main.py
 ```
 
 
