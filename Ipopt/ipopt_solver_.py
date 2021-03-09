@@ -140,9 +140,9 @@ class IPOPTSolver(OptimizationSolver):
             # The callback for calculating the constraints
             print('evaluate constraint')
             b_ct = Cb.Barycenter_Constraint(self.Mesh_, self.param).eval(x)
-            v_ct = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_O"]).eval(x)
+            v_ct = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_DmO"]).eval(x)
             d_ct = Cd.Determinant_Constraint(self.Mesh_, self.param["det_lb"]).eval(x)
-            return self.scale*np.array((v_ct, b_ct)) #, d_ct))
+            return self.scale*np.array((v_ct, b_ct[0], b_ct[1])) #, d_ct))
 
         def jacobian(self, x):
             #
@@ -150,9 +150,9 @@ class IPOPTSolver(OptimizationSolver):
             #
             print('evaluate jacobian')
             b_ct_d = Cb.Barycenter_Constraint(self.Mesh_, self.param).grad(x)
-            v_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_D"]).grad(x)
+            v_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_DmO"]).grad(x)
             d_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["det_lb"]).grad(x)
-            return self.scale*np.concatenate((v_ct_d, b_ct_d)) #, d_ct_d))
+            return self.scale*np.concatenate((v_ct_d, b_ct_d[0], b_ct_d[1])) #, d_ct_d))
 
         #def hessianstructure(self):
         #    #
@@ -228,8 +228,8 @@ class IPOPTSolver(OptimizationSolver):
         max_float = np.finfo(np.double).max
         min_float = np.finfo(np.double).min
 
-        cl = [0.0, 0.0] #, min_float]
-        cu = [0.0, 0.0] #, 0.0]
+        cl = [0.0, 0.0, 0.0] #, min_float]
+        cu = [0.0, 0.0, 0.0] #, 0.0]
 
         ub = np.array([max_float] * len(x0))
         lb = np.array([min_float] * len(x0))
@@ -246,6 +246,7 @@ class IPOPTSolver(OptimizationSolver):
 
         nlp.addOption('mu_strategy', 'adaptive')
         #nlp.addOption('derivative_test', 'first-order')
+        nlp.addOption('point_perturbation_radius', 1e-4)
         nlp.addOption('max_iter', self.param["maxiter_IPOPT"])
         nlp.addOption('tol', 1e-3)
 

@@ -57,19 +57,19 @@ param = {"reg": 1e-3, # regularization parameter
          "Vol_D": geom_prop["volume_hold_all_domain"], # volume parameter
          "Bary_D": geom_prop["barycenter_hold_all_domain"], # barycenter
          "Vol_O": geom_prop["volume_obstacle"],
+         "Vol_DmO": geom_prop["volume_D_minus_obstacle"],
          "Bary_O": geom_prop["barycenter_obstacle"],
          "L": geom_prop["length_pipe"],
          "H": geom_prop["heigth_pipe"],
          "Bary_eps": 0.0, # slack for barycenter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient
-         "maxiter_IPOPT": 25
+         "maxiter_IPOPT": 2
          } 
 print(xf.vector().max())
 #ctt.Extension(init_mfs).test_dof_to_deformation_precond()
 
 #Cv.Volume_Constraint(init_mfs, param["Vol_O"]).test()
 #Cb.Barycenter_Constraint(init_mfs, param).test()
-#exit(0)
 #Cd.Determinant_Constraint(init_mfs, param["det_lb"]).test()
 
 Jred = ro_stokes.reduced_objective(mesh, boundaries,params, red_func=True)
