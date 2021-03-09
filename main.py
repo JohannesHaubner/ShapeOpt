@@ -74,7 +74,7 @@ x0 = interpolate(Constant('0.0'),Vd)
 
 #ipopt_so.IPOPTSolver(problem, init_mfs, param).test_constraints()
 
-for reg in [1e-4]:
+for reg in [1e-2]:
   param["reg"] = reg
   IPOPT = ipopt_so.IPOPTSolver(problem, init_mfs, param)
   x = IPOPT.solve(x0)
