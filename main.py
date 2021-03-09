@@ -62,8 +62,8 @@ param = {"reg": 1e-3, # regularization parameter
          "L": geom_prop["length_pipe"],
          "H": geom_prop["heigth_pipe"],
          "Bary_eps": 0.0, # slack for barycenter
-         "det_lb": 2e-1, # lower bound for determinant of transformation gradient
-         "maxiter_IPOPT": 2
+         #"det_lb": 2e-1, # lower bound for determinant of transformation gradient
+         "maxiter_IPOPT": 25
          } 
 print(xf.vector().max())
 #ctt.Extension(init_mfs).test_dof_to_deformation_precond()
@@ -72,13 +72,15 @@ print(xf.vector().max())
 #Cb.Barycenter_Constraint(init_mfs, param).test()
 #Cd.Determinant_Constraint(init_mfs, param["det_lb"]).test()
 
-Jred = ro_stokes.reduced_objective(mesh, boundaries,params, red_func=True)
+Jred = ro_stokes.reduced_objective(mesh, boundaries,params, param, red_func=True)
 problem = MinimizationProblem(Jred)
 x0 = interpolate(Constant('0.0'),Vd)
 
+#print(param["Bary_O"])
 #ipopt_so.IPOPTSolver(problem, init_mfs, param).test_constraints()
 
-for reg in [1e-2]:
+
+for reg in [1e-4]:
   param["reg"] = reg
   IPOPT = ipopt_so.IPOPTSolver(problem, init_mfs, param)
   x = IPOPT.solve(x0)

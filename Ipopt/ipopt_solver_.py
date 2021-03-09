@@ -141,7 +141,7 @@ class IPOPTSolver(OptimizationSolver):
             print('evaluate constraint')
             b_ct = Cb.Barycenter_Constraint(self.Mesh_, self.param).eval(x)
             v_ct = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_DmO"]).eval(x)
-            d_ct = Cd.Determinant_Constraint(self.Mesh_, self.param["det_lb"]).eval(x)
+            #d_ct = Cd.Determinant_Constraint(self.Mesh_, self.param["det_lb"]).eval(x)
             return self.scale*np.array((v_ct, b_ct[0], b_ct[1])) #, d_ct))
 
         def jacobian(self, x):
@@ -151,7 +151,7 @@ class IPOPTSolver(OptimizationSolver):
             print('evaluate jacobian')
             b_ct_d = Cb.Barycenter_Constraint(self.Mesh_, self.param).grad(x)
             v_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_DmO"]).grad(x)
-            d_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["det_lb"]).grad(x)
+            #d_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["det_lb"]).grad(x)
             return self.scale*np.concatenate((v_ct_d, b_ct_d[0], b_ct_d[1])) #, d_ct_d))
 
         #def hessianstructure(self):

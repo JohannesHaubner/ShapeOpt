@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 stop_annotating
 
-def reduced_objective(mesh, boundaries, params, flag =False, red_func = False):
+def reduced_objective(mesh, boundaries, params, param, flag =False, red_func = False):
     # mesh generated 
     # params dictionary, includes labels for boundary parts:
     # params.inflow
@@ -45,7 +45,7 @@ def reduced_objective(mesh, boundaries, params, flag =False, red_func = False):
     
     # Expressions
     (x,y) = SpatialCoordinate(mesh)
-    g = Expression(("0.1*x[1]*(6-x[1])", "0"), degree = 2)
+    g = Expression(("4/(H*H)*x[1]*(H-x[1])", "0"), degree = 2, H=param["H"])
     zero = Constant([0]*dim)
     
     # weak form
