@@ -1,5 +1,7 @@
 # ShapeOpt
 
+ShapeOpt is based on FEniCS, dolfin-adjoint and IPOPT.
+
 ```
 mkdir Output 
 cd Output
