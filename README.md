@@ -1,6 +1,6 @@
 # ShapeOpt
 
-ShapeOpt is based on FEniCS, dolfin-adjoint and IPOPT.
+ShapeOpt is based on FEniCS, dolfin-adjoint, IPOPT, cyipopt, pygmsh.
 
 ```
 mkdir ShapeOpt/Output 
