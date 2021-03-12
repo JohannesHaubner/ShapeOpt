@@ -32,6 +32,7 @@ params = init_mfs.get_params()
 
 #function space in which the control lives
 Vd = init_mfs.get_Vd()
+Vn = init_mfs.get_Vn()
 V = init_mfs.get_V()
 v = interpolate(Constant("1.0"),V)
 #init_mfs.test_Vn_to_Vdn()
@@ -53,6 +54,7 @@ xf.vector()[:] = x
 #ctt.Extension(init_mfs).test_linear_elasticity()
 geom_prop = np.load('./Mesh_Generation/geom_prop.npy', allow_pickle='TRUE').item()
 
+
 param = {"reg": 1e-3, # regularization parameter
          "Vol_D": geom_prop["volume_hold_all_domain"], # volume parameter
          "Bary_D": geom_prop["barycenter_hold_all_domain"], # barycenter
@@ -61,6 +63,7 @@ param = {"reg": 1e-3, # regularization parameter
          "Bary_O": geom_prop["barycenter_obstacle"],
          "L": geom_prop["length_pipe"],
          "H": geom_prop["heigth_pipe"],
+         "relax_eq": 0.0,
          "Bary_eps": 0.0, # slack for barycenter
          #"det_lb": 2e-1, # lower bound for determinant of transformation gradient
          "maxiter_IPOPT": 25
@@ -75,12 +78,22 @@ print(xf.vector().max())
 Jred = ro_stokes.reduced_objective(mesh, boundaries,params, param, red_func=True)
 problem = MinimizationProblem(Jred)
 x0 = interpolate(Constant('0.0'),Vd)
+d0 = interpolate(Constant(('0.0','0.0')), Vn)
+
+# update discretized params
+param["Vol_DmO"] = assemble(v*dx)
+param["Vol_O"] = param["Vol_D"] - param["Vol_DmO"]
+bo = param["Bary_O"]
+bc = Cb.Barycenter_Constraint(init_mfs, param).eval(x0.vector().get_local())
+param["Bary_O"] = np.add(bc, bo)
 
 #print(param["Bary_O"])
 #ipopt_so.IPOPTSolver(problem, init_mfs, param).test_constraints()
 
 
-for reg in [1e-4]:
+
+for reg in [1e-2, 1e-4, 1e-6]:
+  param["maxiter_IPOPT"]=25
   param["reg"] = reg
   IPOPT = ipopt_so.IPOPTSolver(problem, init_mfs, param)
   x = IPOPT.solve(x0)

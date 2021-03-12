@@ -25,7 +25,7 @@ class IPOPTSolver(OptimizationSolver):
             raise
         self.Mesh_ = Mesh_
         self.param = param
-        self.scalingfactor = 1e2
+        self.scalingfactor = 1.0
         self.Vd = self.Mesh_.get_Vd()
         OptimizationSolver.__init__(self, problem, parameters)
         self.rfn = ReducedFunctionalNumPy(self.problem.reduced_functional)
@@ -65,9 +65,9 @@ class IPOPTSolver(OptimizationSolver):
         j0 = self.problem_obj.constraints(x0)
         djx = self.problem_obj.jacobian(x0)
         print('j0', j0)
-        print('djx', djx)
-        print('djx', np.ma.size(djx))
-        exit(0)
+        #print('djx', djx)
+        #print('djx', np.ma.size(djx))
+        #exit(0)
         return
             
     def perform_first_order_check(self,jlist, j0, gradj0, ds, epslist):
@@ -228,8 +228,9 @@ class IPOPTSolver(OptimizationSolver):
         max_float = np.finfo(np.double).max
         min_float = np.finfo(np.double).min
 
-        cl = [0.0, 0.0, 0.0] #, min_float]
-        cu = [0.0, 0.0, 0.0] #, 0.0]
+        cr = self.param["relax_eq"]
+        cl = [-cr, -cr, -cr] #, min_float]
+        cu = [cr, cr, cr] #, 0.0]
 
         ub = np.array([max_float] * len(x0))
         lb = np.array([min_float] * len(x0))
@@ -246,7 +247,7 @@ class IPOPTSolver(OptimizationSolver):
 
         nlp.addOption('mu_strategy', 'adaptive')
         #nlp.addOption('derivative_test', 'first-order')
-        nlp.addOption('point_perturbation_radius', 1e-4)
+        nlp.addOption('point_perturbation_radius', 0.0)
         nlp.addOption('max_iter', self.param["maxiter_IPOPT"])
         nlp.addOption('tol', 1e-3)
 
