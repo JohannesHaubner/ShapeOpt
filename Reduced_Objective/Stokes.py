@@ -64,7 +64,7 @@ def reduced_objective(mesh, boundaries, params, param, flag =False, red_func = F
     
     # solve equations
     
-    solve(F==0, w, bcs)
+    solve(F==0, w, bcs) #, solver_parameters={'newton_solver':{'linear_solver':'mumps'}})
     u, p = w.split()
 
     # plot solution to check

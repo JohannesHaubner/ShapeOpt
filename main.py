@@ -92,23 +92,16 @@ param["Bary_O"] = np.add(bc, bo)
 
 
 
-for reg in [1e-2, 1e-4, 1e-6]:
+for reg in [1e-2, 1e-2, 1e-2]:
   param["maxiter_IPOPT"]=25
   param["reg"] = reg
   IPOPT = ipopt_so.IPOPTSolver(problem, init_mfs, param)
   x = IPOPT.solve(x0)
   #x = 0.01*np.asarray(range(len(x0.vector().get_local())))
-  x0.vector().set_local(x)
-  print(x0)
-
-deformation = ctt.Extension(init_mfs).dof_to_deformation_precond(x)
-
-stop_annotating
-
-mesh_new = mesh
-ALE.move(mesh_new, deformation, annotate=False)
-
-plt.figure()
-plot(mesh_new)
-plt.show()
+  deformation = ctt.Extension(init_mfs).dof_to_deformation_precond(x)
+  ALE.move(mesh, deformation, annotate=False)
+  
+  plt.figure()
+  plot(mesh)
+  plt.show()
 
