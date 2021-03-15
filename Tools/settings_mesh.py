@@ -8,25 +8,35 @@ Created on Fri Jun 26 08:39:51 2020
 from dolfin import *
 import numpy as np
 from dolfin_adjoint import *
+import matplotlib.pyplot as plt
 
 class Initialize_Mesh_and_FunctionSpaces():
-    def __init__(self):
+    def __init__(self, mesh = None, boundaries = None, params = None):
       #load mesh
       stop_annotating
-      mesh = Mesh()
-      with XDMFFile("./Output/Mesh_Generation/mesh_triangles.xdmf") as infile:
-        infile.read(mesh)
-        mvc = MeshValueCollection("size_t", mesh, 1)
-      mfile = File("./Output/Tests/ForwardEquation/mesh.pvd")
-      mfile << mesh
-      with XDMFFile("./Output/Mesh_Generation/facet_mesh.xdmf") as infile:
-        infile.read(mvc, "name_to_read")
-        boundaries = cpp.mesh.MeshFunctionSizet(mesh,mvc)
+      if mesh == None:
+          mesh = Mesh()
+          with XDMFFile("./Output/Mesh_Generation/mesh_triangles.xdmf") as infile:
+            infile.read(mesh)
+            mvc = MeshValueCollection("size_t", mesh, 1)
+          mfile = File("./Output/Tests/ForwardEquation/mesh.pvd")
+          mfile << mesh
+          with XDMFFile("./Output/Mesh_Generation/facet_mesh.xdmf") as infile:
+            infile.read(mvc, "name_to_read")
+            boundaries = cpp.mesh.MeshFunctionSizet(mesh,mvc)
 
-      bdfile = File("./Output/Tests/ForwardEquation/boundary.pvd")
-      bdfile << boundaries
+          bdfile = File("./Output/Tests/ForwardEquation/boundary.pvd")
+          bdfile << boundaries
 
-      params = np.load('./Mesh_Generation/params.npy', allow_pickle='TRUE').item()
+          params = np.load('./Mesh_Generation/params.npy', allow_pickle='TRUE').item()
+      else:
+          new_mesh = Mesh(mesh)
+          mvc = MeshValueCollection("size_t", mesh, 1)
+          new_boundaries =cpp.mesh.MeshFunctionSizet(new_mesh,mvc)
+          new_boundaries.set_values(boundaries.array())
+          mesh = new_mesh
+          boundaries = new_boundaries
+          params = params
 
       print('mesh created.........................................................')
 

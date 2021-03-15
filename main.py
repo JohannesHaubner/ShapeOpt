@@ -75,8 +75,6 @@ print(xf.vector().max())
 #Cb.Barycenter_Constraint(init_mfs, param).test()
 #Cd.Determinant_Constraint(init_mfs, param["det_lb"]).test()
 
-Jred = ro_stokes.reduced_objective(mesh, boundaries,params, param, red_func=True)
-problem = MinimizationProblem(Jred)
 x0 = interpolate(Constant('0.0'),Vd)
 d0 = interpolate(Constant(('0.0','0.0')), Vn)
 
@@ -91,17 +89,32 @@ param["Bary_O"] = np.add(bc, bo)
 #ipopt_so.IPOPTSolver(problem, init_mfs, param).test_constraints()
 
 
-
-for reg in [1e-2, 1e-2, 1e-2]:
-  param["maxiter_IPOPT"]=25
+for reg in [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3]:
+  set_working_tape(Tape())
+  param["maxiter_IPOPT"]=15
   param["reg"] = reg
+  Jred = ro_stokes.reduced_objective(mesh, boundaries,params, param, red_func=True)
+  problem = MinimizationProblem(Jred)
   IPOPT = ipopt_so.IPOPTSolver(problem, init_mfs, param)
+  x0 = interpolate(Constant('0.0'),Vd)
   x = IPOPT.solve(x0)
   #x = 0.01*np.asarray(range(len(x0.vector().get_local())))
   deformation = ctt.Extension(init_mfs).dof_to_deformation_precond(x)
+  # update mesh
   ALE.move(mesh, deformation, annotate=False)
+  init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(mesh, boundaries, params)
+  mesh = init_mfs.get_mesh()
+  dmesh = init_mfs.get_design_boundary_mesh()
+  boundaries = init_mfs.get_boundaries()
+  params = init_mfs.get_params()
+
+  # function space in which the control lives
+  Vd = init_mfs.get_Vd()
+  Vn = init_mfs.get_Vn()
+  V = init_mfs.get_V()
+  v = interpolate(Constant("1.0"),V)
   
-  plt.figure()
-  plot(mesh)
-  plt.show()
+  #plt.figure()
+  #plot(mesh)
+  #plt.show()
 

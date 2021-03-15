@@ -13,7 +13,9 @@ from pyadjoint.reduced_functional_numpy import ReducedFunctionalNumPy
 
 import Control_to_Trafo.dof_to_trafo as ctt
 
-import ipopt 
+import ipopt
+
+import matplotlib.pyplot as plt
 
 
 class IPOPTSolver(OptimizationSolver):
@@ -24,6 +26,9 @@ class IPOPTSolver(OptimizationSolver):
             print("You need to install cyipopt. (It is recommended to install IPOPT with HSL support!)")
             raise
         self.Mesh_ = Mesh_
+        #plt.figure()
+        #plot(Mesh_.get_mesh())
+        #plt.show()
         self.param = param
         self.scalingfactor = 1.0
         self.Vd = self.Mesh_.get_Vd()
