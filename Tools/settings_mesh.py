@@ -198,7 +198,10 @@ class Initialize_Mesh_and_FunctionSpaces():
       """ Returns a boundary interpolation of the CG1-function v
       see fenicsproject.discourse.group/t/how-tomap-dofs-of-vector-functions...
       """
-      mesh = self.mesh
+      # map from mesh_global to mesh
+      v = self.local_to_global(v)
+
+      mesh = self.mesh_global
       # We use a dof->Vertex mapping to create a global array with all DOF values ordered by mesh vertices
       DofToVert = dof_to_vertex_map(v.function_space())
       #print(DofToVert)
@@ -306,36 +309,32 @@ class Initialize_Mesh_and_FunctionSpaces():
         f_full.vector().apply("")
         return f_full
 
+    def transfer_parentfunction_to_sub(self, f, V_sub):
+        """ Restrict a function f on parent mesh to a function on the subspace V_sub"""
+        # Extract meshes
+        mesh = f.function_space().mesh()
+        submesh = V_sub.mesh()
+
+        # Build cell mapping between sub and parent mesh
+        cell_map = submesh.topology().mapping()[mesh.id()].cell_map()
+
+        # Get cell dofmaps
+        dofmap = V_sub.dofmap()
+        dofmap_full = f.function_space().dofmap()
+
+        # transfer dofs
+        f_sub = Function(V_sub)
+        GValues = np.zeros(np.size(f_sub.vector().get_local()))
+
+        for c in cells(submesh):
+            GValues[dofmap.cell_dofs(c.index())] = f.vector()[dofmap_full.cell_dofs(cell_map[c.index()])]
+        f_sub.vector().set_local(GValues)
+        f_sub.vector().apply("")
+        return f_sub
+
   
     def Vb_to_Vd(self,vb):
-      #TODO
-      bmesh = self.bmesh
-      # We use a dof->Vertex mapping to create a global array with all DOF values ordered by mesh vertices
-      DofToVert = dof_to_vertex_map(vb.function_space())
-      #print(DofToVert)
-      VGlobal = np.zeros(vb.vector().size())
-      
-      vec = vb.vector().get_local()
-      for i in range(len(vec)):
-          Vert = MeshEntity(bmesh,0,DofToVert[i])
-          globalIndex = Vert.global_index()
-          VGlobal[globalIndex] = vec[i]
-      VGlobal = self.SyncSum(VGlobal)
-      #print(VGlobal)
-      # Use the inverse mapping to see the DOF values of a boundary function
-      dspace = FunctionSpace(self.dmesh, "CG", 1)
-      dfunction = Function(dspace)
-      mapa = self.dmesh.data().array('parent_vertex_indices',0)
-      DofToVert = dof_to_vertex_map(dspace)
-      
-      LocValues = dfunction.vector().get_local()
-      for i in range(len(LocValues)):
-          VolVert = MeshEntity(bmesh,0,mapa[int(DofToVert[i])])
-          GlobalIndex = VolVert.global_index()
-          LocValues[i] = VGlobal[GlobalIndex]
-          
-      dfunction.vector().set_local(LocValues)
-      dfunction.vector().apply('')
+      dfunction = self.transfer_parentfunction_to_sub(vb, self.Vd)
       return dfunction
   
     def Vd_to_Vb(self,vd):
@@ -357,9 +356,7 @@ class Initialize_Mesh_and_FunctionSpaces():
       return vbn 
       
     def Vdn_to_Vn(self,xd):
-      print('vdn_to_vbn')
       xb = self.Vdn_to_Vbn(xd)
-      print('vbn_to_vn')
       x = self.Vbn_to_Vn(xb)
       return x
   
