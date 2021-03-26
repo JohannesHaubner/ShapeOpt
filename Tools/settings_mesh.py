@@ -7,6 +7,7 @@ Created on Fri Jun 26 08:39:51 2020
 """
 from dolfin import *
 import numpy as np
+from pyadjoint.overloaded_type import create_overloaded_object
 #import mpi4py as MPI
 #from dolfin_adjoint import *
 import matplotlib.pyplot as plt
@@ -20,6 +21,7 @@ class Initialize_Mesh_and_FunctionSpaces():
           with XDMFFile("./Output/Mesh_Generation/mesh_triangles.xdmf") as infile:
             infile.read(mesh)
             mvc = MeshValueCollection("size_t", mesh, 1)
+          mesh = create_overloaded_object(mesh)
           mfile = File("./Output/Tests/ForwardEquation/mesh.pvd")
           mfile << mesh
           with XDMFFile("./Output/Mesh_Generation/facet_mesh.xdmf") as infile:
@@ -54,6 +56,7 @@ class Initialize_Mesh_and_FunctionSpaces():
 
       #boundary mesh and submesh
       bmesh = BoundaryMesh(mesh_global, "exterior")
+      bmesh_local = BoundaryMesh(mesh, "exterior")
 
       # get entity map of facets, dof of facet of boundary mesh to dof of facet of mesh
       dofs = bmesh.entity_map(1)
@@ -80,6 +83,8 @@ class Initialize_Mesh_and_FunctionSpaces():
       
       # define function spaces
       self.V = FunctionSpace(mesh, "CG", 1)
+      self.Vbl = FunctionSpace(bmesh_local, "CG", 1)
+      self.Vbln = VectorFunctionSpace(bmesh_local, "CG", 1)
       self.Vg = FunctionSpace(mesh_global, "CG",1)
       self.Vb = FunctionSpace(bmesh, "CG", 1)
       self.Vd = FunctionSpace(dmesh, "CG", 1)
@@ -92,6 +97,7 @@ class Initialize_Mesh_and_FunctionSpaces():
       self.mesh = mesh
       self.mesh_global = mesh_global
       self.bmesh = bmesh
+      self.bmesh_local = bmesh_local
       self.dmesh = dmesh
       self.params = params
       self.boundaries = boundaries
@@ -139,7 +145,7 @@ class Initialize_Mesh_and_FunctionSpaces():
         SpaceV = self.V
 
         gathered_local = Fg.vector().get_local()
-        print(gathered_local)
+        #print(gathered_local)
         f = Function(SpaceV)
         dof = SpaceV.dofmap()
 
@@ -164,10 +170,10 @@ class Initialize_Mesh_and_FunctionSpaces():
      
      Each vec vector must have the same dimension for each MPI process """
      
-     comm = MPI.comm_self
+     comm = MPI.comm_world
      NormalsAllProcs = np.zeros(comm.Get_size()*len(vec), dtype=vec.dtype)
      comm.Allgather(vec, NormalsAllProcs)
-     
+
      out = np.zeros(len(vec))
      for j in range(comm.Get_size()):
          out += NormalsAllProcs[len(vec)*j:len(vec)*(j+1)]
@@ -257,9 +263,9 @@ class Initialize_Mesh_and_FunctionSpaces():
       Fg.vector().set_local(GValues)
       Fg.vector().apply("")
       # works
-      outfile_1 = XDMFFile(MPI.comm_self, "Output/Tests/SettingsMesh/Vdn_to_Vn.xdmf")
-      outfile_1.write(Fg)
-      outfile_1.close()
+      #outfile_1 = XDMFFile(MPI.comm_self, "Output/Tests/SettingsMesh/Vdn_to_Vn.xdmf")
+      #outfile_1.write(Fg)
+      #outfile_1.close()
 
       F = self.global_to_local(Fg)
 
@@ -408,11 +414,130 @@ class Initialize_Mesh_and_FunctionSpaces():
   
     def get_Mlumpedm05(self):
       return self.M_lumped_m05
+
+    def V_to_Vbl(self, v):
+        """ Returns a boundary interpolation of the CG1-function v
+        see fenicsproject.discourse.group/t/how-tomap-dofs-of-vector-functions...
+        """
+        mesh = self.mesh
+        # We use a dof->Vertex mapping to create a global array with all DOF values ordered by mesh vertices
+        DofToVert = dof_to_vertex_map(v.function_space())
+        # print(DofToVert)
+        VGlobal = np.zeros(v.vector().size())
+
+        vec = v.vector().get_local()
+        for i in range(len(vec)):
+            Vert = MeshEntity(mesh, 0, DofToVert[i])
+            globalIndex = Vert.global_index()
+            VGlobal[globalIndex] = vec[i]
+        VGlobal = self.SyncSum(VGlobal)
+        # print(VGlobal)
+        # Use the inverse mapping to see the DOF values of a boundary function
+        surface_space = self.Vbl
+        surface_function = Function(surface_space)
+        mapa = self.bmesh_local.entity_map(0)
+        DofToVert = dof_to_vertex_map(surface_space)
+
+        LocValues = surface_function.vector().get_local()
+        for i in range(len(LocValues)):
+            VolVert = MeshEntity(mesh, 0, mapa[int(DofToVert[i])])
+            GlobalIndex = VolVert.global_index()
+            LocValues[i] = VGlobal[GlobalIndex]
+
+        surface_function.vector().set_local(LocValues)
+        surface_function.vector().apply('')
+        return surface_function
+
+    def Vbl_to_V(self, f):
+        """ Take a CG1 function f defined on bmesh and return a volume vector with same
+        values on the boundary but zero in volume
+        """
+        SpaceV = self.V
+        SpaceB = self.Vbl
+
+        F = Function(SpaceV)
+        LocValues = np.zeros(F.vector().local_size())
+        GValues = np.zeros(F.vector().size())
+
+        mapb = self.bmesh_local.entity_map(0)
+        d2v = dof_to_vertex_map(SpaceB)
+        v2d = vertex_to_dof_map(SpaceV)
+
+        dof = SpaceV.dofmap()
+        imin, imax = dof.ownership_range()
+
+        for i in range(f.vector().local_size()):
+            GVertID = Vertex(self.bmesh, d2v[i]).index()  # Local Vertex ID for given dof on boundary mesh
+            PVertID = mapb[GVertID]  # Local Vertex ID of parent mesh
+            PDof = v2d[PVertID]  # Dof on parent mesh
+            value = f.vector()[i]  # Value on local processor
+            GValues[dof.local_to_global_index(PDof)] = value
+        GValues = self.SyncSum(GValues)
+
+        F.vector().set_local(GValues[imin:imax])
+        F.vector().apply("")
+        return F
+
+    def Vn_to_Vbln(self, vn):
+        """ Take function vn in Vn and interpolate at boundary
+        """
+        v_is = vn.split(deepcopy=True)
+        vbs = []
+        for v_i in v_is:
+            vbs.append(self.V_to_Vbl(v_i))
+        split_to_vec = FunctionAssigner(self.Vbln, [vi.function_space() for vi in vbs])
+        vbn = Function(self.Vbln)
+        split_to_vec.assign(vbn, vbs)
+        return vbn
+
+    def Vbln_to_Vn(self, vbn):
+        vb_is = vbn.split(deepcopy=True)
+        vs = []
+        for vb_i in vb_is:
+            vs.append(self.Vbl_to_V(vb_i))
+        split_to_vec = FunctionAssigner(self.Vn, [vi.function_space() for vi in vs])
+        vn = Function(self.Vn)
+        split_to_vec.assign(vn, vs)
+        return vn
+
+    def Vb_to_Vbl(self, v):
+        return self.V_to_Vbl(self.Vb_to_V(v))
+
+    def Vbl_to_Vb(self, v):
+        return self.V_to_Vb(self.Vbl_to_V(v))
+
+    def Vbn_to_Vbln(self, v):
+        vb_is = v.split(deepcopy=True)
+        vbs = []
+        for v_i in vb_is:
+            vbs.append(self.Vb_to_Vbl(v_i))
+        split_to_vec = FunctionAssigner(self.Vbln, [vi.function_space() for vi in vbs])
+        vbn = Function(self.Vbln)
+        split_to_vec.assign(vbn, vbs)
+        return vbn
+
+    def Vbln_to_Vbn(self, v):
+        vb_is = v.split(deepcopy=True)
+        vbs = []
+        for v_i in vb_is:
+            vbs.append(self.Vbl_to_Vb(v_i))
+        split_to_vec = FunctionAssigner(self.Vbn, [vi.function_space() for vi in vbs])
+        vbn = Function(self.Vbn)
+        split_to_vec.assign(vbn, vbs)
+        return vbn
   
     def test_Vbn_to_Vn(self):
       vbn = project(Expression(("x[0]", "pow(x[1]-x[0],2)"), element= self.Vbn.ufl_element()),self.Vbn)
       vn = self.Vbn_to_Vn(vbn)
       outfile_1 = XDMFFile("Output/Tests/SettingsMesh/Vbn_to_Vn.xdmf")
+      outfile_1.write(vn)
+      outfile_1.close()
+      pass
+
+    def test_Vbln_to_Vn(self):
+      vbn = project(Expression(("x[0]", "pow(x[1]-x[0],2)"), element= self.Vbln.ufl_element()),self.Vbln)
+      vn = self.Vbln_to_Vn(vbn)
+      outfile_1 = XDMFFile(MPI.comm_world, "Output/Tests/SettingsMesh/Vbln_to_Vn.xdmf")
       outfile_1.write(vn)
       outfile_1.close()
       pass
@@ -441,4 +566,14 @@ class Initialize_Mesh_and_FunctionSpaces():
       outfile_1 = XDMFFile("Output/Tests/SettingsMesh/Vn_to_Vdn_to_Vn.xdmf")
       outfile_1.write(vn)
       outfile_1.close()
-      pass 
+      pass
+
+    def test_Vbln_to_Vbn(self):
+      vn = project(Expression(("x[0]", "pow(x[1]-x[0],2)"), element= self.Vbln.ufl_element()),self.Vbln)
+      vbn = self.Vbln_to_Vbn(vn)
+      vn = self.Vbn_to_Vn(vbn)
+      outfile_1 = XDMFFile(MPI.comm_self, "Output/Tests/SettingsMesh/Vbln_to_Vbn_to_Vn.xdmf")
+      outfile_1.write(vn)
+      outfile_1.close()
+      print('here')
+      pass
