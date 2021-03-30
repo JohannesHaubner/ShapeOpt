@@ -10,20 +10,27 @@ from pyadjoint import *
 import Reduced_Objective.Stokes as ro_stokes
 import Tools.save_load_obj as tool
 import Control_to_Trafo.dof_to_trafo as ctt
+
 import Tools.settings_mesh as tsm
+#import Tools.settings_mesh_storagebad as tsm
 import Constraints.volume as Cv
 import Constraints.barycenter_ as Cb
 import Constraints.determinant as Cd
 import Ipopt.ipopt_solver_ as ipopt_so
 import numpy as np
+from mpi4py import MPI
+from pyadjoint.overloaded_type import create_overloaded_object
+
+stop_annotating()
 
 import matplotlib.pyplot as plt
 
-print('---------------------------------------------------------------------')
-print('main.py started......................................................')
-print('---------------------------------------------------------------------')
+#print('---------------------------------------------------------------------')
+#print('main.py started......................................................')
+#print('---------------------------------------------------------------------')
 
 #load mesh
+
 init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces()
 mesh = init_mfs.get_mesh()
 dmesh = init_mfs.get_design_boundary_mesh()
@@ -35,24 +42,12 @@ Vd = init_mfs.get_Vd()
 Vn = init_mfs.get_Vn()
 V = init_mfs.get_V()
 v = interpolate(Constant("1.0"),V)
-#init_mfs.test_Vn_to_Vdn()
 
-#ro_stokes.test(mesh, boundaries, params)
+#init_mfs.test_Vdn_to_Vn()
+#ctt.Extension(init_mfs).test_dof_to_deformation_precond()
+#exit(0)
 
-#ctt.Extension(mesh, boundaries, dmesh, params).test_design_boundary_mesh()
-x = np.zeros(dmesh.num_vertices())
-xf = Function(Vd)
-#print(len(xf.vector()))
-if len(xf.vector()) - len(x) == 0:
-  pass
-else:
-  print('ERROR: the dimension of x is incorrect----------------------')
-  exit(0)
-xf.vector()[:] = x
-
-#ctt.Extension(init_mfs).test_linear_elasticity()
 geom_prop = np.load('./Mesh_Generation/geom_prop.npy', allow_pickle='TRUE').item()
-
 
 param = {"reg": 1e-3, # regularization parameter
          "Vol_D": geom_prop["volume_hold_all_domain"], # volume parameter
@@ -65,9 +60,20 @@ param = {"reg": 1e-3, # regularization parameter
          "relax_eq": 0.0,
          "Bary_eps": 0.0, # slack for barycenter
          #"det_lb": 2e-1, # lower bound for determinant of transformation gradient
-         "maxiter_IPOPT": 25
-         } 
-print(xf.vector().max())
+         "maxiter_IPOPT": 2
+         }
+
+
+#ro_stokes.test(init_mfs, param)
+#exit(0)
+
+#ctt.Extension(mesh, boundaries, dmesh, params).test_design_boundary_mesh()
+
+xf = Function(Vd)
+
+#ctt.Extension(init_mfs).test_linear_elasticity()
+
+#print(xf.vector().max())
 #ctt.Extension(init_mfs).test_dof_to_deformation_precond()
 
 #Cv.Volume_Constraint(init_mfs, param["Vol_O"]).test()
@@ -85,17 +91,23 @@ bc = Cb.Barycenter_Constraint(init_mfs, param).eval(x0.vector().get_local())
 param["Bary_O"] = np.add(bc, bo)
 
 #print(param["Bary_O"])
+Jred = ro_stokes.reduced_objective(mesh, boundaries,params, param, red_func=True)
+problem = MinimizationProblem(Jred)
+
+#ipopt_so.IPOPTSolver(problem, init_mfs, param).test_objective()
 #ipopt_so.IPOPTSolver(problem, init_mfs, param).test_constraints()
+#
 
 
-for reg in [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3]:
+for reg in [1e-3]:
+  stop_annotating()
   set_working_tape(Tape())
   param["maxiter_IPOPT"]=15
   param["reg"] = reg
   Jred = ro_stokes.reduced_objective(mesh, boundaries,params, param, red_func=True)
   problem = MinimizationProblem(Jred)
   IPOPT = ipopt_so.IPOPTSolver(problem, init_mfs, param)
-  x0 = interpolate(Constant('0.0'),Vd)
+  x0 = interpolate(Constant('0.0'),Vd).vector().get_local()
   x = IPOPT.solve(x0)
   #x = 0.01*np.asarray(range(len(x0.vector().get_local())))
   deformation = ctt.Extension(init_mfs).dof_to_deformation_precond(x)

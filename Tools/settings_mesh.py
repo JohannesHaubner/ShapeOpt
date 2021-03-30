@@ -13,68 +13,65 @@ from pyadjoint.overloaded_type import create_overloaded_object
 import matplotlib.pyplot as plt
 
 class Initialize_Mesh_and_FunctionSpaces():
-    def __init__(self, mesh = None, boundaries = None, params = None):
-      #load mesh
-      #stop_annotating()
-      if mesh == None:
-          mesh = Mesh()
-          with XDMFFile("./Output/Mesh_Generation/mesh_triangles.xdmf") as infile:
-            infile.read(mesh)
-            mvc = MeshValueCollection("size_t", mesh, 1)
-          mesh = create_overloaded_object(mesh)
-          mfile = File("./Output/Tests/ForwardEquation/mesh.pvd")
-          mfile << mesh
-          with XDMFFile("./Output/Mesh_Generation/facet_mesh.xdmf") as infile:
-            infile.read(mvc, "name_to_read")
-            boundaries = cpp.mesh.MeshFunctionSizet(mesh, mvc)
+    def __init__(self, boundaries = None, params = None):
+      # load mesh
+      mesh = Mesh()
+      with XDMFFile("./Output/Mesh_Generation/mesh_triangles.xdmf") as infile:
+        infile.read(mesh)
 
-          mesh_global = Mesh(MPI.comm_self)
-          with XDMFFile(MPI.comm_self, "./Output/Mesh_Generation/mesh_triangles.xdmf") as infile:
-            infile.read(mesh_global)
+      # create pyadjoint mesh
+      mesh = create_overloaded_object(mesh)
 
-          mvc2 = MeshValueCollection("size_t", mesh_global, 1)
-          with XDMFFile(MPI.comm_self, "./Output/Mesh_Generation/facet_mesh.xdmf") as infile:
-            infile.read(mvc2, "name_to_read")
-          boundaries_global = cpp.mesh.MeshFunctionSizet(mesh_global, mvc2)
+      # read boundary parts
+      mvc = MeshValueCollection("size_t", mesh, 1)
+      mfile = File("./Output/Tests/ForwardEquation/mesh.pvd")
+      mfile << mesh
+      with XDMFFile("./Output/Mesh_Generation/facet_mesh.xdmf") as infile:
+        infile.read(mvc, "name_to_read")
+        boundaries = cpp.mesh.MeshFunctionSizet(mesh, mvc)
 
-          bdfile = File("./Output/Tests/ForwardEquation/boundary.pvd")
-          bdfile << boundaries
-          params = np.load('./Mesh_Generation/params.npy', allow_pickle='TRUE').item()
+      # load global mesh on each process in order to have the design boundary mesh on each process
+      mesh_global = Mesh(MPI.comm_self)
+      with XDMFFile(MPI.comm_self, "./Output/Mesh_Generation/mesh_triangles.xdmf") as infile:
+        infile.read(mesh_global)
 
-      else:
-          raise('Not implemented yet')
-          new_mesh = Mesh(mesh)
-          mvc = MeshValueCollection("size_t", mesh, 1)
-          new_boundaries =cpp.mesh.MeshFunctionSizet(new_mesh,mvc)
-          new_boundaries.set_values(boundaries.array())
-          mesh = new_mesh
-          boundaries = new_boundaries
-          params = params
+      # full boundary information on each process
+      mvc2 = MeshValueCollection("size_t", mesh_global, 1)
+      with XDMFFile(MPI.comm_self, "./Output/Mesh_Generation/facet_mesh.xdmf") as infile:
+        infile.read(mvc2, "name_to_read")
+      boundaries_global = cpp.mesh.MeshFunctionSizet(mesh_global, mvc2)
 
-      print('mesh created.........................................................')
-      #define design boundary mesh
+      # save to pvd file for testing
+      bdfile = File("./Output/Tests/ForwardEquation/boundary.pvd")
+      bdfile << boundaries
 
-      #boundary mesh and submesh
+      # load mesh parameters
+      params = np.load('./Mesh_Generation/params.npy', allow_pickle='TRUE').item()
+
+      # define design boundary mesh on each process
+
+      # boundary mesh and submesh
       bmesh = BoundaryMesh(mesh_global, "exterior")
-      bmesh_local = BoundaryMesh(mesh, "exterior")
 
       # get entity map of facets, dof of facet of boundary mesh to dof of facet of mesh
       dofs = bmesh.entity_map(1)
 
-      #create MeshFunctionSizet on boundary
+      # create MeshFunctionSizet on boundary
       bmvc = MeshValueCollection("size_t", bmesh, 1)
       bboundaries = cpp.mesh.MeshFunctionSizet(bmesh, bmvc)
 
-      #write boundaries[dof of facet in mesh] into bboundaries[dof of facet in bmesh]
+      # write boundaries[dof of facet in mesh] into bboundaries[dof of facet in bmesh]
       bnum = bmesh.num_vertices()
       bsize = bboundaries.size()
 
       for i in range(bnum):
         bboundaries.set_value(i, boundaries_global[dofs[i]])
 
+      # write to pvd-file for testing
       bdfile = File(MPI.comm_self, "./Output/Tests/ForwardEquation/bboundary.pvd")
       bdfile << bboundaries
 
+      # create design-boundary mesh
       dmesh = MeshView.create(bboundaries, params["design"])
       print('design boundary mesh created.........................................')
 
@@ -83,31 +80,110 @@ class Initialize_Mesh_and_FunctionSpaces():
       
       # define function spaces
       self.V = FunctionSpace(mesh, "CG", 1)
-      self.Vbl = FunctionSpace(bmesh_local, "CG", 1)
-      self.Vbln = VectorFunctionSpace(bmesh_local, "CG", 1)
-      self.Vg = FunctionSpace(mesh_global, "CG",1)
-      self.Vb = FunctionSpace(bmesh, "CG", 1)
+      #Vbl = FunctionSpace(bmesh_local, "CG", 1)
+      #Vbln = VectorFunctionSpace(bmesh_local, "CG", 1)
+      Vg = FunctionSpace(mesh_global, "CG",1)
+      Vb = FunctionSpace(bmesh, "CG", 1)
       self.Vd = FunctionSpace(dmesh, "CG", 1)
       self.Vn = VectorFunctionSpace(mesh, "CG", 1)
-      self.Vbn = VectorFunctionSpace(bmesh, "CG", 1)
+      Vbn = VectorFunctionSpace(bmesh, "CG", 1)
       self.Vdn = VectorFunctionSpace(dmesh, "CG", 1)
       dnormal = CellNormal(dmesh)
       self.dnormalf = project(dnormal, self.Vdn)
       
       self.mesh = mesh
-      self.mesh_global = mesh_global
-      self.bmesh = bmesh
-      self.bmesh_local = bmesh_local
       self.dmesh = dmesh
       self.params = params
       self.boundaries = boundaries
 
-      self.global_to_glocal_map, self.glocal_to_global_map = self.__meshglobal_to_mesh_spaceV_spaceVg__()
+      self.ds = ds
 
-    def __meshglobal_to_mesh_spaceV_spaceVg__(self):
+      # dof-maps between V and Vg
+      global_to_glocal_map = self.__meshglobal_to_mesh__(mesh_global)
+
+      # dof-maps between V and Vb
+      Vb_to_V_map = self.__Vb_to_V(Vg, Vb, global_to_glocal_map)
+      #self.__test_Vb_to_V(Vg, Vb, global_to_glocal_map)
+
+      # dof-maps between V and Vd
+      self.Vd_to_V_map = self.__Vd_to_V(Vb, Vb_to_V_map)
+      self.__test_Vdn_to_Vn()
+      # dof-maps between V and Vd (safe in self)
+
+    def vec_to_Vd(self, x):
+        """ takes a vector with all dofs and writes them on each process to a function v """
+        SpaceVd = self.Vd
+        fx = Function(SpaceVd)
+        fx.vector().set_local(x)
+        fx.vector().apply("")
+        return fx
+
+    def Vd_to_vec(self, v):
+        SpaceVd = self.Vd
+        dof = SpaceVd.dofmap()
+        imin, imax = dof.ownership_range()
+        xvalues = v.vector().get_local()
+        x = xvalues
+        return x
+
+    def Vd_to_V(self, x):
+        """
+        maps Vd-function x to function in V
+        """
+        v = Function(self.V)
+        dofsv = np.zeros(v.vector().size())
+        dofsv[self.Vd_to_V_map] = x.vector().get_local()
+        # gathered local dofs to processes
+        dof = self.V.dofmap()
+        imin, imax = dof.ownership_range()
+        v.vector().set_local(dofsv[imin:imax])
+        return v
+
+    def V_to_Vd(self, x):
+        """
+        maps V-function x to a function in Vd
+        """
+        vd = Function(self.Vd)
+        # gather dofs
+        ndof = x.vector().size()
+        gathered_local = x.vector().gather(range(ndof))
+
+        # write correct dofs into x
+        vd.vector().set_local(gathered_local[self.Vd_to_V_map])
+        vd.vector().apply("")
+        return vd
+
+
+    def Vn_to_Vdn(self, x):
+        """
+        maps Vn-function x to a function in Vdn
+        """
+        x_is = x.split(deepcopy=True)
+        vbs = []
+        for v_i in x_is:
+            vbs.append(self.V_to_Vd(v_i))
+        split_to_vec = FunctionAssigner(self.Vdn, [vi.function_space() for vi in vbs])
+        vdn = Function(self.Vdn)
+        split_to_vec.assign(vdn, vbs)
+        return vdn
+
+    def Vdn_to_Vn(self, x):
+        """
+        maps Vdn-function to a function in Vn
+        """
+        vb_is = x.split(deepcopy=True)
+        vs = []
+        for vb_i in vb_is:
+            vs.append(self.Vd_to_V(vb_i))
+        split_to_vec = FunctionAssigner(self.Vn, [vi.function_space() for vi in vs])
+        vn = Function(self.Vn)
+        split_to_vec.assign(vn, vs)
+        return vn
+
+    def __meshglobal_to_mesh__(self, mesh_global):
         " returns dof maps between V and Vg "
         SpaceV = self.V
-        SpaceVg = self.Vg
+        SpaceVg = FunctionSpace(mesh_global, "CG",1)
 
         # construct array with [indicees, xvalues, yvalues] (for global and gathered local mesh, on each process)
         f1 = Expression('x[0]', degree=1)
@@ -138,30 +214,31 @@ class Initialize_Mesh_and_FunctionSpaces():
         gloc_glob_sort2 = gloc_glob[gloc_glob[:, 1].argsort(kind='mergesort')]
         glocal_to_global_map = gloc_glob_sort2[:, 0]
 
-        return global_to_glocal_map.astype(int), glocal_to_global_map.astype(int)
+        return global_to_glocal_map.astype(int) #, glocal_to_global_map.astype(int)
 
-    def global_to_local(self, Fg):
+    def __global_to_local(self, Fg, glocal_to_global_map):
         " maps Function from Vg to V "
         SpaceV = self.V
 
         gathered_local = Fg.vector().get_local()
-        #print(gathered_local)
+        #print(gathered_local))
+
         f = Function(SpaceV)
         dof = SpaceV.dofmap()
 
         imin, imax = dof.ownership_range()
-        f.vector().set_local(gathered_local[self.glocal_to_global_map[imin:imax]])
+        f.vector().set_local(gathered_local[glocal_to_global_map[imin:imax]])
         f.vector().apply("")
         return f
 
-    def local_to_global(self, f):
+    def __local_to_global(self, f, global_to_glocal_map):
         " maps Function from V to Vg"
         SpaceVg = self.Vg
 
         Fg = Function(SpaceVg)
         ndof = np.size(Fg.vector().get_local())
         gathered_local = f.vector().gather(range(ndof))
-        Fg.vector().set_local(gathered_local[self.global_to_glocal_map])
+        Fg.vector().set_local(gathered_local[global_to_glocal_map])
         Fg.vector().apply("")
         return Fg
 
@@ -178,52 +255,33 @@ class Initialize_Mesh_and_FunctionSpaces():
      for j in range(comm.Get_size()):
          out += NormalsAllProcs[len(vec)*j:len(vec)*(j+1)]
      return out
- 
-    def vec_to_Vd(self,x):
-      """ takes a vector with all dofs and writes them in parallel to a function v """
-      SpaceVd = self.Vd
-      fx = Function(SpaceVd)
-      dof = SpaceVd.dofmap()
       
-      imin, imax = dof.ownership_range()
-      fx.vector().set_local(x[imin:imax])
-      fx.vector().apply("")
-      return fx
-  
-    def Vd_to_vec(self,v):
-      SpaceVd = self.Vd
-      dof = SpaceVd.dofmap()
-      imin, imax = dof.ownership_range()
-      xvalues = np.zeros(v.vector().size())
-      for i in range(v.vector().local_size()):
-          xvalues[imin:imax] = v.vector().get_local()
-      x = self.SyncSum(xvalues)
-      return x
-      
-    def V_to_Vb(self, v):
-      """ Returns a boundary interpolation of the CG1-function v
-      see fenicsproject.discourse.group/t/how-tomap-dofs-of-vector-functions...
-      """
-      # map from mesh_global to mesh
-      v = self.local_to_global(v)
+    def __V_to_Vb_map(self, Vg, Vb, glocal_to_global_map):
 
-      mesh = self.mesh_global
+      bmesh = Vb.mesh()
+      mesh_global = Vg.mesh()
+
+      v = Function(self.V)
+      ndofv = v.vector().size()
+      rnd = np.array(range(ndofv))
+
+      # map from mesh_global to bmesh
+      ggm = glocal_to_global_map[rnd]
+
       # We use a dof->Vertex mapping to create a global array with all DOF values ordered by mesh vertices
       DofToVert = dof_to_vertex_map(v.function_space())
-      #print(DofToVert)
+
       VGlobal = np.zeros(v.vector().size())
-      
       vec = v.vector().get_local()
       for i in range(len(vec)):
-          Vert = MeshEntity(mesh,0,DofToVert[i])
+          Vert = MeshEntity(mesh_global,0,DofToVert[i])
           globalIndex = Vert.global_index()
-          VGlobal[globalIndex] = vec[i]
-      VGlobal = self.SyncSum(VGlobal)
-      #print(VGlobal)
+          VGlobal[i] = ggm[globalIndex]
+
       # Use the inverse mapping to see the DOF values of a boundary function
-      surface_space = FunctionSpace(self.bmesh, "CG", 1)
+      surface_space = Vb
       surface_function = Function(surface_space)
-      mapa = self.bmesh.entity_map(0)
+      mapa = bmesh.entity_map(0)
       DofToVert = dof_to_vertex_map(surface_space)
       
       LocValues = surface_function.vector().get_local()
@@ -231,146 +289,127 @@ class Initialize_Mesh_and_FunctionSpaces():
           VolVert = MeshEntity(mesh,0,mapa[int(DofToVert[i])])
           GlobalIndex = VolVert.global_index()
           LocValues[i] = VGlobal[GlobalIndex]
-          
-      surface_function.vector().set_local(LocValues)
-      surface_function.vector().apply('')
-      return surface_function
+
+      return LocValues
   
-    def Vb_to_V(self, f):
+    def __Vb_to_V(self, Vg, Vb, global_to_glocal_map):
       """ Take a CG1 function f defined on bmesh and return a volume vector with same 
       values on the boundary but zero in volume
       """
       SpaceV = self.V
-      SpaceVg = self.Vg
-      SpaceB = self.Vb
+      SpaceVg = Vg
+      SpaceB = Vb
+
+      f = Function(SpaceB)
 
       # assign f to function in Fg
-      mapb = self.bmesh.entity_map(0)
+      bmesh = Vb.mesh()
+      mapb = bmesh.entity_map(0)
       d2v = dof_to_vertex_map(SpaceB)
       v2d = vertex_to_dof_map(SpaceVg)
 
-      dof = SpaceV.dofmap()
-      Fg = Function(SpaceVg)
-      GValues = np.zeros(Fg.vector().size())
 
+      Vb_to_Vg_map = np.zeros((f.vector().local_size()))
       for i in range(f.vector().local_size()):
-          GVertID = Vertex(self.bmesh, d2v[i]).index()  # Local Vertex ID for given dof on boundary mesh
+          GVertID = Vertex(bmesh, d2v[i]).index()  # Local Vertex ID for given dof on boundary mesh
           PVertID = mapb[GVertID]  # Local Vertex ID of parent mesh
-          PDof = v2d[PVertID]  # Dof on parent mesh
-          value = f.vector()[i]  # Value on local processor
-          GValues[PDof] = value
-      #GValues = self.SyncSum(GValues)
-      Fg.vector().set_local(GValues)
-      Fg.vector().apply("")
-      # works
-      #outfile_1 = XDMFFile(MPI.comm_self, "Output/Tests/SettingsMesh/Vdn_to_Vn.xdmf")
-      #outfile_1.write(Fg)
-      #outfile_1.close()
+          PDof = v2d[PVertID]
+          Vb_to_Vg_map[i] = int(PDof)
+      Vb_to_V_map_new = [global_to_glocal_map[int(c)] for c in Vb_to_Vg_map]
 
-      F = self.global_to_local(Fg)
+      return Vb_to_V_map_new
 
-      return F
-  
-    def Vn_to_Vbn(self, vn):
-      """ Take function vn in Vn and interpolate at boundary
-      """
-      v_is = vn.split(deepcopy = True)
-      vbs = []
-      for v_i in v_is:
-          vbs.append(self.V_to_Vb(v_i))
-      split_to_vec = FunctionAssigner(self.Vbn, [vi.function_space() for vi in vbs])
-      vbn = Function(self.Vbn)
-      split_to_vec.assign(vbn, vbs)
-      return vbn
-  
-    def Vbn_to_Vn(self,vbn):
-      vb_is = vbn.split(deepcopy = True)
-      vs = []
-      for vb_i in vb_is:
-          vs.append(self.Vb_to_V(vb_i))
-      split_to_vec = FunctionAssigner(self.Vn, [vi.function_space() for vi in vs])
-      vn = Function(self.Vn)
-      split_to_vec.assign(vn, vs)
-      return vn
+    def __test_Vb_to_V(self, Vg, Vb, global_to_glocal_map):
+        f = interpolate(Constant("1.0"),Vb)
+        Vb_to_V_map = self.__Vb_to_V(Vg, Vb, global_to_glocal_map)
 
-    def transfer_subfunction_to_parent(self, f, V_full):
+        p = Function(self.V)
+        values = np.zeros(p.vector().size())
+        values[Vb_to_V_map] = f.vector().get_local()
+
+        dof = self.V.dofmap()
+        imin, imax = dof.ownership_range()
+        p.vector().set_local(values[imin:imax])
+
+        bdfile = File(MPI.comm_self, "./Output/Tests/SettingsMesh/Vb_to_V.pvd")
+        bdfile << p
+        pass
+
+    def __Vd_to_V(self, Vb, Vb_to_V_map):
         """ Transfers a function from a MeshView submesh to its parent mesh """
         # Extract meshes
-        mesh = V_full.mesh()
-        submesh = f.function_space().mesh()
+        mesh = Vb.mesh()
+        submesh = self.Vd.mesh()
+
+        # function
+        f = Function(self.Vd)
 
         # Build cell mapping between sub and parent mesh
         cell_map = submesh.topology().mapping()[mesh.id()].cell_map()
 
         # Get cell dofmaps
-        dofmap = f.function_space().dofmap()
-        dofmap_full = V_full.dofmap()
+        dofmap = self.Vd.dofmap()
+        dofmap_full = Vb.dofmap()
 
         # Transfer dofs
-        f_full = Function(V_full)
-        GValues = np.zeros(np.size(f_full.vector().get_local()))
+        GValues = np.zeros(np.size(f.vector().get_local()))
         for c in cells(submesh):
-            GValues[dofmap_full.cell_dofs(cell_map[c.index()])] = f.vector()[dofmap.cell_dofs(c.index())]
-        f_full.vector().set_local(GValues)
-        f_full.vector().apply("")
-        return f_full
+            GValues[dofmap.cell_dofs(c.index())] = dofmap_full.cell_dofs(cell_map[c.index()])
+        #GValuesnew = np.zeros(np.size(f.vector().get_local()))
+        #for i in range(len(GValues)):
+        #    GValuesnew[i] = int(Vb_to_V_map[int(GValues[i])])
+        GValuesnew = [Vb_to_V_map[int(c)] for c in GValues]
+        return GValuesnew
 
-    def transfer_parentfunction_to_sub(self, f, V_sub):
-        """ Restrict a function f on parent mesh to a function on the subspace V_sub"""
-        # Extract meshes
-        mesh = f.function_space().mesh()
-        submesh = V_sub.mesh()
+    def __test_Vd_to_V(self):
+        f = interpolate(Expression("x[0]", degree = 2), self.Vd)
 
-        # Build cell mapping between sub and parent mesh
-        cell_map = submesh.topology().mapping()[mesh.id()].cell_map()
+        p = self.Vd_to_V(f)
 
-        # Get cell dofmaps
-        dofmap = V_sub.dofmap()
-        dofmap_full = f.function_space().dofmap()
+        bdfile = File(MPI.comm_self, "./Output/Tests/SettingsMesh/Vd_to_V.pvd")
+        bdfile << p
+        pass
 
-        # transfer dofs
-        f_sub = Function(V_sub)
-        GValues = np.zeros(np.size(f_sub.vector().get_local()))
+    def __test_V_to_Vd(self):
+        f = interpolate(Expression("x[0]", degree = 2), self.V)
 
-        for c in cells(submesh):
-            GValues[dofmap.cell_dofs(c.index())] = f.vector()[dofmap_full.cell_dofs(cell_map[c.index()])]
-        f_sub.vector().set_local(GValues)
-        f_sub.vector().apply("")
-        return f_sub
+        p = self.V_to_Vd(f)
 
-  
-    def Vb_to_Vd(self,vb):
-      dfunction = self.transfer_parentfunction_to_sub(vb, self.Vd)
-      return dfunction
-  
-    def Vd_to_Vb(self,vd):
-      F = self.transfer_subfunction_to_parent(vd, self.Vb)
-      return F
-  
-    def Vbn_to_Vdn(self,vbn):
-      v_is = vbn.split(deepcopy = True)
-      vbs = []
-      for v_i in v_is:
-          vbs.append(self.Vb_to_Vd(v_i))
-      split_to_vec = FunctionAssigner(self.Vdn, [vi.function_space() for vi in vbs])
-      vdn = Function(self.Vdn)
-      split_to_vec.assign(vdn, vbs)
-      return vdn
-  
-    def Vdn_to_Vbn(self,vdn):
-      vbn = self.transfer_subfunction_to_parent(vdn, self.Vbn)
-      return vbn 
-      
-    def Vdn_to_Vn(self,xd):
-      xb = self.Vdn_to_Vbn(xd)
-      x = self.Vbn_to_Vn(xb)
-      return x
-  
-    def Vn_to_Vdn(self,x):
-      # x is a function in Vn; take the trace on dmesh to obtain xd
-      xb = self.Vn_to_Vbn(x)
-      xd = self.Vbn_to_Vdn(xb)
-      return xd
+        bdfile = File(MPI.comm_self, "./Output/Tests/SettingsMesh/V_to_Vd.pvd")
+        bdfile << p
+        pass
+
+    def __test_Vd_to_V_to_Vd(self):
+        f = interpolate(Expression("x[0]", degree = 2), self.Vd)
+
+        p = self.Vd_to_V(f)
+
+        f = self.V_to_Vd(p)
+        p = self.Vd_to_V(f)
+
+        bdfile = File(MPI.comm_self, "./Output/Tests/SettingsMesh/Vd_to_V_to_Vd.pvd")
+        bdfile << p
+        pass
+
+    def __test_Vn_to_Vdn(self):
+        f = project(Expression(("x[0]", "pow(x[1]-x[0],2)"), element= self.Vn.ufl_element()),self.Vn)
+
+        p = self.Vn_to_Vdn(f)
+
+        bdfile = File(MPI.comm_self, "./Output/Tests/SettingsMesh/Vn_to_Vdn.pvd")
+        bdfile << p
+        pass
+
+    def __test_Vdn_to_Vn(self):
+        f = project(Expression(("x[0]", "pow(x[1]-x[0],2)"), element= self.Vdn.ufl_element()),self.Vdn)
+
+        p = self.Vdn_to_Vn(f)
+
+        bdfile = File(MPI.comm_self, "./Output/Tests/SettingsMesh/Vdn_to_Vn.pvd")
+        bdfile << p
+        pass
+
+
       
     def get_mesh(self):
       #print('load mesh............................................................')
@@ -391,189 +430,21 @@ class Initialize_Mesh_and_FunctionSpaces():
     def get_V(self):
       return self.V
   
-    def get_Vb(self):
-      return self.Vb
-  
     def get_Vd(self):
       return self.Vd
   
     def get_Vn(self):
       return self.Vn
-  
-    def get_Vbn(self):
-      return self.Vbn
-  
+
     def get_Vdn(self):
       return self.Vdn
+
+    def get_ds(self):
+      return self.ds
   
     def get_dnormalf(self):
       return self.dnormalf
   
     def get_n(self):
       return self.n
-  
-    def get_Mlumpedm05(self):
-      return self.M_lumped_m05
 
-    def V_to_Vbl(self, v):
-        """ Returns a boundary interpolation of the CG1-function v
-        see fenicsproject.discourse.group/t/how-tomap-dofs-of-vector-functions...
-        """
-        mesh = self.mesh
-        # We use a dof->Vertex mapping to create a global array with all DOF values ordered by mesh vertices
-        DofToVert = dof_to_vertex_map(v.function_space())
-        # print(DofToVert)
-        VGlobal = np.zeros(v.vector().size())
-
-        vec = v.vector().get_local()
-        for i in range(len(vec)):
-            Vert = MeshEntity(mesh, 0, DofToVert[i])
-            globalIndex = Vert.global_index()
-            VGlobal[globalIndex] = vec[i]
-        VGlobal = self.SyncSum(VGlobal)
-        # print(VGlobal)
-        # Use the inverse mapping to see the DOF values of a boundary function
-        surface_space = self.Vbl
-        surface_function = Function(surface_space)
-        mapa = self.bmesh_local.entity_map(0)
-        DofToVert = dof_to_vertex_map(surface_space)
-
-        LocValues = surface_function.vector().get_local()
-        for i in range(len(LocValues)):
-            VolVert = MeshEntity(mesh, 0, mapa[int(DofToVert[i])])
-            GlobalIndex = VolVert.global_index()
-            LocValues[i] = VGlobal[GlobalIndex]
-
-        surface_function.vector().set_local(LocValues)
-        surface_function.vector().apply('')
-        return surface_function
-
-    def Vbl_to_V(self, f):
-        """ Take a CG1 function f defined on bmesh and return a volume vector with same
-        values on the boundary but zero in volume
-        """
-        SpaceV = self.V
-        SpaceB = self.Vbl
-
-        F = Function(SpaceV)
-        LocValues = np.zeros(F.vector().local_size())
-        GValues = np.zeros(F.vector().size())
-
-        mapb = self.bmesh_local.entity_map(0)
-        d2v = dof_to_vertex_map(SpaceB)
-        v2d = vertex_to_dof_map(SpaceV)
-
-        dof = SpaceV.dofmap()
-        imin, imax = dof.ownership_range()
-
-        for i in range(f.vector().local_size()):
-            GVertID = Vertex(self.bmesh, d2v[i]).index()  # Local Vertex ID for given dof on boundary mesh
-            PVertID = mapb[GVertID]  # Local Vertex ID of parent mesh
-            PDof = v2d[PVertID]  # Dof on parent mesh
-            value = f.vector()[i]  # Value on local processor
-            GValues[dof.local_to_global_index(PDof)] = value
-        GValues = self.SyncSum(GValues)
-
-        F.vector().set_local(GValues[imin:imax])
-        F.vector().apply("")
-        return F
-
-    def Vn_to_Vbln(self, vn):
-        """ Take function vn in Vn and interpolate at boundary
-        """
-        v_is = vn.split(deepcopy=True)
-        vbs = []
-        for v_i in v_is:
-            vbs.append(self.V_to_Vbl(v_i))
-        split_to_vec = FunctionAssigner(self.Vbln, [vi.function_space() for vi in vbs])
-        vbn = Function(self.Vbln)
-        split_to_vec.assign(vbn, vbs)
-        return vbn
-
-    def Vbln_to_Vn(self, vbn):
-        vb_is = vbn.split(deepcopy=True)
-        vs = []
-        for vb_i in vb_is:
-            vs.append(self.Vbl_to_V(vb_i))
-        split_to_vec = FunctionAssigner(self.Vn, [vi.function_space() for vi in vs])
-        vn = Function(self.Vn)
-        split_to_vec.assign(vn, vs)
-        return vn
-
-    def Vb_to_Vbl(self, v):
-        return self.V_to_Vbl(self.Vb_to_V(v))
-
-    def Vbl_to_Vb(self, v):
-        return self.V_to_Vb(self.Vbl_to_V(v))
-
-    def Vbn_to_Vbln(self, v):
-        vb_is = v.split(deepcopy=True)
-        vbs = []
-        for v_i in vb_is:
-            vbs.append(self.Vb_to_Vbl(v_i))
-        split_to_vec = FunctionAssigner(self.Vbln, [vi.function_space() for vi in vbs])
-        vbn = Function(self.Vbln)
-        split_to_vec.assign(vbn, vbs)
-        return vbn
-
-    def Vbln_to_Vbn(self, v):
-        vb_is = v.split(deepcopy=True)
-        vbs = []
-        for v_i in vb_is:
-            vbs.append(self.Vbl_to_Vb(v_i))
-        split_to_vec = FunctionAssigner(self.Vbn, [vi.function_space() for vi in vbs])
-        vbn = Function(self.Vbn)
-        split_to_vec.assign(vbn, vbs)
-        return vbn
-  
-    def test_Vbn_to_Vn(self):
-      vbn = project(Expression(("x[0]", "pow(x[1]-x[0],2)"), element= self.Vbn.ufl_element()),self.Vbn)
-      vn = self.Vbn_to_Vn(vbn)
-      outfile_1 = XDMFFile("Output/Tests/SettingsMesh/Vbn_to_Vn.xdmf")
-      outfile_1.write(vn)
-      outfile_1.close()
-      pass
-
-    def test_Vbln_to_Vn(self):
-      vbn = project(Expression(("x[0]", "pow(x[1]-x[0],2)"), element= self.Vbln.ufl_element()),self.Vbln)
-      vn = self.Vbln_to_Vn(vbn)
-      outfile_1 = XDMFFile(MPI.comm_world, "Output/Tests/SettingsMesh/Vbln_to_Vn.xdmf")
-      outfile_1.write(vn)
-      outfile_1.close()
-      pass
-  
-    def test_Vdn_to_Vn(self):
-      vdn = project(Expression(("x[0]", "pow(x[1]-x[0],2)"), element= self.Vdn.ufl_element()),self.Vdn)
-      vn = self.Vdn_to_Vn(vdn)
-      outfile_1 = XDMFFile("Output/Tests/SettingsMesh/Vdn_to_Vn.xdmf")
-      outfile_1.write(vn)
-      outfile_1.close()
-      pass 
-  
-    def test_Vn_to_Vbn(self):
-      vn = project(Expression(("x[0]", "pow(x[1]-x[0],2)"), element= self.Vn.ufl_element()),self.Vn)
-      vbn = self.Vn_to_Vbn(vn)
-      vn = self.Vbn_to_Vn(vbn)
-      outfile_1 = XDMFFile("Output/Tests/SettingsMesh/Vn_to_Vbn_to_Vn.xdmf")
-      outfile_1.write(vn)
-      outfile_1.close()
-      pass 
-  
-    def test_Vn_to_Vdn(self):
-      vn = project(Expression(("x[0]", "pow(x[1]-x[0],2)"), element= self.Vn.ufl_element()),self.Vn)
-      vbn = self.Vn_to_Vdn(vn)
-      vn = self.Vdn_to_Vn(vbn)
-      outfile_1 = XDMFFile("Output/Tests/SettingsMesh/Vn_to_Vdn_to_Vn.xdmf")
-      outfile_1.write(vn)
-      outfile_1.close()
-      pass
-
-    def test_Vbln_to_Vbn(self):
-      vn = project(Expression(("x[0]", "pow(x[1]-x[0],2)"), element= self.Vbln.ufl_element()),self.Vbln)
-      vbn = self.Vbln_to_Vbn(vn)
-      vn = self.Vbn_to_Vn(vbn)
-      outfile_1 = XDMFFile(MPI.comm_self, "Output/Tests/SettingsMesh/Vbln_to_Vbn_to_Vn.xdmf")
-      outfile_1.write(vn)
-      outfile_1.close()
-      print('here')
-      pass

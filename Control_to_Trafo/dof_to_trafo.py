@@ -25,6 +25,7 @@ class Extension():
       n = Mesh_.get_n()
       
       self.Mesh_ = Mesh_
+      self.mesh = mesh
       
       self.dmesh = dmesh
 
@@ -53,6 +54,7 @@ class Extension():
       M_diag = assemble(mass_action_form)
       M_diag_m05 = assemble(mass_action_form)
       M_diag_m05.set_local(np.ma.power(M_diag.get_local(), -0.5))
+      M_diag_m05.apply("")
       M_lumped.set_diagonal(M_diag)
       M_lumped_m05.set_diagonal(M_diag_m05)
       self.M_lumped = M_lumped
@@ -64,8 +66,10 @@ class Extension():
       
     def vec_to_func_precond_chainrule(self, v):
       vc = self.M_lumped_m05 * v.vector()
+      #print(v.vector())
       vcf = Function(self.Vd)
       vcf.vector().set_local(vc)
+      vcf.vector().apply("")
       x = self.Mesh_.Vd_to_vec(vcf)
       return x
   
@@ -74,6 +78,7 @@ class Extension():
       v = self.Mesh_.vec_to_Vd(x)
       vc = self.M_lumped_m05 * v.vector()
       v.vector().set_local(vc.get_local())
+      v.vector().apply("")
       return v
   
     def dof_to_deformation_precond(self,x):
@@ -85,6 +90,7 @@ class Extension():
       djy = self.dof_to_deformation_chainrule(djy, option2)
       djyy = Function(self.Vd)
       djyy.vector().set_local(djy)
+      djyy.vector().apply("")
       djx = self.vec_to_func_precond_chainrule(djyy)
       return djx
   
@@ -126,9 +132,9 @@ class Extension():
       ds = interpolate(Constant(1.0), self.Vd)
       #ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
       y0 = self.dof_to_deformation(x0)
-      j0 = assemble(0.5*inner(y0,y0)*dx)
+      j0 = assemble(0.5*inner(y0,y0)*dx(self.mesh))
       djy = y0
-      djx = self.dof_to_deformation_chainrule(djy,1)
+      djx = self.dof_to_deformation_chainrule(djy,1).get_local()
       epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
       ylist = [self.dof_to_deformation(x0+eps*ds) for eps in epslist]
       jlist = [assemble(0.5*inner(y, y)*dx) for y in ylist]
@@ -147,13 +153,7 @@ class Extension():
       print('output: ', assemble(inner(v,v)*dx))
       print('test finished...................................................')
       pass
-  
-    def boundary_to_domain_function_vector(self,x):
-      # x is an element of Vdn
-      # the function maps a boundary function to a function with the 
-      xf = interpolate(x,self.Vn, allow_extrapolation=True)
-      # TODO: write the values of x at the values of xf
-      return xf
+
       
       
     def linear_elasticity(self,x):   
@@ -184,11 +184,13 @@ class Extension():
       # solve variational problem
       u = Function(self.Vn)
       solve(a == L, u, bc)
+
       return u
   
     def test_linear_elasticity(self):
       print('----------------------------------------------------------------')
       print('Extension.test_linear_elasticity started........................')
+
       x0 = interpolate(Constant(("1.0","0.5")), self.Vdn)
       ds = interpolate(Constant(("0.5","0.2")), self.Vdn)
       y0 = self.linear_elasticity(x0)
@@ -205,7 +207,7 @@ class Extension():
       #ylist = [self.linear_elasticity(x0+eps*ds) for eps in epslist]
       jlist = [assemble(0.5*inner(y, y)*dx) for y in ylist]
       ds_ = ds.vector().get_local()
-      self.perform_first_order_check(jlist, j0, djx, ds_, epslist)
+      self.perform_first_order_check(jlist, j0, djx.get_local(), ds_, epslist)
       return
   
     def linear_elasticity_chainrule(self,djy, option, option2): 
@@ -245,9 +247,6 @@ class Extension():
         bc2.apply(A)
         bc3.apply(A)
         u = Function(self.Vn)
-        dj = Function(self.Vn)
-        dj.vector().set_local(djy)
-        djy = dj.vector()
         bc1.apply(djy)
         bc2.apply(djy)
         bc3.apply(djy)
@@ -270,6 +269,8 @@ class Extension():
       
       parameters["form_compiler"]["cpp_optimize"] = True
       parameters["form_compiler"]["optimize"] = True
+
+      ds = self.Mesh_.get_ds()
       
       # Define trial and test functions
       u = TrialFunction(self.Vdn)
@@ -279,7 +280,7 @@ class Extension():
       bc = []
       
       # Define bilinear form
-      a = self.lb_off*inner(grad(u), grad(v))*dx + inner(u,v)*dx 
+      a = self.lb_off*inner(grad(u), grad(v))*dx + inner(u,v)*dx
       # Define linear form
       L = inner(x*self.dnormalf,v)*dx
       
@@ -295,7 +296,7 @@ class Extension():
       
       parameters["form_compiler"]["cpp_optimize"] = True
       parameters["form_compiler"]["optimize"] = True
-      
+
       # solve adjoint equation
       v = TrialFunction(self.Vdn)
       z = TestFunction(self.Vdn)
@@ -325,12 +326,15 @@ class Extension():
       ds = interpolate(Constant(1.0), self.Vd)
       #ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
       y0 = self.vector_laplace_beltrami(x0)
-      j0 = assemble(0.5*inner(y0,y0)*dx)
+      j0 = assemble(0.5 * inner(y0, y0) * dx)
+      # correction since assemble adds up values for all processes
+      rank = MPI.comm_world.Get_size()
+      j0 = j0/rank
       djy = y0
-      djx = self.vector_laplace_beltrami_chainrule(djy)
+      djx = self.vector_laplace_beltrami_chainrule(djy).get_local()
       epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
       ylist = [self.vector_laplace_beltrami(x0+eps*ds) for eps in epslist]
-      jlist = [assemble(0.5*inner(y, y)*dx) for y in ylist]
+      jlist = [assemble(0.5*inner(y, y)*dx)/rank for y in ylist] #includes correction
       ds_ = ds.vector().get_local()
       self.perform_first_order_check(jlist, j0, djx, ds_, epslist)
       return
@@ -342,6 +346,7 @@ class Extension():
       x0 = 0.5*np.ones(n,1)
       ds = 1.0*np.ones(n,1)
       y0 = self.vector_laplace_beltrami()
+      pass
       
       
     def perform_first_order_check(self, jlist, j0, gradj0, ds, epslist):

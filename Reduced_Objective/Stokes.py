@@ -10,24 +10,27 @@ from dolfin import *
 from dolfin_adjoint import *
 import numpy as np
 from pyadjoint import annotate_tape, stop_annotating
+from pyadjoint.overloaded_type import create_overloaded_object
 import matplotlib.pyplot as plt
 
-stop_annotating
+stop_annotating()
 
-def reduced_objective(mesh, boundaries, params, param, flag =False, red_func = False):
+def reduced_objective(mesh, boundaries, params, param, flag =False, red_func = False, control = False):
     # mesh generated 
     # params dictionary, includes labels for boundary parts:
     # params.inflow
     # params.outflow
     # params.noslip
     # params.design
-    
+
     #parameters["adjoint"]["stop_annotating"] = False
-    
-    annotate_tape
+
+    stop_annotating()
     set_working_tape(Tape())
-    
+    annotate_tape()
+
     dim = mesh.geometric_dimension()
+
     
     # function spaces
     V2 = VectorElement("CG", mesh.ufl_cell(), dim)
@@ -35,26 +38,32 @@ def reduced_objective(mesh, boundaries, params, param, flag =False, red_func = F
     S1 = FiniteElement("CG", mesh.ufl_cell(), 1)
     VP = FunctionSpace(mesh, V2*S1)
     VC = FunctionSpace(mesh, V1)
-    #
+
+
+    # Expressions
+    zero = Constant([0.0]*dim)
+    (x, y) = SpatialCoordinate(mesh)
+    g = Expression(("4/(H*H)*x[1]*(H-x[1])", "0"), degree=2, H=param["H"])
+
+
     tu = interpolate(Expression(("0.0","0.0"), name = 'Control', degree =1), VC)
+    if control:
+        tu.vector().set_local(control.vector().get_local())
+        tu.vector().apply("")
+        if flag == True:
+            print(tu.vector().get_local())
     
     # test and trial functions
     w = Function(VP, name = "Mixed State Solutions")
     (u,p) = split(w)
     (v, q) = TestFunctions(VP)
     
-    # Expressions
-    (x,y) = SpatialCoordinate(mesh)
-    g = Expression(("4/(H*H)*x[1]*(H-x[1])", "0"), degree = 2, H=param["H"])
-    zero = Constant([0]*dim)
-    
     # weak form
     tFhat = Identity(dim) + grad(tu)
     tFhati = inv(tFhat)
     tJhat = det(tFhat)
-    F = inner(grad(u)*tFhati, grad(v)*tFhati)*tJhat*dx - tr(grad(u)*tFhati)*q*tJhat*dx - tr(grad(v)*tFhati)*p*tJhat*dx - inner(zero, v)*tJhat*dx
-    
-    print(params["inflow"])
+    F = inner(grad(u)*tFhati, grad(v)*tFhati)*tJhat*dx(mesh) - tr(grad(u)*tFhati)*q*tJhat*dx(mesh) - tr(grad(v)*tFhati)*p*tJhat*dx(mesh) - inner(zero, v)*tJhat*dx(mesh)
+
     
     # boundary conditions
     bc_inflow = DirichletBC(VP.sub(0), g, boundaries, params["inflow"])
@@ -65,6 +74,7 @@ def reduced_objective(mesh, boundaries, params, param, flag =False, red_func = F
     # solve equations
     
     solve(F==0, w, bcs) #, solver_parameters={'newton_solver':{'linear_solver':'mumps'}})
+    stop_annotating()
     u, p = w.split()
 
     # plot solution to check
@@ -79,7 +89,7 @@ def reduced_objective(mesh, boundaries, params, param, flag =False, red_func = F
         return conditional(gt(r, eps), r - eps / 2, conditional(lt(r, 0), 0, r ** 2 / (2 * eps)))
     
     #objective function
-    J=assemble(inner(grad(u)*tFhati, grad(u)*tFhati)*tJhat*dx +0.5*gammaP * smoothmax(etaP - tJhat)**2*dx)  
+    J=assemble(inner(grad(u)*tFhati, grad(u)*tFhati)*tJhat*dx(mesh) +0.5*gammaP * smoothmax(etaP - tJhat)**2*dx(mesh))
     if flag:
       dJ = compute_gradient(J,Control(tu))
     
@@ -104,13 +114,16 @@ def reduced_objective(mesh, boundaries, params, param, flag =False, red_func = F
       else:
         return J
 
-def test(mesh, boundaries, params):
-    stop_annotating
+def test(Mesh_, param):
+    mesh = Mesh_.get_mesh()
+    params = Mesh_.get_params()
+    boundaries = Mesh_.get_boundaries()
+    stop_annotating()
     V1 = VectorElement("CG", mesh.ufl_cell(), 1)
     VC = FunctionSpace(mesh, V1)
     
     tu = interpolate(Expression(("0.0","0.0"), name = 'Control', degree =1), VC)
-    J, dJ = reduced_objective(mesh, boundaries, params, True)
+    J, dJ = reduced_objective(mesh, boundaries, params, param, flag=True)
     
     # compute disturb direction
     g = Expression(("(x[0]-0.2)*(x[0]-0.2)", "(x[1]-0.2)*(x[1]-0.2)"), degree =2)
@@ -132,14 +145,18 @@ def test(mesh, boundaries, params):
     jlist = []
     
     for eps in epslist:
-        ew = project((eps*w), VC, annotate=False)
-        ewi = project((-eps*w), VC, annotate=False)
-        ALE.move(mesh, ew, annotate=False)
-        jlist.append(reduced_objective(mesh, boundaries, params))
-        ALE.move(mesh, ewi)
+        #ew = project((eps*w), VC, annotate=False)
+        #ewi = project((-eps*w), VC, annotate=False)
+        #ALE.move(mesh, ew, annotate=False)
+        #jlist.append(reduced_objective(mesh, boundaries, params))
+        #ALE.move(mesh, ewi)
+        ew = project((eps * w), VC, annotate=False)
+        jlist.append(reduced_objective(mesh, boundaries, params, param, control = ew))
     #print(dJ.vector().get_local())
     #print(w.vector().get_local())
-    perform_first_order_check(jlist, J, dJ.vector().get_local(), w.vector().get_local(), epslist)
+    dj = Mesh_.Vn_to_vec(dJ)
+    w = Mesh_.Vn_to_vec(w)
+    perform_first_order_check(jlist, J, dj, w, epslist)
     
     ## plot solution
     #import matplotlib.pyplot as plt

@@ -1,4 +1,7 @@
-from dolfin import *
+from __future__ import print_function
+
+from functools import partial
+#from dolfin import *
 from dolfin_adjoint import *
 from copy import deepcopy
 import numpy as np
@@ -13,69 +16,78 @@ from pyadjoint.reduced_functional_numpy import ReducedFunctionalNumPy
 
 import Control_to_Trafo.dof_to_trafo as ctt
 
-import ipopt
+import Reduced_Objective.Stokes as Stokes
 
-import matplotlib.pyplot as plt
+import ipopt as cyipopt
 
+class _IPOptProblem:
+    """API used by cyipopt for wrapping the problem"""
+    def __init__(self, objective, gradient, constraints, jacobian):
+        self.objective = objective
+        self.gradient = gradient
+        self.constraints = constraints
+        self.jacobian = jacobian
 
 class IPOPTSolver(OptimizationSolver):
+    """Use the cyipopt bindings to IPOPT to solve the given optimization problem.
+
+    The cyipopt Problem instance is accessible as solver.ipopt_problem."""
+
     def __init__(self, problem, Mesh_, param, parameters=None):
-        try:
-            import ipopt
-        except ImportError:
-            print("You need to install cyipopt. (It is recommended to install IPOPT with HSL support!)")
-            raise
         self.Mesh_ = Mesh_
-        #plt.figure()
-        #plot(Mesh_.get_mesh())
-        #plt.show()
+        # plt.figure()
+        # plot(Mesh_.get_mesh())
+        # plt.show()
+        self.boundaries = Mesh_.get_boundaries()
+        self.params = Mesh_.get_params()
         self.param = param
-        self.scalingfactor = 1.0
+        self.scale = 1.0
         self.Vd = self.Mesh_.get_Vd()
+        self.counter = 0
+        self.mesh = self.Mesh_.get_mesh()
+
         OptimizationSolver.__init__(self, problem, parameters)
         self.rfn = ReducedFunctionalNumPy(self.problem.reduced_functional)
         self.ncontrols = len(self.rfn.get_controls())
         self.rf = self.problem.reduced_functional
-        self.problem_obj = self.create_problem_obj(self)
         self.dmesh = self.Mesh_.get_design_boundary_mesh()
-        
-        #self.param.reg contains regularization parameter
+
+        # self.param.reg contains regularization parameter
         print('Initialization of IPOPTSolver finished')
 
-    def create_problem_obj(self, outer):
-        return IPOPTSolver.shape_opt_prob(outer)
+        self.__build_ipopt_problem()
 
     def test_objective(self):
         # check dof_to_deformation with first order derivative check
         print('Extension.test_dof_to_deformation started.......................')
         xl = self.dmesh.num_vertices()
-        x0 = 0.5*np.ones(xl)
-        ds = 1.0*np.ones(xl)
-        #ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
-        j0 = self.problem_obj.objective(x0) 
-        djx = self.problem_obj.gradient(x0)
+        x0 = 0.5 * np.ones(xl)
+        ds = 1.0 * np.ones(xl)
+        # ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
+        j0 = self.eval_f(x0)
+        djx = self.eval_grad_f(x0)
         epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
-        jlist = [self.problem_obj.objective(x0+eps*ds) for eps in epslist]
+        jlist = [self.eval_f(x0 + eps * ds) for eps in epslist]
         self.perform_first_order_check(jlist, j0, djx, ds, epslist)
-        print('here')
         return
 
     def test_constraints(self):
         # check dof_to_deformation with first order derivative check
         print('Extension.test_dof_to_deformation started.......................')
         xl = self.dmesh.num_vertices()
-        x0 = 0.0*np.ones(xl)
-        ds = 1.0*np.ones(xl)
-        #ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
-        j0 = self.problem_obj.constraints(x0)
-        djx = self.problem_obj.jacobian(x0)
+        x0 = 0.0 * np.ones(xl)
+        ds = 1.0 * np.ones(xl)
+        # ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
+        j0 = self.eval_g(x0)
+        djx = self.eval_jac_g(x0)
         print('j0', j0)
-        #print('djx', djx)
-        #print('djx', np.ma.size(djx))
-        #exit(0)
+        print('djx', djx)
+        # print('djx', djx)
+        # print('djx', np.ma.size(djx))
+        # exit(0)
         return
-            
-    def perform_first_order_check(self,jlist, j0, gradj0, ds, epslist):
+
+    def perform_first_order_check(self, jlist, j0, gradj0, ds, epslist):
         # j0: function value at x0
         # gradj0: gradient value at x0
         # epslist: list of decreasing eps-values
@@ -84,177 +96,153 @@ class IPOPTSolver(OptimizationSolver):
         diff1 = []
         order0 = []
         order1 = []
-        i = 0 
+        i = 0
         for eps in epslist:
             je = jlist[i]
             di0 = je - j0
-            di1 = je - j0 - eps*np.dot(gradj0,ds)
+            di1 = je - j0 - eps * np.dot(gradj0, ds)
             diff0.append(abs(di0))
             diff1.append(abs(di1))
             if i == 0:
                 order0.append(0.0)
                 order1.append(0.0)
             if i > 0:
-                order0.append(np.log(diff0[i-1]/diff0[i])/ np.log(epslist[i-1]/epslist[i]))
-                order1.append(np.log(diff1[i-1]/diff1[i])/ np.log(epslist[i-1]/epslist[i]))
-            i = i+1
+                order0.append(np.log(diff0[i - 1] / diff0[i]) / np.log(epslist[i - 1] / epslist[i]))
+                order1.append(np.log(diff1[i - 1] / diff1[i]) / np.log(epslist[i - 1] / epslist[i]))
+            i = i + 1
         for i in range(len(epslist)):
-            print('eps\t', epslist[i], '\t\t check continuity\t', order0[i], '\t\t diff0 \t', diff0[i], '\t\t check derivative \t', order1[i], '\t\t diff1 \t', diff1[i], '\n'),
-                                
+            print('eps\t', epslist[i], '\t\t check continuity\t', order0[i], '\t\t diff0 \t', diff0[i],
+                  '\t\t check derivative \t', order1[i], '\t\t diff1 \t', diff1[i], '\n'),
+
         return
 
-
-    class shape_opt_prob(object):
-        def __init__(self, outer):
-            self.Mesh_ = outer.Mesh_
-            self.rfn = outer.rfn
-            self.rf = outer.rf
-            self.param = outer.param
-            self.Vd = outer.Vd
-            self.scale = outer.scalingfactor
-
-        def objective(self, x):
-            #
-            # The callback for calculating the objective
-            #
-            # x to deformation
-            print('evaluate objective')
-            deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(x).vector()
-            # evaluate reduced cost functional
-            j1 = self.rfn(deformation) #self.rfn(deformation)
-            # add regularization (note that due to preconditioning no matrix is needed)
-            j = j1+ 0.5*self.param["reg"]*np.dot(np.asarray(x),np.asarray(x)) # regularization 
-            return j
-
-        def gradient(self, x):
-            #
-            # The callback for calculating the gradient
-            #
-            #print('evaluate derivative of objective funtion')
-            print('evaluate gradient')
-            deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(x)
-            new_params = [self.__copy_data(p.data()) for p in self.rfn.controls]
-            self.rfn.set_local(new_params, deformation.vector().get_local())
-            dJf = self.rfn.derivative(forget=False, project = False) #rf
-            dJ = ctt.Extension(self.Mesh_).dof_to_deformation_precond_chainrule(dJf,2)
-            dJ1 = dJ + self.param["reg"]*x # derivative of the regularization
-            return np.asarray(dJ1, dtype =float)
-
-        def constraints(self, x):
-            #
-            # The callback for calculating the constraints
-            print('evaluate constraint')
-            b_ct = Cb.Barycenter_Constraint(self.Mesh_, self.param).eval(x)
-            v_ct = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_DmO"]).eval(x)
-            #d_ct = Cd.Determinant_Constraint(self.Mesh_, self.param["det_lb"]).eval(x)
-            return self.scale*np.array((v_ct, b_ct[0], b_ct[1])) #, d_ct))
-
-        def jacobian(self, x):
-            #
-            # The callback for calculating the Jacobian
-            #
-            print('evaluate jacobian')
-            b_ct_d = Cb.Barycenter_Constraint(self.Mesh_, self.param).grad(x)
-            v_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_DmO"]).grad(x)
-            #d_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["det_lb"]).grad(x)
-            return self.scale*np.concatenate((v_ct_d, b_ct_d[0], b_ct_d[1])) #, d_ct_d))
-
-        #def hessianstructure(self):
-        #    #
-        #    # The structure of the Hessian
-        #    # Note:
-        #    # The default hessian structure is of a lower triangular matrix. Therefore
-        #    # this function is redundant. I include it as an example for structure
-        #    # callback.
-        #    #
-        #    global hs
+    def eval_f(self, x):
         #
-        #    hs = sps.coo_matrix(np.tril(np.ones((4, 4))))
-        #    return (hs.col, hs.row)
+        # The callback for calculating the objective
         #
-        #def hessian(self, x, lagrange, obj_factor):
-        #    #
-        #    # The callback for calculating the Hessian
-        #    #
-        #    H = obj_factor*np.array((
-        #            (2*x[3], 0, 0, 0),
-        #            (x[3],   0, 0, 0),
-        #            (x[3],   0, 0, 0),
-        #            (2*x[0]+x[1]+x[2], x[0], x[0], 0)))
+        # x to deformation
+        print('evaluate objective')
+        deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(x)
+
+        # move mesh in direction of deformation
+        j1 = Stokes.reduced_objective(self.mesh, self.boundaries, self.params, self.param,
+                                      control=deformation)  # self.rfn(0*deformation.vector().get_local()) #self.rfn(deformation)
+
+        # add regularization (note that due to preconditioning no matrix is needed)
+        j = j1 + 0.5 * self.param["reg"] * np.dot(np.asarray(x), np.asarray(x))  # regularization
+        return j
+
+    def eval_grad_f(self, x):
         #
-        #    H += lagrange[0]*np.array((
-        #            (0, 0, 0, 0),
-        #            (x[2]*x[3], 0, 0, 0),
-        #            (x[1]*x[3], x[0]*x[3], 0, 0),
-        #            (x[1]*x[2], x[0]*x[2], x[0]*x[1], 0)))
+        # The callback for calculating the gradient
         #
-        #    H += lagrange[1]*2*np.eye(4)
+        print('evaluate derivative of objective funtion')
+
+        deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(x)
+
+        # compute gradient
+        j, dJf = Stokes.reduced_objective(self.mesh, self.boundaries, self.params,
+                                          self.param, flag=True, control=deformation)
+
+        dJ1 = ctt.Extension(self.Mesh_).dof_to_deformation_precond_chainrule(dJf.vector(), 2)
+        dJ = dJ1 + self.param["reg"] * x  # derivative of the regularization
+        return dJ
+
+    def eval_g(self, x):
         #
-        #    #
-        #    # Note:
-        #    #
-        #    #
-        #    return H[hs.row, hs.col]
+        # The callback for calculating the constraints
+        # print('evaluate constraint')
+        b_ct = Cb.Barycenter_Constraint(self.Mesh_, self.param).eval(x)
+        v_ct = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_DmO"]).eval(x)
+        # d_ct = Cd.Determinant_Constraint(self.Mesh_, self.param["det_lb"]).eval(x)
+        con = self.scale * np.array((v_ct, b_ct[0], b_ct[1]))  # , d_ct))
+        return con
 
-        def intermediate(
-                self,
-                alg_mod,
-                iter_count,
-                obj_value,
-                inf_pr,
-                inf_du,
-                mu,
-                d_norm,
-                regularization_size,
-                alpha_du,
-                alpha_pr,
-                ls_trials
-                ):
+    def eval_jac_g(self, x):
+        #
+        # The callback for calculating the Jacobian
+        #
+        # print('evaluate jacobian')
+        b_ct_d = Cb.Barycenter_Constraint(self.Mesh_, self.param).grad(x)
+        v_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_DmO"]).grad(x)
+        # d_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["det_lb"]).grad(x)
+        jaccon = self.scale * np.concatenate((v_ct_d, b_ct_d[0], b_ct_d[1]))  # , d_ct_d))
+        return jaccon
 
-            #
-            # Example for the use of the intermediate callback.
-            #
-            print("Objective value at iteration ", iter_count, " is ", obj_value)
-            return
+    def __copy_data(self, m):
+        """Returns a deep copy of the given Function/Constant."""
+        if hasattr(m, "vector"):
+            return backend.Function(m.function_space())
+        elif hasattr(m, "value_size"):
+            return backend.Constant(m(()))
+        else:
+            raise TypeError('Unknown control type %s.' % str(type(m)))
 
-        def __copy_data(self, m):
-            """Returns a deep copy of the given Function/Constant."""
-            if hasattr(m, "vector"):
-                return backend.Function(m.function_space())
-            elif hasattr(m, "value_size"):
-                return backend.Constant(m(()))
-            else:
-                raise TypeError('Unknown control type %s.' % str(type(m)))
+    def __build_ipopt_problem(self):
+        """Build the ipopt problem from the OptimizationProblem instance."""
 
+        import ipopt
 
-    def solve(self,x0):
-        # x0 is a function in Vd
-        x0 = x0.vector().get_local()
+        x0 = Function(self.Vd)
+        nvar = np.size(x0.vector().get_local())
+        ncon = np.size(self.eval_g(x0.vector().get_local()))
+        print('nvar, ncon', nvar, ncon)
+
         max_float = np.finfo(np.double).max
         min_float = np.finfo(np.double).min
 
         cr = self.param["relax_eq"]
-        cl = [-cr, -cr, -cr] #, min_float]
-        cu = [cr, cr, cr] #, 0.0]
+        g_L = np.array([-1.0*cr]*ncon)
+        g_U = np.array([cr]*ncon)
 
-        ub = np.array([max_float] * len(x0))
-        lb = np.array([min_float] * len(x0))
+        x_U = np.ones((nvar)) * max_float  # np.array([max_float] * nvar)
+        x_L = np.ones((nvar)) * min_float  # np.array([min_float] * nvar)
 
-        nlp = ipopt.problem(
-                        n=len(x0),
-                        m=len(cl),
-                        problem_obj=self.problem_obj,
-                        lb=lb,
-                        ub=ub,
-                        cl=cl,
-                        cu=cu
-                        )
+        (lb, ub) = (x_L, x_U)
+        fun_g = self.eval_g
+        jac_g = self.eval_jac_g
+        J = self.eval_f
+        dJ = self.eval_grad_f
+        (clb, cub) = (g_L, g_U)
 
-        nlp.addOption('mu_strategy', 'adaptive')
-        #nlp.addOption('derivative_test', 'first-order')
-        nlp.addOption('point_perturbation_radius', 0.0)
-        nlp.addOption('max_iter', self.param["maxiter_IPOPT"])
-        nlp.addOption('tol', 1e-3)
+        # A callback that evaluates the functional and derivative.
+        J = self.rfn.__call__
+        dJ = partial(self.rfn.derivative, forget=False)
 
-        x, info = nlp.solve(x0)
-        return x
+        nlp = cyipopt.problem(
+            n=len(ub),  # length of control vector
+            lb=lb,  # lower bounds on control vector
+            ub=ub,  # upper bounds on control vector
+            m=ncon,  # number of constraints
+            cl=clb,  # lower bounds on constraints
+            cu=cub,  # upper bounds on constraints
+            problem_obj=_IPOptProblem(
+                objective=J,  # to evaluate the functional
+                gradient=dJ,  # to evaluate the gradient
+                constraints=fun_g,  # to evaluate the constraints
+                jacobian=jac_g,  # to evaluate the constraint Jacobian
+            ),
+        )
+
+        """
+        if rank(self.problem.reduced_functional.mpi_comm()) > 0:
+            nlp.addOption('print_level', 0)    # disable redundant IPOPT output in parallel
+        else:
+            nlp.addOption('print_level', 6)    # very useful IPOPT output
+        """
+        # TODO: Earlier the commented out code above was present.
+        # Figure out how to solve parallel output cases like these in pyadjoint.
+        nlp.addOption("max_iter", self.param["maxiter_IPOPT"])
+        nlp.addOption("print_level", 5) #6)
+
+        self.ipopt_problem = nlp
+
+
+
+
+    def solve(self, x0):
+        """Solve the optimization problem and return the optimized controls."""
+        guess = x0
+        results = self.ipopt_problem.solve(guess)
+
+        return results

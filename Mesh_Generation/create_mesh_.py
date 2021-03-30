@@ -12,7 +12,7 @@ import pygmsh, meshio
 import h5py
 
 # resolution
-resolution = 0.1 # 0.005 #0.1
+resolution = 0.2 # 0.005 #0.1
 
 # geometric properties
 L = 20 #2.5 #20            # length of channel
@@ -110,3 +110,4 @@ meshio.write("./Output/Mesh_Generation/mesh_triangles.xdmf", triangle_mesh)
 #model = OGS()
 #model.msh.generate("gmsh", geo_object=geom)
 #model.msh.show()
+
