@@ -107,7 +107,8 @@ class Initialize_Mesh_and_FunctionSpaces():
 
       # dof-maps between V and Vd
       self.Vd_to_V_map = self.__Vd_to_V(Vb, Vb_to_V_map)
-      self.__test_Vdn_to_Vn()
+      #self.__test_Vdn_to_Vn()
+
       # dof-maps between V and Vd (safe in self)
 
     def vec_to_Vd(self, x):
@@ -137,6 +138,7 @@ class Initialize_Mesh_and_FunctionSpaces():
         dof = self.V.dofmap()
         imin, imax = dof.ownership_range()
         v.vector().set_local(dofsv[imin:imax])
+        v.vector().apply("")
         return v
 
     def V_to_Vd(self, x):
@@ -309,8 +311,8 @@ class Initialize_Mesh_and_FunctionSpaces():
       v2d = vertex_to_dof_map(SpaceVg)
 
 
-      Vb_to_Vg_map = np.zeros((f.vector().local_size()))
-      for i in range(f.vector().local_size()):
+      Vb_to_Vg_map = np.zeros(np.size(f.vector().get_local()))
+      for i in range(np.size(f.vector().get_local())):
           GVertID = Vertex(bmesh, d2v[i]).index()  # Local Vertex ID for given dof on boundary mesh
           PVertID = mapb[GVertID]  # Local Vertex ID of parent mesh
           PDof = v2d[PVertID]
@@ -319,8 +321,13 @@ class Initialize_Mesh_and_FunctionSpaces():
 
       return Vb_to_V_map_new
 
+
     def __test_Vb_to_V(self, Vg, Vb, global_to_glocal_map):
-        f = interpolate(Constant("1.0"),Vb)
+        print(Vb)
+        f = Function(Vb)
+        n = np.size(f.vector().get_local())
+        f.vector().set_local(np.ones(n))
+        f.vector().apply("")
         Vb_to_V_map = self.__Vb_to_V(Vg, Vb, global_to_glocal_map)
 
         p = Function(self.V)
@@ -330,6 +337,7 @@ class Initialize_Mesh_and_FunctionSpaces():
         dof = self.V.dofmap()
         imin, imax = dof.ownership_range()
         p.vector().set_local(values[imin:imax])
+        p.vector().apply("")
 
         bdfile = File(MPI.comm_self, "./Output/Tests/SettingsMesh/Vb_to_V.pvd")
         bdfile << p
