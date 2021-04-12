@@ -76,7 +76,8 @@ class Initialize_Mesh_and_FunctionSpaces():
       print('design boundary mesh created.........................................')
 
       # normal vector on mesh
-      self.n = FacetNormal(mesh)
+      n = FacetNormal(mesh)
+      self.n = n
       
       # define function spaces
       self.V = FunctionSpace(mesh, "CG", 1)
@@ -88,8 +89,6 @@ class Initialize_Mesh_and_FunctionSpaces():
       self.Vn = VectorFunctionSpace(mesh, "CG", 1)
       Vbn = VectorFunctionSpace(bmesh, "CG", 1)
       self.Vdn = VectorFunctionSpace(dmesh, "CG", 1)
-      dnormal = CellNormal(dmesh)
-      self.dnormalf = project(dnormal, self.Vdn)
       
       self.mesh = mesh
       self.dmesh = dmesh
@@ -108,8 +107,36 @@ class Initialize_Mesh_and_FunctionSpaces():
       # dof-maps between V and Vd
       self.Vd_to_V_map = self.__Vd_to_V(Vb, Vb_to_V_map)
       #self.__test_Vdn_to_Vn()
+      self.__test_Vd_to_V()
 
-      # dof-maps between V and Vd (safe in self)
+      # normal on design boundary
+      v = TestFunction(self.Vn)
+      n_mesh = assemble(inner(n, v)*ds(mesh))
+      n_norm = assemble(inner(Constant(("1.0","1.0")), v) * ds(mesh)) # to norm n_mesh
+      normal = Function(self.Vn)
+      normal.vector().set_local(n_mesh.get_local())
+      normal.vector().apply("")
+      nnorm = Function(self.Vn)
+      nnorm.vector().set_local(n_norm.get_local())
+      nnorm.vector().apply("")
+      dnormalf = self.Vn_to_Vdn(normal)
+      n_normf = self.Vn_to_Vdn(nnorm)
+      n_normf.vector().apply("")
+      normed_normal = [dnormalf.vector().get_local()[i]/n_normf.vector().get_local()[i] for i in range(np.size(dnormalf.vector().get_local()))]
+      self.dnormalf = Function(self.Vdn)
+      self.dnormalf.vector().set_local(normed_normal)
+      self.dnormalf.vector().apply("")
+
+    def vec_to_Vn(self, x):
+        """
+        x contains gathered dofs of Vn-function and writes them into a Vn function
+        """
+        v = Function(self.Vn)
+        dof = self.Vn.dofmap()
+        imin, imax = dof.ownership_range()
+        v.vector().set_local(x[imin:imax])
+        v.vector().apply("")
+        return v
 
     def vec_to_Vd(self, x):
         """ takes a vector with all dofs and writes them on each process to a function v """
@@ -370,7 +397,9 @@ class Initialize_Mesh_and_FunctionSpaces():
         return GValuesnew
 
     def __test_Vd_to_V(self):
-        f = interpolate(Expression("x[0]", degree = 2), self.Vd)
+        f = interpolate(Expression("x[1]", degree = 2), self.Vd)
+        #f = Function(self.Vd)
+        #f.vector().set_local(np.asarray(range(np.size(f.vector().get_local()))))
 
         p = self.Vd_to_V(f)
 

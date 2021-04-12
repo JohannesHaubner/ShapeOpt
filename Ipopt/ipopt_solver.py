@@ -131,11 +131,15 @@ class IPOPTSolver(OptimizationSolver):
             # move mesh in direction of deformation
             j1 = Stokes.reduced_objective(self.mesh, self.boundaries, self.params, self.param,
                                           control=deformation)  #
-            # j1 =  self.rfn(deformation.vector()) #self.rfn(deformation)
+            #j1 =  self.rfn(deformation.vector()) #self.rfn(deformation)
+
+            vv = v.vector().get_local()
+            prod = 0
+            for i in range(np.size(vv)):
+                prod += vv[i]*vv[i]
 
             # add regularization (note that due to preconditioning no matrix is needed)
-            j = j1 + 0.5 * self.param["reg"] * np.dot(np.asarray(v.vector().get_local()),
-                                                      np.asarray(v.vector().get_local()))  # regularization
+            j = j1 + 0.5 * self.param["reg"] * np.dot(x,x)  # regularization
             return j
 
         def gradient(self, x):
@@ -150,15 +154,16 @@ class IPOPTSolver(OptimizationSolver):
             # compute gradient
             j, dJf = Stokes.reduced_objective(self.mesh, self.boundaries, self.params,
                                               self.param, flag=True, control=deformation)
-            # new_params = [self.__copy_data(p.data()) for p in self.rfn.controls]
-            # self.rfn.set_local(new_params, deformation.vector().get_local())
-            # dJf = self.rfn.derivative(forget=False, project = False)
+            #new_params = [self.__copy_data(p.data()) for p in self.rfn.controls]
+            #self.rfn.set_local(new_params, deformation.vector().get_local())
+            #dJf = self.rfn.derivative(forget=False, project = False)
+            #dJf = self.Mesh_.vec_to_Vn(dJf)
 
-            ufile = File("./Output/Forward/dJf2.pvd")
+            # ufile = File("./Output/Forward/dJf2.pvd")
             # ufile << dJf
 
             dJ1 = ctt.Extension(self.Mesh_).dof_to_deformation_precond_chainrule(dJf.vector(), 2)
-            dJ = dJ1 + self.param["reg"] * v.vector().get_local()  # derivative of the regularization
+            dJ = dJ1 + self.param["reg"] * x  # derivative of the regularization
 
             return dJ
 
@@ -277,7 +282,7 @@ class IPOPTSolver(OptimizationSolver):
                         )
 
         nlp.add_option('mu_strategy', 'adaptive')
-        #nlp.addOption('derivative_test', 'first-order')
+        #nlp.add_option('derivative_test', 'first-order')
         nlp.add_option('point_perturbation_radius', 0.0)
         nlp.add_option('max_iter', self.param["maxiter_IPOPT"])
         nlp.add_option('tol', 1e-3)

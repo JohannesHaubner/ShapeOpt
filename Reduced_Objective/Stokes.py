@@ -38,6 +38,7 @@ def reduced_objective(mesh, boundaries, params, param, flag =False, red_func = F
     S1 = FiniteElement("CG", mesh.ufl_cell(), 1)
     VP = FunctionSpace(mesh, V2*S1)
     VC = FunctionSpace(mesh, V1)
+    VU = FunctionSpace(mesh, V2)
 
 
     # Expressions
@@ -78,6 +79,10 @@ def reduced_objective(mesh, boundaries, params, param, flag =False, red_func = F
     u, p = w.split()
 
     # plot solution to check
+    # save to pvd file for testing
+    ufile = File("./Output/Forward/velocity.pvd")
+    up = project(u,VU)
+    ufile << up
     #plt.figure()
     #plot(u[0])
     #plt.show()
@@ -154,8 +159,9 @@ def test(Mesh_, param):
         jlist.append(reduced_objective(mesh, boundaries, params, param, control = ew))
     #print(dJ.vector().get_local())
     #print(w.vector().get_local())
-    dj = Mesh_.Vn_to_vec(dJ)
-    w = Mesh_.Vn_to_vec(w)
+    ndof = dJ.vector().size()
+    dj = dJ.vector().gather(range(ndof))
+    w = w.vector().gather(range(ndof))
     perform_first_order_check(jlist, J, dj, w, epslist)
     
     ## plot solution

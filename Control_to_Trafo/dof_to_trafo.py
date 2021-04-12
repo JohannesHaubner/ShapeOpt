@@ -45,8 +45,8 @@ class Extension():
       # lumped mass matrix for IPOPT
       v = TestFunction(self.Vd)
       u = TrialFunction(self.Vd)
-      mass_form = v*u*dx()
-      mass_action_form = action(mass_form, Constant(1.0))
+      mass_form = v*u*dx(self.dmesh)
+      mass_action_form = action(mass_form, interpolate(Constant(1.0),self.Vd))
       M_lumped = assemble(mass_form)
       M_lumped_m05= assemble(mass_form)
       M_lumped.zero()
@@ -73,9 +73,9 @@ class Extension():
       x = self.Mesh_.Vd_to_vec(vcf)
       return x
   
-    def vec_to_func_precond(self,x):
-      """ takes a vecor with all dofs, writes them in parallel to a function and multiplies with (lumped mass matrix)^0.5 """
-      v = self.Mesh_.vec_to_Vd(x)
+    def vec_to_func_precond(self,v):
+      """ takes a Vd function, and multiplies with (lumped mass matrix)^0.5 """
+      #v = self.Mesh_.vec_to_Vd(x)
       vc = self.M_lumped_m05 * v.vector()
       v.vector().set_local(vc.get_local())
       v.vector().apply("")
@@ -101,12 +101,12 @@ class Extension():
       x0 = 0.5*np.ones(xl)
       ds = 1.0*np.ones(xl)
       #ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
-      y0 = self.dof_to_deformation_precond(x0)
+      y0 = self.dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x0))
       j0 = assemble(0.5*inner(y0,y0)*dx)
       djy = y0
       djx = self.dof_to_deformation_precond_chainrule(djy, 1)
       epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
-      ylist = [self.dof_to_deformation_precond(x0+eps*ds) for eps in epslist]
+      ylist = [self.dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x0+eps*ds)) for eps in epslist]
       jlist = [assemble(0.5*inner(y, y)*dx) for y in ylist]
       self.perform_first_order_check(jlist, j0, djx, ds, epslist)
       return
@@ -133,6 +133,8 @@ class Extension():
       #ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
       y0 = self.dof_to_deformation(x0)
       j0 = assemble(0.5*inner(y0,y0)*dx(self.mesh))
+      print(j0)
+      exit(0)
       djy = y0
       djx = self.dof_to_deformation_chainrule(djy,1).get_local()
       epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
@@ -247,6 +249,10 @@ class Extension():
         bc2.apply(A)
         bc3.apply(A)
         u = Function(self.Vn)
+        dj = Function(self.Vn)
+        dj.vector().set_local(djy)
+        dj.vector().apply("")
+        djy = dj.vector()
         bc1.apply(djy)
         bc2.apply(djy)
         bc3.apply(djy)
@@ -280,9 +286,9 @@ class Extension():
       bc = []
       
       # Define bilinear form
-      a = self.lb_off*inner(grad(u), grad(v))*dx + inner(u,v)*dx
+      a = self.lb_off*inner(grad(u), grad(v))*dx(self.dmesh) + inner(u,v)*dx(self.dmesh)
       # Define linear form
-      L = inner(x*self.dnormalf,v)*dx
+      L = inner(x*self.dnormalf,v)*dx(self.dmesh)
       
       # solve variational problem
       u = Function(self.Vdn)
@@ -305,9 +311,9 @@ class Extension():
       bc = []
       
       # Define bilinear form
-      a = self.lb_off*inner(grad(v), grad(z))*dx + inner(v,z)*dx
+      a = self.lb_off*inner(grad(v), grad(z))*dx(self.dmesh) + inner(v,z)*dx(self.dmesh)
       # Define linear form
-      L = inner(djy, z)*dx
+      L = inner(djy, z)*dx(self.dmesh)
       
       # solve variational problem
       v = Function(self.Vdn)
@@ -315,18 +321,20 @@ class Extension():
       
       # evaluate dj/dx
       xt = TrialFunction(self.Vd)
-      djx = assemble(inner(v, self.dnormalf)*xt*dx)
+      djx = assemble(inner(v, self.dnormalf)*xt*dx(self.dmesh))
       
       return djx
   
     def test_vector_laplace_beltrami(self):
       # check laplace beltrami equation with first order derivative check
       print('Extension.test_vector_laplace_beltrami started..................')
-      x0 = interpolate(Constant(0.5), self.Vd)
+      x0 = interpolate(Constant(0.15), self.Vd)
       ds = interpolate(Constant(1.0), self.Vd)
       #ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
       y0 = self.vector_laplace_beltrami(x0)
-      j0 = assemble(0.5 * inner(y0, y0) * dx)
+      bdfile = File(MPI.comm_self, "./Output/Tests/vectorLaplaceBeltrami.pvd")
+      bdfile << self.Mesh_.Vdn_to_Vn(y0)
+      j0 = assemble(0.5 * inner(y0, y0) * dx(self.dmesh))
       # correction since assemble adds up values for all processes
       rank = MPI.comm_world.Get_size()
       j0 = j0/rank

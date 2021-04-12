@@ -12,7 +12,7 @@ import pygmsh, meshio
 import h5py
 
 # resolution
-resolution = 0.2 # 0.005 #0.1
+resolution = 0.4 #1 # 0.005 #0.1
 
 # geometric properties
 L = 20 #2.5 #20            # length of channel
@@ -49,7 +49,7 @@ geometry = pygmsh.geo.Geometry()
 # Fetch model we would like to add data to
 model = geometry.__enter__()
 # Add circle
-circle = model.add_circle(c, r, mesh_size=resolution)
+circle = model.add_circle(c, r, mesh_size=0.2*resolution)
 
 # Add points with finer resolution on left side
 points = [model.add_point((0, 0, 0), mesh_size=resolution),

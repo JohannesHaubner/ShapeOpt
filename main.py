@@ -72,13 +72,16 @@ xf = Function(Vd)
 
 #ctt.Extension(init_mfs).test_linear_elasticity()
 
+
 #print(xf.vector().max())
 #ctt.Extension(init_mfs).test_vector_laplace_beltrami()
+
 #ctt.Extension(init_mfs).test_dof_to_deformation_precond()
+#exit(0)
 
 #Cv.Volume_Constraint(init_mfs, param["Vol_O"]).test()
 #Cb.Barycenter_Constraint(init_mfs, param).test()
-#Cd.Determinant_Constraint(init_mfs, param["det_lb"]).test()
+##Cd.Determinant_Constraint(init_mfs, param["det_lb"]).test()
 
 x0 = interpolate(Constant('0.0'),Vd)
 d0 = interpolate(Constant(('0.0','0.0')), Vn)
@@ -94,9 +97,9 @@ param["Bary_O"] = np.add(bc, bo)
 Jred = ro_stokes.reduced_objective(mesh, boundaries,params, param, red_func=True)
 problem = MinimizationProblem(Jred)
 
-#ipopt_so.IPOPTSolver(problem, init_mfs, param).test_objective()
+ipopt_so.IPOPTSolver(problem, init_mfs, param).test_objective()
 #ipopt_so.IPOPTSolver(problem, init_mfs, param).test_constraints()
-#exit(0)
+exit(0)
 #
 
 bdfile = File(MPI.comm_self, "./Output/mesh_optimize.pvd")
@@ -104,7 +107,7 @@ bdfile = File(MPI.comm_self, "./Output/mesh_optimize.pvd")
 for reg in [1e-3]:
   stop_annotating()
   set_working_tape(Tape())
-  param["maxiter_IPOPT"]=5
+  param["maxiter_IPOPT"]=20
   param["reg"] = reg
   Jred = ro_stokes.reduced_objective(mesh, boundaries,params, param, red_func=True)
   problem = MinimizationProblem(Jred)
