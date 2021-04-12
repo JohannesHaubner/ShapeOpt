@@ -49,7 +49,7 @@ class IPOPTSolver(OptimizationSolver):
 
     def test_objective(self):
         # check dof_to_deformation with first order derivative check
-        print('Extension.test_dof_to_deformation started.......................')
+        print('Extension.test_objective started.......................')
         xl = self.dmesh.num_vertices()
         x0 = 0.5*np.ones(xl)
         ds = 1.0*np.ones(xl)
@@ -66,15 +66,23 @@ class IPOPTSolver(OptimizationSolver):
         # check dof_to_deformation with first order derivative check
         print('Extension.test_dof_to_deformation started.......................')
         xl = self.dmesh.num_vertices()
-        x0 = 0.0*np.ones(xl)
-        ds = 1.0*np.ones(xl)
+        x0 = interpolate(Constant(0.01), self.Vd).vector().get_local()
+        ds = interpolate(Constant(100.0), self.Vd).vector().get_local()
         #ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
         j0 = self.problem_obj.constraints(x0)
         djx = self.problem_obj.jacobian(x0)
         print('j0', j0)
-        #print('djx', djx)
-        #print('djx', np.ma.size(djx))
-        #exit(0)
+        xl = self.dmesh.num_vertices()
+        x0 = 0.5 * np.ones(xl)
+        ds = 1.0 * np.ones(xl)
+        # ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
+        #if only one constraint
+        j0 = self.problem_obj.constraints(x0)
+        djx = self.problem_obj.jacobian(x0)
+        epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
+        jlist = [self.problem_obj.constraints(x0 + eps * ds) for eps in epslist]
+        self.perform_first_order_check(jlist, j0, djx, ds, epslist)
+        print('here')
         return
             
     def perform_first_order_check(self,jlist, j0, gradj0, ds, epslist):
@@ -124,19 +132,13 @@ class IPOPTSolver(OptimizationSolver):
             #
             # x to deformation
             print('evaluate objective')
-            v = self.Mesh_.vec_to_Vd(x)
-            deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(v)
-            # deformation = project(deformation, self.mesh)
+            deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
+            #deformation = project(deformation, self.mesh)
 
             # move mesh in direction of deformation
             j1 = Stokes.reduced_objective(self.mesh, self.boundaries, self.params, self.param,
                                           control=deformation)  #
             #j1 =  self.rfn(deformation.vector()) #self.rfn(deformation)
-
-            vv = v.vector().get_local()
-            prod = 0
-            for i in range(np.size(vv)):
-                prod += vv[i]*vv[i]
 
             # add regularization (note that due to preconditioning no matrix is needed)
             j = j1 + 0.5 * self.param["reg"] * np.dot(x,x)  # regularization
@@ -147,8 +149,7 @@ class IPOPTSolver(OptimizationSolver):
             # The callback for calculating the gradient
             #
             print('evaluate derivative of objective funtion')
-            v = self.Mesh_.vec_to_Vd(x)
-            deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(v)
+            deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             # deformation = project(deformation, self.mesh)
 
             # compute gradient
@@ -171,9 +172,8 @@ class IPOPTSolver(OptimizationSolver):
             #
             # The callback for calculating the constraints
             # print('evaluate constraint')
-            v = self.Mesh_.vec_to_Vd(x)
-            b_ct = Cb.Barycenter_Constraint(self.Mesh_, self.param).eval(v)
-            v_ct = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_DmO"]).eval(v)
+            v_ct = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_DmO"]).eval(self.Mesh_.vec_to_Vd(x))
+            b_ct = Cb.Barycenter_Constraint(self.Mesh_, self.param).eval(self.Mesh_.vec_to_Vd(x))
             # d_ct = Cd.Determinant_Constraint(self.Mesh_, self.param["det_lb"]).eval(x)
             con = self.scale * np.array((v_ct, b_ct[0], b_ct[1]))  # , d_ct))
             return con
@@ -183,9 +183,8 @@ class IPOPTSolver(OptimizationSolver):
             # The callback for calculating the Jacobian
             #
             # print('evaluate jacobian')
-            v = self.Mesh_.vec_to_Vd(x)
-            b_ct_d = Cb.Barycenter_Constraint(self.Mesh_, self.param).grad(v)
-            v_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_DmO"]).grad(v)
+            b_ct_d = Cb.Barycenter_Constraint(self.Mesh_, self.param).grad(self.Mesh_.vec_to_Vd(x))
+            v_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_DmO"]).grad(self.Mesh_.vec_to_Vd(x))
             # d_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["det_lb"]).grad(x)
             jaccon = self.scale * np.concatenate((v_ct_d, b_ct_d[0], b_ct_d[1]))  # , d_ct_d))
             return jaccon
@@ -282,9 +281,9 @@ class IPOPTSolver(OptimizationSolver):
                         )
 
         nlp.add_option('mu_strategy', 'adaptive')
-        #nlp.add_option('derivative_test', 'first-order')
+        nlp.add_option('derivative_test', 'first-order')
         nlp.add_option('point_perturbation_radius', 0.0)
-        nlp.add_option('max_iter', self.param["maxiter_IPOPT"])
+        nlp.add_option('max_iter', 1) #self.param["maxiter_IPOPT"])
         nlp.add_option('tol', 1e-3)
 
         x, info = nlp.solve(x0)

@@ -97,9 +97,9 @@ param["Bary_O"] = np.add(bc, bo)
 Jred = ro_stokes.reduced_objective(mesh, boundaries,params, param, red_func=True)
 problem = MinimizationProblem(Jred)
 
-ipopt_so.IPOPTSolver(problem, init_mfs, param).test_objective()
+#ipopt_so.IPOPTSolver(problem, init_mfs, param).test_objective()
 #ipopt_so.IPOPTSolver(problem, init_mfs, param).test_constraints()
-exit(0)
+#exit(0)
 #
 
 bdfile = File(MPI.comm_self, "./Output/mesh_optimize.pvd")

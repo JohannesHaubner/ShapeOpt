@@ -1,6 +1,8 @@
 from dolfin import *
 import numpy as np
+#from dolfin_adjoint import *
 import matplotlib.pyplot as plt
+
 
 mesh = Mesh()
 with XDMFFile("./Output/Mesh_Generation/mesh_triangles.xdmf") as infile:

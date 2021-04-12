@@ -43,10 +43,10 @@ class Volume_Constraint():
         x0 = interpolate(Constant(0.01), self.Vd).vector().get_local()
         ds = interpolate(Constant(100.0), self.Vd).vector().get_local()
         #ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
-        j0 = self.eval(x0)
-        djx = self.grad(x0)
+        j0 = self.eval(self.Mesh_.vec_to_Vd(x0))
+        djx = self.grad(self.Mesh_.vec_to_Vd(x0))
         epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
-        ylist = [x0+eps*ds for eps in epslist]
+        ylist = [self.Mesh_.vec_to_Vd(x0+eps*ds) for eps in epslist]
         jlist = [self.eval(y) for y in ylist]
         ds_ = ds#.vector().get_local()
         self.perform_first_order_check(jlist, j0, djx, ds_, epslist)
