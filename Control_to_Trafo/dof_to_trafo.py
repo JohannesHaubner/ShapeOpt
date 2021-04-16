@@ -8,6 +8,10 @@ Created on Fri Jul 10 08:45:52 2020
 from dolfin import *
 #from dolfin_adjoint import *
 import numpy as np
+import matplotlib.pyplot as plt
+
+import Control_to_Trafo.Extension_Equation.Elastic_extension as extension
+import Control_to_Trafo.Boundary_Operator.LaplaceBeltrami as boundary
 
 class Extension():
     def __init__(self, Mesh_):
@@ -30,7 +34,7 @@ class Extension():
       self.dmesh = dmesh
 
       # Laplace Beltrami off
-      self.lb_off = Constant('1.0') #1.0 on, 0.0 off
+      self.lb_off = Constant("0.1") #Constant('0.0') # 0.0 = multiply with n, 1.0 = Laplace Beltrami
       
       # define function spaces
       self.V = Mesh_.get_V()
@@ -63,7 +67,37 @@ class Extension():
       #func = interpolate(Constant(1.0), self.Vd)
       #print((self.M_lumped_m05 * func.vector()).get_local())
       #exit(0)
-      
+
+    def dof_to_deformation(self, x):
+      # x: corresponds to control in self.Vd
+      #xd = boundary.Boundary_Operator(self.dmesh, self.dnormalf, self.lb_off).eval(x)
+      #xd = self.Mesh_.Vdn_to_Vn(xd)
+      #xd = extension.Extension(self.mesh, self.boundaries, self.params).eval(xd)
+      #deformation = extension.Extension(self.mesh, self.boundaries, self.params).eval(xd)
+
+      ## strategy 3
+      xd = boundary.Boundary_Operator(self.dmesh, self.dnormalf, self.lb_off).eval(x)
+      xd = self.Mesh_.Vdn_to_Vn(xd)
+      deformation = extension.Extension(self.mesh, self.boundaries, self.params).eval(xd)
+      ###
+      return deformation
+
+    def dof_to_deformation_chainrule(self, djy, option2):
+      # compute derivative of j(dof_to_deformation(x)) under the knowledge of
+      # djy = nabla j(y) (gradient) (if option2 ==1) or derivative j'(y) (if option2 == 2)
+      #djxd = extension.Extension(self.mesh, self.boundaries, self.params).chainrule(djy, 2, option2)
+      #djxd = extension.Extension(self.mesh, self.boundaries, self.params).chainrule(djxd.vector(), 1, 2)
+      #djxdf = self.Mesh_.Vn_to_Vdn(djxd)
+      #djy = boundary.Boundary_Operator(self.dmesh, self.dnormalf, self.lb_off).chainrule(djxdf)
+
+      ### strategy 3
+      djxd = extension.Extension(self.mesh, self.boundaries, self.params).chainrule(djy, 1, option2)
+      djxdf = self.Mesh_.Vn_to_Vdn(djxd)
+      djy = boundary.Boundary_Operator(self.dmesh, self.dnormalf, self.lb_off).chainrule(djxdf)
+      ###
+      return djy
+
+
     def vec_to_func_precond_chainrule(self, v):
       vc = self.M_lumped_m05 * v.vector()
       #print(v.vector())
@@ -110,20 +144,7 @@ class Extension():
       jlist = [assemble(0.5*inner(y, y)*dx) for y in ylist]
       self.perform_first_order_check(jlist, j0, djx, ds, epslist)
       return
-      
-      
-    def dof_to_deformation(self, x):
-      # x: corresponds to control in self.Vd
-      xd = self.vector_laplace_beltrami(x)
-      deformation = self.linear_elasticity(xd)
-      return deformation
-  
-    def dof_to_deformation_chainrule(self,djy, option2):
-      # compute derivative of j(dof_to_deformation(x)) under the knowledge of
-      # djy = nabla j(y) (gradient) (if option2 ==1) or derivative j'(y) (if option2 == 2)
-      djxd = self.linear_elasticity_chainrule(djy,1, option2)
-      djy = self.vector_laplace_beltrami_chainrule(djxd)
-      return djy
+
   
     def test_dof_to_deformation(self):
       # check dof_to_deformation with first order derivative check
@@ -157,195 +178,7 @@ class Extension():
       pass
 
       
-      
-    def linear_elasticity(self,x):   
-      # x: corresponds to vector valued function in self.Vdn
-      #print('Extension.vector_laplace_beltrami started.......................')
-      
-      parameters["form_compiler"]["cpp_optimize"] = True
-      parameters["form_compiler"]["optimize"] = True
-      
-      # Define trial and test functions
-      u = TrialFunction(self.Vn)
-      v = TestFunction(self.Vn)
-      
-      # project x on domain function
-      xd = self.Mesh_.Vdn_to_Vn(x)
-      
-      # Define boundary conditions
-      bc1 = DirichletBC(self.Vn, Constant(("0.0","0.0")), self.boundaries, self.params["inflow"])
-      bc2 = DirichletBC(self.Vn, Constant(("0.0","0.0")), self.boundaries, self.params["outflow"])
-      bc3 = DirichletBC(self.Vn, Constant(("0.0","0.0")), self.boundaries, self.params["noslip"])
-      bc = [bc1, bc2, bc3]
-      
-      # Define bilinear form
-      a = inner(grad(u) + np.transpose(grad(u)), grad(v))*dx + inner(u,v)*dx 
-      # Define linear form
-      L = inner(xd,v)*self.ds(self.params["design"])
-      
-      # solve variational problem
-      u = Function(self.Vn)
-      solve(a == L, u, bc)
 
-      return u
-  
-    def test_linear_elasticity(self):
-      print('----------------------------------------------------------------')
-      print('Extension.test_linear_elasticity started........................')
-
-      x0 = interpolate(Constant(("1.0","0.5")), self.Vdn)
-      ds = interpolate(Constant(("0.5","0.2")), self.Vdn)
-      y0 = self.linear_elasticity(x0)
-      j0 = assemble(0.5*inner(y0,y0)*dx)
-      djy = y0
-      djx = self.linear_elasticity_chainrule(djy,2,1)
-      epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
-      ylist = []
-      for eps in epslist:
-          xeps = Function(self.Vdn)
-          xeps.assign(x0)
-          xeps.vector().axpy(eps, ds.vector())
-          ylist.append(self.linear_elasticity(xeps))
-      #ylist = [self.linear_elasticity(x0+eps*ds) for eps in epslist]
-      jlist = [assemble(0.5*inner(y, y)*dx) for y in ylist]
-      ds_ = ds.vector().get_local()
-      self.perform_first_order_check(jlist, j0, djx.get_local(), ds_, epslist)
-      return
-  
-    def linear_elasticity_chainrule(self,djy, option, option2): 
-      # compute derivative of j(linear_elasticity(x)) under the knowledge of
-      # djy:
-      # option == 1: gradient  nabla j(x)
-      # option == 2: deriative j'(x)
-      #
-      # option2 == 1: djy is gradient 
-      # option2 == 2: djy is derivative
-      #print('Extension.vector_laplace_beltrami_chainrule started.............')
-      
-      parameters["form_compiler"]["cpp_optimize"] = True
-      parameters["form_compiler"]["optimize"] = True
-      
-      # solve adjoint equations
-      u = TrialFunction(self.Vn)
-      v = TestFunction(self.Vn)
-      
-      # Define boundary conditions
-      bc1 = DirichletBC(self.Vn, Constant(("0.0","0.0")), self.boundaries, self.params["inflow"])
-      bc2 = DirichletBC(self.Vn, Constant(("0.0","0.0")), self.boundaries, self.params["outflow"])
-      bc3 = DirichletBC(self.Vn, Constant(("0.0","0.0")), self.boundaries, self.params["noslip"])
-      bc = [bc1, bc2, bc3]
-      
-      # Define bilinear form
-      a = inner(grad(u) + np.transpose(grad(u)), grad(v))*dx + inner(u,v)*dx 
-      if option2 ==1:
-        # define linear form
-        L = inner(djy,v)*dx
-        # solve variational problem
-        u = Function(self.Vn)
-        solve(a==L, u, bc)
-      elif option2 == 2:
-        A = assemble(a)
-        bc1.apply(A)
-        bc2.apply(A)
-        bc3.apply(A)
-        u = Function(self.Vn)
-        dj = Function(self.Vn)
-        dj.vector().set_local(djy)
-        dj.vector().apply("")
-        djy = dj.vector()
-        bc1.apply(djy)
-        bc2.apply(djy)
-        bc3.apply(djy)
-        solve(A, u.vector(), djy)
-      if option == 1:
-        djx = self.Mesh_.Vn_to_Vdn(u)
-        return djx
-      elif option == 2:
-        xt = TrialFunction(self.Vn)
-        ud = assemble(inner(u,xt)*self.ds(self.params["design"]))
-        u = Function(self.Vn)
-        u.vector()[:] = ud
-        djx = self.Mesh_.Vn_to_Vdn(u)
-        return djx.vector()
-  
-  
-    def vector_laplace_beltrami(self,x):   
-      # x: corresponds to control in self.Vd
-      #print('Extension.vector_laplace_beltrami started.......................')
-      
-      parameters["form_compiler"]["cpp_optimize"] = True
-      parameters["form_compiler"]["optimize"] = True
-
-      ds = self.Mesh_.get_ds()
-      
-      # Define trial and test functions
-      u = TrialFunction(self.Vdn)
-      v = TestFunction(self.Vdn)
-      
-      # Define boundary conditions
-      bc = []
-      
-      # Define bilinear form
-      a = self.lb_off*inner(grad(u), grad(v))*dx(self.dmesh) + inner(u,v)*dx(self.dmesh)
-      # Define linear form
-      L = inner(x*self.dnormalf,v)*dx(self.dmesh)
-      
-      # solve variational problem
-      u = Function(self.Vdn)
-      solve(a == L, u, bc)
-      return u
-
-    def vector_laplace_beltrami_chainrule(self,djy):
-      # compute derivative of j(vector_laplace_beltrami(x)) under the knowledge of
-      # djy = nabla j(y) (gradient)
-      #print('Extension.vector_laplace_beltrami_chainrule started.............')
-      
-      parameters["form_compiler"]["cpp_optimize"] = True
-      parameters["form_compiler"]["optimize"] = True
-
-      # solve adjoint equation
-      v = TrialFunction(self.Vdn)
-      z = TestFunction(self.Vdn)
-      
-      # define boundary conditions
-      bc = []
-      
-      # Define bilinear form
-      a = self.lb_off*inner(grad(v), grad(z))*dx(self.dmesh) + inner(v,z)*dx(self.dmesh)
-      # Define linear form
-      L = inner(djy, z)*dx(self.dmesh)
-      
-      # solve variational problem
-      v = Function(self.Vdn)
-      solve(a == L, v, bc)
-      
-      # evaluate dj/dx
-      xt = TrialFunction(self.Vd)
-      djx = assemble(inner(v, self.dnormalf)*xt*dx(self.dmesh))
-      
-      return djx
-  
-    def test_vector_laplace_beltrami(self):
-      # check laplace beltrami equation with first order derivative check
-      print('Extension.test_vector_laplace_beltrami started..................')
-      x0 = interpolate(Constant(0.15), self.Vd)
-      ds = interpolate(Constant(1.0), self.Vd)
-      #ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
-      y0 = self.vector_laplace_beltrami(x0)
-      bdfile = File(MPI.comm_self, "./Output/Tests/vectorLaplaceBeltrami.pvd")
-      bdfile << self.Mesh_.Vdn_to_Vn(y0)
-      j0 = assemble(0.5 * inner(y0, y0) * dx(self.dmesh))
-      # correction since assemble adds up values for all processes
-      rank = MPI.comm_world.Get_size()
-      j0 = j0/rank
-      djy = y0
-      djx = self.vector_laplace_beltrami_chainrule(djy).get_local()
-      epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
-      ylist = [self.vector_laplace_beltrami(x0+eps*ds) for eps in epslist]
-      jlist = [assemble(0.5*inner(y, y)*dx)/rank for y in ylist] #includes correction
-      ds_ = ds.vector().get_local()
-      self.perform_first_order_check(jlist, j0, djx, ds_, epslist)
-      return
   
     def test_dof_to_precond_Vd_to_vector_laplace_beltrami(self):
       print('Extension.test_dof_to_precond_Vd_to_vector_laplace_beltrami started...')

@@ -148,7 +148,7 @@ class IPOPTSolver(OptimizationSolver):
             #
             # The callback for calculating the gradient
             #
-            print('evaluate derivative of objective funtion')
+            print('evaluate derivative of objective function')
             deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             # deformation = project(deformation, self.mesh)
 
@@ -281,10 +281,10 @@ class IPOPTSolver(OptimizationSolver):
                         )
 
         nlp.add_option('mu_strategy', 'adaptive')
-        nlp.add_option('derivative_test', 'first-order')
+        #nlp.add_option('derivative_test', 'first-order')
         nlp.add_option('point_perturbation_radius', 0.0)
-        nlp.add_option('max_iter', 1) #self.param["maxiter_IPOPT"])
-        nlp.add_option('tol', 1e-3)
+        nlp.add_option('max_iter', self.param["maxiter_IPOPT"])
+        #nlp.add_option('tol', 1e-3)
 
         x, info = nlp.solve(x0)
         return x

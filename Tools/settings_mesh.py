@@ -6,39 +6,70 @@ Created on Fri Jun 26 08:39:51 2020
 @author: Johannes Haubner
 """
 from dolfin import *
+from dolfin_adjoint import *
 import numpy as np
 from pyadjoint.overloaded_type import create_overloaded_object
 #import mpi4py as MPI
 #from dolfin_adjoint import *
 import matplotlib.pyplot as plt
 
+
 class Initialize_Mesh_and_FunctionSpaces():
-    def __init__(self, boundaries = None, params = None):
+    def __init__(self, load_mesh=False):
+      if load_mesh:
+        stri = "./Output/Mesh_Generation/mesh_triangles_new.xdmf"
+        stri2 = "./Output/Mesh_Generation/facet_mesh_new.xdmf"
+      else:
+        stri = "./Output/Mesh_Generation/mesh_triangles.xdmf"
+        stri2 = "./Output/Mesh_Generation/facet_mesh.xdmf"
       # load mesh
       mesh = Mesh()
-      with XDMFFile("./Output/Mesh_Generation/mesh_triangles.xdmf") as infile:
+      with XDMFFile(stri) as infile:
         infile.read(mesh)
+
+      # read boundary parts
+      mfile = File("./Output/Tests/ForwardEquation/mesh.pvd")
+      mfile << mesh
+      if load_mesh:
+          mvc = MeshValueCollection("size_t", mesh, 1)
+          with XDMFFile(stri2) as infile:
+              infile.read(mvc)
+      else:
+          mvc = MeshValueCollection("size_t", mesh, 1)
+          with XDMFFile(stri2) as infile:
+            infile.read(mvc, "name_to_read")
+      boundaries = MeshFunction('size_t', mesh, mvc)
+      #xdmf2 = XDMFFile("./Output/Mesh_Generation/facet_mesh_new.xdmf")
+      #xdmf2.write(boundaries)
+      #mvc = MeshValueCollection("size_t", mesh, 1)
+      #with XDMFFile("./Output/Mesh_Generation/facet_mesh_new.xdmf") as infile:
+      #    infile.read(mvc)
+      #boundaries = MeshFunction('size_t', mesh, mvc)
+      #exit(0)
 
       # create pyadjoint mesh
       mesh = create_overloaded_object(mesh)
-
-      # read boundary parts
       mvc = MeshValueCollection("size_t", mesh, 1)
-      mfile = File("./Output/Tests/ForwardEquation/mesh.pvd")
-      mfile << mesh
-      with XDMFFile("./Output/Mesh_Generation/facet_mesh.xdmf") as infile:
-        infile.read(mvc, "name_to_read")
-        boundaries = cpp.mesh.MeshFunctionSizet(mesh, mvc)
+      new_boundaries = cpp.mesh.MeshFunctionSizet(mesh, mvc)
+      new_boundaries.set_values(boundaries.array())
+      boundaries = new_boundaries
+
+
+
 
       # load global mesh on each process in order to have the design boundary mesh on each process
       mesh_global = Mesh(MPI.comm_self)
-      with XDMFFile(MPI.comm_self, "./Output/Mesh_Generation/mesh_triangles.xdmf") as infile:
+      with XDMFFile(MPI.comm_self, stri) as infile:
         infile.read(mesh_global)
 
       # full boundary information on each process
       mvc2 = MeshValueCollection("size_t", mesh_global, 1)
-      with XDMFFile(MPI.comm_self, "./Output/Mesh_Generation/facet_mesh.xdmf") as infile:
-        infile.read(mvc2, "name_to_read")
+      if load_mesh:
+          with XDMFFile(MPI.comm_self, stri2) as infile:
+              infile.read(mvc2)
+      else:
+          with XDMFFile(MPI.comm_self, stri2) as infile:
+            infile.read(mvc2, "name_to_read")
       boundaries_global = cpp.mesh.MeshFunctionSizet(mesh_global, mvc2)
 
       # save to pvd file for testing
@@ -98,7 +129,7 @@ class Initialize_Mesh_and_FunctionSpaces():
       self.ds = ds
 
       # dof-maps between V and Vg
-      global_to_glocal_map = self.__meshglobal_to_mesh__(mesh_global)
+      global_to_glocal_map, glocal_to_global_map = self.__meshglobal_to_mesh__(mesh_global)
 
       # dof-maps between V and Vb
       Vb_to_V_map = self.__Vb_to_V(Vg, Vb, global_to_glocal_map)
@@ -209,6 +240,24 @@ class Initialize_Mesh_and_FunctionSpaces():
         split_to_vec.assign(vn, vs)
         return vn
 
+    def __V_to_Vg(self, v, Vg, glocal_to_global_map):
+        ndof = v.vector().size()
+        gathered_local = v.vector().gather(range(ndof))
+        defog = Function(Vg)
+        defog.vector().set_local(gathered_local[glocal_to_global_map])
+        return defog
+
+    def __Vn_to_Vgn(self, v, Vg, Vgn, glocal_to_global_map):
+        vb_is = v.split(deepcopy=True)
+        vs = []
+        for vb_i in vb_is:
+            vs.append(self.__V_to_Vg(vb_i, Vg, glocal_to_global_map))
+        split_to_vec = FunctionAssigner(Vgn, [vi.function_space() for vi in vs])
+        vn = Function(Vgn)
+        split_to_vec.assign(vn, vs)
+        return vn
+
+
     def __meshglobal_to_mesh__(self, mesh_global):
         " returns dof maps between V and Vg "
         SpaceV = self.V
@@ -243,7 +292,7 @@ class Initialize_Mesh_and_FunctionSpaces():
         gloc_glob_sort2 = gloc_glob[gloc_glob[:, 1].argsort(kind='mergesort')]
         glocal_to_global_map = gloc_glob_sort2[:, 0]
 
-        return global_to_glocal_map.astype(int) #, glocal_to_global_map.astype(int)
+        return global_to_glocal_map.astype(int), glocal_to_global_map.astype(int)
 
     def __global_to_local(self, Fg, glocal_to_global_map):
         " maps Function from Vg to V "
@@ -451,6 +500,7 @@ class Initialize_Mesh_and_FunctionSpaces():
     def get_mesh(self):
       #print('load mesh............................................................')
       return self.mesh
+
   
     def get_design_boundary_mesh(self):
       #print('load design boundary mesh............................................')
