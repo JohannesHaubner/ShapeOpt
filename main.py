@@ -20,6 +20,8 @@ import Constraints.determinant as Cd
 import Ipopt.ipopt_solver as ipopt_so #_pa as ipopt_so
 import numpy as np
 
+import Mesh_Postprocessing.post_process as mpp
+
 import meshio
 
 
@@ -65,9 +67,11 @@ v = interpolate(Constant("1.0"),V)
 
 #ctt.Extension(init_mfs).test_dof_to_deformation_precond()
 
+
 geom_prop = np.load('./Mesh_Generation/geom_prop.npy', allow_pickle='TRUE').item()
 
-param = {"reg": 1e-4, # regularization parameter
+param = {"reg": 1e-2, # regularization parameter
+         "lb_off_p": 1.0, #Laplace Beltrami weighting
          "Vol_D": geom_prop["volume_hold_all_domain"], # volume parameter
          "Bary_D": geom_prop["barycenter_hold_all_domain"], # barycenter
          "Vol_O": geom_prop["volume_obstacle"],
@@ -75,10 +79,10 @@ param = {"reg": 1e-4, # regularization parameter
          "Bary_O": geom_prop["barycenter_obstacle"],
          "L": geom_prop["length_pipe"],
          "H": geom_prop["heigth_pipe"],
-         "relax_eq": 1e-7,
+         "relax_eq": 0.0,
          #"Bary_eps": 0.0, # slack for barycenter
          #"det_lb": 2e-1, # lower bound for determinant of transformation gradient
-         "maxiter_IPOPT": 25
+         "maxiter_IPOPT": 50
          }
 
 
@@ -117,48 +121,57 @@ param["Bary_O"] = np.add(bc, bo)
 #exit(0)
 #
 
-bdfile = File(MPI.comm_self, "./Output/mesh_optimize.pvd")
+bdfile = File(MPI.comm_self, "./Output/mesh_optimize_pp_regmin_fine.pvd")
 
 x0 = interpolate(Constant("0.0"),Vd).vector().get_local()
 
-#x0 = interpolate(Expression("100.0*(x[0]-6)", degree = 2),Vd).vector().get_local()
+deform_mesh = True
 
-for reg in [1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10]:
+param["lb_off_p"] = 1.0
 
-  deformation = ctt.Extension(init_mfs).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
+for lb_off in [1e0, 0.5, 0.25, 0.125, 0.1, 0.05, 0.025, 0.0125, 0.01, 0.005, 0.0025, 0.00125, 0.001, 0.0001, 0.00001, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10]:
+
+  deformation = ctt.Extension(init_mfs, param).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
   defo = project(deformation, Vn)
-  defo0 = project(deformation.sub(0), V)
   ALE.move(mesh, defo, annotate=False)
-  new_mesh = Mesh(mesh)
-  mvc = MeshValueCollection("size_t", new_mesh, 1)
-  new_boundaries = cpp.mesh.MeshFunctionSizet(new_mesh, mvc)
-  new_boundaries.set_values(boundaries.array())
+  if deform_mesh == True:
+      defo_new  = mpp.harmonic(defo)
+      ALE.move(mesh, defo_new, annotate=False)
 
-  xdmf = XDMFFile("./Output/Mesh_Generation/mesh_triangles_new.xdmf")
-  xdmf2 = XDMFFile("./Output/Mesh_Generation/facet_mesh_new.xdmf")
-  xdmf.write(new_mesh)
-  xdmf2.write(new_boundaries)
+      new_mesh = Mesh(mesh)
+      mvc = MeshValueCollection("size_t", new_mesh, 1)
+      new_boundaries = cpp.mesh.MeshFunctionSizet(new_mesh, mvc)
+      new_boundaries.set_values(boundaries.array())
 
-  init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(load_mesh=True)
+      xdmf = XDMFFile("./Output/Mesh_Generation/mesh_triangles_new.xdmf")
+      xdmf2 = XDMFFile("./Output/Mesh_Generation/facet_mesh_new.xdmf")
+      xdmf.write(new_mesh)
+      xdmf2.write(new_boundaries)
+
+      init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(load_mesh=True)
+  else:
+      bdfile << defo
+      init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces()
   mesh = init_mfs.get_mesh()
   dmesh = init_mfs.get_design_boundary_mesh()
   boundaries = init_mfs.get_boundaries()
   params = init_mfs.get_params()
   dnormal = init_mfs.get_dnormalf()
-
-  bdfile << mesh
+  if deform_mesh == True:
+    bdfile << mesh
 
   Vd = init_mfs.get_Vd()
   Vn = init_mfs.get_Vn()
   V = init_mfs.get_V()
   v = interpolate(Constant("1.0"), V)
 
-  x0 = interpolate(Constant("0.0"), Vd).vector().get_local()
+  if deform_mesh:
+    x0 = interpolate(Constant("0.0"), Vd).vector().get_local()
 
   stop_annotating()
   set_working_tape(Tape())
-  param["maxiter_IPOPT"]=20
-  param["reg"] = reg
+  #param["reg"] = reg
+  param["lb_off_p"] = lb_off
   Jred = ro_stokes.reduced_objective(mesh, boundaries,params, param, red_func=True)
   problem = MinimizationProblem(Jred)
   IPOPT = ipopt_so.IPOPTSolver(problem, init_mfs, param)
@@ -169,3 +182,7 @@ for reg in [1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10]:
   #plot(mesh)
   #plt.show()
 
+deformation = ctt.Extension(init_mfs, param).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
+defo = project(deformation, Vn)
+ALE.move(mesh, defo, annotate=False)
+bdfile << defo

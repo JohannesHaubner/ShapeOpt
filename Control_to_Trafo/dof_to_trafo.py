@@ -14,7 +14,7 @@ import Control_to_Trafo.Extension_Equation.Elastic_extension as extension
 import Control_to_Trafo.Boundary_Operator.LaplaceBeltrami as boundary
 
 class Extension():
-    def __init__(self, Mesh_):
+    def __init__(self, Mesh_, param):
       # mesh: reference mesh
       # boundaries: labels for boundary
       # dmesh: design boundary mesh
@@ -34,7 +34,8 @@ class Extension():
       self.dmesh = dmesh
 
       # Laplace Beltrami off
-      self.lb_off = Constant("0.1") #Constant('0.0') # 0.0 = multiply with n, 1.0 = Laplace Beltrami
+      lb_off_p = param["lb_off_p"]
+      self.lb_off = Expression(("lb_off"), degree = 0, lb_off = lb_off_p) #Constant("0.1") #Constant('0.0') # 0.0 = multiply with n, 1.0 = Laplace Beltrami
       
       # define function spaces
       self.V = Mesh_.get_V()
@@ -76,7 +77,7 @@ class Extension():
       #deformation = extension.Extension(self.mesh, self.boundaries, self.params).eval(xd)
 
       ## strategy 3
-      xd = boundary.Boundary_Operator(self.dmesh, self.dnormalf, self.lb_off).eval(x)
+      xd = boundary.Boundary_Operator(self.dmesh, self.dnormalf, self.lb_off).eval(x) #self.lb_off).eval(x)
       xd = self.Mesh_.Vdn_to_Vn(xd)
       deformation = extension.Extension(self.mesh, self.boundaries, self.params).eval(xd)
       ###

@@ -24,6 +24,7 @@ class Barycenter_Constraint():
         self.Vd = Mesh_.get_Vd()
         self.Vn = Mesh_.get_Vn()
         self.V = Mesh_.get_V()
+        self.param = param
         self.Bary_O = param["Bary_O"]
         self.Vol = param["Vol_DmO"]
         self.L = param["L"]
@@ -33,7 +34,7 @@ class Barycenter_Constraint():
     def eval(self,y):
         L = self.L
         H = self.H
-        deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(y)
+        deformation = ctt.Extension(self.Mesh_, self.param).dof_to_deformation_precond(y)
         x = SpatialCoordinate(self.mesh)
         dF = Identity(self.dim) + grad(deformation)
         Jhat = det(dF)
@@ -45,14 +46,14 @@ class Barycenter_Constraint():
     def grad(self,y):
         L = self.L
         H = self.H
-        deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(y)
+        deformation = ctt.Extension(self.Mesh_, self.param).dof_to_deformation_precond(y)
         x = SpatialCoordinate(self.mesh)
         form1 = (x[0]+deformation[0])*det(Identity(self.dim) + grad(deformation)) * dx
         form2 = (x[1]+deformation[1])*det(Identity(self.dim) + grad(deformation)) * dx
         df1 = -1.0/ (L * H - self.Vol)*assemble(derivative(form1, deformation))
         df2 = -1.0/ (L * H - self.Vol)*assemble(derivative(form2, deformation))
-        cgf1 = ctt.Extension(self.Mesh_).dof_to_deformation_precond_chainrule(df1, 2)
-        cgf2 = ctt.Extension(self.Mesh_).dof_to_deformation_precond_chainrule(df2, 2)
+        cgf1 = ctt.Extension(self.Mesh_,self.param).dof_to_deformation_precond_chainrule(df1, 2)
+        cgf2 = ctt.Extension(self.Mesh_,self.param).dof_to_deformation_precond_chainrule(df2, 2)
         return [cgf1, cgf2]
     
     def test(self):

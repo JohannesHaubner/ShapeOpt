@@ -12,29 +12,30 @@ import numpy as np
 import Control_to_Trafo.dof_to_trafo as ctt
 
 class Volume_Constraint():
-    def __init__(self, Mesh_, V):
+    def __init__(self, Mesh_, param):
         # Consider constraint of the form volume >= V
         self.Mesh_ = Mesh_
         self.dim = self.Mesh_.mesh.geometric_dimension()
         self.Vd = Mesh_.get_Vd()
         self.Vn = Mesh_.get_Vn()
-        self.V = V
+        self.V = param["Vol_DmO"]
+        self.param = param
         self.scalingfactor = 1.0
         
     def eval(self,x):
         # x dof
         # evaluate g(x) = V - volume(x)
-        deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(x)
+        deformation = ctt.Extension(self.Mesh_, self.param).dof_to_deformation_precond(x)
         dF = Identity(self.dim) + grad(deformation)
         Jhat = det(dF)
         vol = self.scalingfactor * (assemble(Jhat*dx) -self.V)
         return vol
     
     def grad(self,x):
-        deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(x)
+        deformation = ctt.Extension(self.Mesh_, self.param).dof_to_deformation_precond(x)
         form = det(Identity(self.dim)+grad(deformation))*dx
         dform = assemble(derivative(form, deformation))
-        dvolx = self.scalingfactor*ctt.Extension(self.Mesh_).dof_to_deformation_precond_chainrule(dform, 2)
+        dvolx = self.scalingfactor*ctt.Extension(self.Mesh_, self.param).dof_to_deformation_precond_chainrule(dform, 2)
         return dvolx
     
     def test(self):

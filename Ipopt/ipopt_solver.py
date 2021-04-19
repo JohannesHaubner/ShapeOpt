@@ -132,7 +132,7 @@ class IPOPTSolver(OptimizationSolver):
             #
             # x to deformation
             print('evaluate objective')
-            deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
+            deformation = ctt.Extension(self.Mesh_, self.param).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             #deformation = project(deformation, self.mesh)
 
             # move mesh in direction of deformation
@@ -149,7 +149,7 @@ class IPOPTSolver(OptimizationSolver):
             # The callback for calculating the gradient
             #
             print('evaluate derivative of objective function')
-            deformation = ctt.Extension(self.Mesh_).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
+            deformation = ctt.Extension(self.Mesh_, self.param).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             # deformation = project(deformation, self.mesh)
 
             # compute gradient
@@ -163,7 +163,7 @@ class IPOPTSolver(OptimizationSolver):
             # ufile = File("./Output/Forward/dJf2.pvd")
             # ufile << dJf
 
-            dJ1 = ctt.Extension(self.Mesh_).dof_to_deformation_precond_chainrule(dJf.vector(), 2)
+            dJ1 = ctt.Extension(self.Mesh_, self.param).dof_to_deformation_precond_chainrule(dJf.vector(), 2)
             dJ = dJ1 + self.param["reg"] * x  # derivative of the regularization
 
             return dJ
@@ -172,7 +172,7 @@ class IPOPTSolver(OptimizationSolver):
             #
             # The callback for calculating the constraints
             # print('evaluate constraint')
-            v_ct = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_DmO"]).eval(self.Mesh_.vec_to_Vd(x))
+            v_ct = Cv.Volume_Constraint(self.Mesh_, self.param).eval(self.Mesh_.vec_to_Vd(x))
             b_ct = Cb.Barycenter_Constraint(self.Mesh_, self.param).eval(self.Mesh_.vec_to_Vd(x))
             # d_ct = Cd.Determinant_Constraint(self.Mesh_, self.param["det_lb"]).eval(x)
             con = self.scale * np.array((v_ct, b_ct[0], b_ct[1]))  # , d_ct))
@@ -184,7 +184,7 @@ class IPOPTSolver(OptimizationSolver):
             #
             # print('evaluate jacobian')
             b_ct_d = Cb.Barycenter_Constraint(self.Mesh_, self.param).grad(self.Mesh_.vec_to_Vd(x))
-            v_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["Vol_DmO"]).grad(self.Mesh_.vec_to_Vd(x))
+            v_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param).grad(self.Mesh_.vec_to_Vd(x))
             # d_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["det_lb"]).grad(x)
             jaccon = self.scale * np.concatenate((v_ct_d, b_ct_d[0], b_ct_d[1]))  # , d_ct_d))
             return jaccon
@@ -284,7 +284,7 @@ class IPOPTSolver(OptimizationSolver):
         #nlp.add_option('derivative_test', 'first-order')
         nlp.add_option('point_perturbation_radius', 0.0)
         nlp.add_option('max_iter', self.param["maxiter_IPOPT"])
-        #nlp.add_option('tol', 1e-3)
+        nlp.add_option('tol', 1e-5)
 
         x, info = nlp.solve(x0)
         return x
