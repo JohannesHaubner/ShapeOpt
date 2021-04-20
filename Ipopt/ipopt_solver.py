@@ -264,8 +264,8 @@ class IPOPTSolver(OptimizationSolver):
         min_float = np.finfo(np.double).min
 
         cr = self.param["relax_eq"]
-        cl = [-cr, -cr, -cr] #, min_float]
-        cu = [cr, cr, cr] #, 0.0]
+        cl = [0.0, -cr, -cr] #, min_float]
+        cu = [0.0, cr, cr] #, 0.0]
 
         ub = np.array([max_float] * len(x0))
         lb = np.array([min_float] * len(x0))

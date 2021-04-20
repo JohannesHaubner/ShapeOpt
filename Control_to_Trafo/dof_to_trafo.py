@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import Control_to_Trafo.Extension_Equation.Elastic_extension as extension
-import Control_to_Trafo.Boundary_Operator.LaplaceBeltrami as boundary
+import Control_to_Trafo.Boundary_Operator.LaplaceBeltrami_withbc as boundary
 
 class Extension():
     def __init__(self, Mesh_, param):

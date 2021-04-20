@@ -79,7 +79,7 @@ param = {"reg": 1e-2, # regularization parameter
          "Bary_O": geom_prop["barycenter_obstacle"],
          "L": geom_prop["length_pipe"],
          "H": geom_prop["heigth_pipe"],
-         "relax_eq": 0.0,
+         "relax_eq": 0.0, #relax barycenter
          #"Bary_eps": 0.0, # slack for barycenter
          #"det_lb": 2e-1, # lower bound for determinant of transformation gradient
          "maxiter_IPOPT": 50
@@ -121,7 +121,7 @@ param["Bary_O"] = np.add(bc, bo)
 #exit(0)
 #
 
-bdfile = File(MPI.comm_self, "./Output/mesh_optimize_pp_regmin_fine.pvd")
+bdfile = File(MPI.comm_self, "./Output/mesh_optimize_fixedpart.pvd")
 
 x0 = interpolate(Constant("0.0"),Vd).vector().get_local()
 
@@ -129,7 +129,7 @@ deform_mesh = True
 
 param["lb_off_p"] = 1.0
 
-for lb_off in [1e0, 0.5, 0.25, 0.125, 0.1, 0.05, 0.025, 0.0125, 0.01, 0.005, 0.0025, 0.00125, 0.001, 0.0001, 0.00001, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10]:
+for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:  #[1e0, 0.5, 0.25, 0.125, 0.1, 0.05, 0.025, 0.0125, 0.01, 0.005, 0.0025, 0.00125, 0.001, 0.0001, 0.00001, 1e-6]:
 
   deformation = ctt.Extension(init_mfs, param).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
   defo = project(deformation, Vn)
