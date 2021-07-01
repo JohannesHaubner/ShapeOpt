@@ -10,8 +10,8 @@ from dolfin import *
 import numpy as np
 import matplotlib.pyplot as plt
 
-import Control_to_Trafo.Extension_Equation.Elastic_extension as extension
-import Control_to_Trafo.Boundary_Operator.LaplaceBeltrami_withbc as boundary
+import Control_to_Trafo.Extension_Equation.Elastic_extension_subdom as extension
+import Control_to_Trafo.Boundary_Operator.LaplaceBeltrami as boundary
 
 class Extension():
     def __init__(self, Mesh_, param):
@@ -23,6 +23,7 @@ class Extension():
       mesh = Mesh_.get_mesh()
       dmesh = Mesh_.get_design_boundary_mesh()
       boundaries = Mesh_.get_boundaries()
+      domains = Mesh_.get_domains()
       params = Mesh_.get_params()
       
       # normal vector on mesh
@@ -44,6 +45,7 @@ class Extension():
       self.Vdn = Mesh_.get_Vdn()
       self.dnormalf = Mesh_.get_dnormalf()
       self.params = params
+      self.domains = domains
       self.boundaries = boundaries
       self.ds = Measure("ds", subdomain_data=boundaries)
       
@@ -79,7 +81,7 @@ class Extension():
       ## strategy 3
       xd = boundary.Boundary_Operator(self.dmesh, self.dnormalf, self.lb_off).eval(x) #self.lb_off).eval(x)
       xd = self.Mesh_.Vdn_to_Vn(xd)
-      deformation = extension.Extension(self.mesh, self.boundaries, self.params).eval(xd)
+      deformation = extension.Extension(self.mesh, self.domains, self.boundaries, self.params).eval(xd)
       ###
       return deformation
 
@@ -92,7 +94,7 @@ class Extension():
       #djy = boundary.Boundary_Operator(self.dmesh, self.dnormalf, self.lb_off).chainrule(djxdf)
 
       ### strategy 3
-      djxd = extension.Extension(self.mesh, self.boundaries, self.params).chainrule(djy, 1, option2)
+      djxd = extension.Extension(self.mesh, self.domains, self.boundaries, self.params).chainrule(djy, 1, option2)
       djxdf = self.Mesh_.Vn_to_Vdn(djxd)
       djy = boundary.Boundary_Operator(self.dmesh, self.dnormalf, self.lb_off).chainrule(djxdf)
       ###

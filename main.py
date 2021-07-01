@@ -8,7 +8,7 @@ Created on Fri Jun 26 09:27:20 2020
 from dolfin import *
 from pyadjoint import *
 
-import Reduced_Objective.Stokes as ro_stokes
+import Reduced_Objective.FluidStructure as ro_stokes
 import Tools.save_load_obj as tool
 import Control_to_Trafo.dof_to_trafo as ctt
 
@@ -46,6 +46,7 @@ init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces()
 mesh = init_mfs.get_mesh()
 dmesh = init_mfs.get_design_boundary_mesh()
 boundaries = init_mfs.get_boundaries()
+domains = init_mfs.get_domains()
 params = init_mfs.get_params()
 dnormal = init_mfs.get_dnormalf()
 
@@ -121,7 +122,7 @@ param["Bary_O"] = np.add(bc, bo)
 #exit(0)
 #
 
-bdfile = File(MPI.comm_self, "./Output/mesh_optimize_fixedpart.pvd")
+bdfile = File(MPI.comm_self, "./Output/mesh_optimize_test.pvd")
 
 x0 = interpolate(Constant("0.0"),Vd).vector().get_local()
 
@@ -139,14 +140,26 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
       ALE.move(mesh, defo_new, annotate=False)
 
       new_mesh = Mesh(mesh)
+
+      mvc2 = MeshValueCollection("size_t", new_mesh, 2)
+      new_domains = cpp.mesh.MeshFunctionSizet(new_mesh, mvc2)
+      new_domains.set_values(domains.array())
+
       mvc = MeshValueCollection("size_t", new_mesh, 1)
       new_boundaries = cpp.mesh.MeshFunctionSizet(new_mesh, mvc)
       new_boundaries.set_values(boundaries.array())
 
+      #plt.figure()
+      #plot(new_domains)
+      #plt.show()
+
+
       xdmf = XDMFFile("./Output/Mesh_Generation/mesh_triangles_new.xdmf")
       xdmf2 = XDMFFile("./Output/Mesh_Generation/facet_mesh_new.xdmf")
+      xdmf3 = XDMFFile("./Output/Mesh_Generation/domains_new.xdmf")
       xdmf.write(new_mesh)
       xdmf2.write(new_boundaries)
+      xdmf3.write(new_domains)
 
       init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(load_mesh=True)
   else:
@@ -155,10 +168,11 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
   mesh = init_mfs.get_mesh()
   dmesh = init_mfs.get_design_boundary_mesh()
   boundaries = init_mfs.get_boundaries()
+  domains = init_mfs.get_domains()
   params = init_mfs.get_params()
   dnormal = init_mfs.get_dnormalf()
   if deform_mesh == True:
-    bdfile << mesh
+    bdfile << domains
 
   Vd = init_mfs.get_Vd()
   Vn = init_mfs.get_Vn()
@@ -172,10 +186,10 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
   set_working_tape(Tape())
   #param["reg"] = reg
   param["lb_off_p"] = lb_off
-  Jred = ro_stokes.reduced_objective(mesh, boundaries,params, param, red_func=True)
+  Jred = ro_stokes.reduced_objective(mesh, domains, boundaries,params, param, red_func=True)
   problem = MinimizationProblem(Jred)
   IPOPT = ipopt_so.IPOPTSolver(problem, init_mfs, param)
-  x = IPOPT.solve(x0)
+  x, info = IPOPT.solve(x0)
   x0 = x
 
   #plt.figure()

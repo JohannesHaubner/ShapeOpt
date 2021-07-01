@@ -23,7 +23,6 @@ with XDMFFile("./Output/Mesh_Generation/facet_mesh.xdmf") as infile:
 params = np.load('./Mesh_Generation/params.npy', allow_pickle='TRUE').item()
 
 dmesh = MeshView.create(boundaries, params["design"])
-exit(0)
 
 # do just on single process and then share with other proceess
 #boundary mesh and submesh

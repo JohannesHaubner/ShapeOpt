@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 stop_annotating()
 
-def reduced_objective(mesh, boundaries, params, param, flag =False, red_func = False, control = False):
+def reduced_objective(mesh, domains, boundaries, params, param, flag =False, red_func = False, control = False):
     # mesh generated 
     # params dictionary, includes labels for boundary parts:
     # params.inflow
@@ -122,13 +122,14 @@ def reduced_objective(mesh, boundaries, params, param, flag =False, red_func = F
 def test(Mesh_, param):
     mesh = Mesh_.get_mesh()
     params = Mesh_.get_params()
+    domains = Mesh_.get_domains()
     boundaries = Mesh_.get_boundaries()
     stop_annotating()
     V1 = VectorElement("CG", mesh.ufl_cell(), 1)
     VC = FunctionSpace(mesh, V1)
     
     tu = interpolate(Expression(("0.0","0.0"), name = 'Control', degree =1), VC)
-    J, dJ = reduced_objective(mesh, boundaries, params, param, flag=True)
+    J, dJ = reduced_objective(mesh, domains, boundaries, params, param, flag=True)
     
     # compute disturb direction
     g = Expression(("(x[0]-0.2)*(x[0]-0.2)", "(x[1]-0.2)*(x[1]-0.2)"), degree =2)
@@ -156,7 +157,7 @@ def test(Mesh_, param):
         #jlist.append(reduced_objective(mesh, boundaries, params))
         #ALE.move(mesh, ewi)
         ew = project((eps * w), VC, annotate=False)
-        jlist.append(reduced_objective(mesh, boundaries, params, param, control = ew))
+        jlist.append(reduced_objective(mesh, domains, boundaries, params, param, control = ew))
     #print(dJ.vector().get_local())
     #print(w.vector().get_local())
     ndof = dJ.vector().size()

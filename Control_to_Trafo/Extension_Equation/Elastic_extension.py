@@ -2,7 +2,7 @@ from dolfin import *
 import numpy as np
 
 class Extension:
-    def __init__(self, mesh, boundaries, params):
+    def __init__(self, mesh, domains, boundaries, params):
         # x denotes a scalar valued function on mesh
         self.mesh = mesh
         self.Vn = VectorFunctionSpace(mesh, "CG", 1)

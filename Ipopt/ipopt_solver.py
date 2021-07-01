@@ -123,6 +123,7 @@ class IPOPTSolver(OptimizationSolver):
             self.Vd = outer.Vd
             self.scale = outer.scalingfactor
             self.mesh = self.Mesh_.get_mesh()
+            self.domains = self.Mesh_.get_domains()
             self.boundaries = self.Mesh_.get_boundaries()
             self.params = self.Mesh_.get_params()
 
@@ -136,7 +137,7 @@ class IPOPTSolver(OptimizationSolver):
             #deformation = project(deformation, self.mesh)
 
             # move mesh in direction of deformation
-            j1 = Stokes.reduced_objective(self.mesh, self.boundaries, self.params, self.param,
+            j1 = Stokes.reduced_objective(self.mesh, self.domains, self.boundaries, self.params, self.param,
                                           control=deformation)  #
             #j1 =  self.rfn(deformation.vector()) #self.rfn(deformation)
 
@@ -153,7 +154,7 @@ class IPOPTSolver(OptimizationSolver):
             # deformation = project(deformation, self.mesh)
 
             # compute gradient
-            j, dJf = Stokes.reduced_objective(self.mesh, self.boundaries, self.params,
+            j, dJf = Stokes.reduced_objective(self.mesh, self.domains, self.boundaries, self.params,
                                               self.param, flag=True, control=deformation)
             #new_params = [self.__copy_data(p.data()) for p in self.rfn.controls]
             #self.rfn.set_local(new_params, deformation.vector().get_local())
@@ -287,4 +288,4 @@ class IPOPTSolver(OptimizationSolver):
         nlp.add_option('tol', 1e-5)
 
         x, info = nlp.solve(x0)
-        return x
+        return x, info
