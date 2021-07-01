@@ -19,13 +19,27 @@ class Initialize_Mesh_and_FunctionSpaces():
       if load_mesh:
         stri = "./Output/Mesh_Generation/mesh_triangles_new.xdmf"
         stri2 = "./Output/Mesh_Generation/facet_mesh_new.xdmf"
+        stri3 = "./Output/Mesh_Generation/domains_new.xdmf"
       else:
         stri = "./Output/Mesh_Generation/mesh_triangles.xdmf"
         stri2 = "./Output/Mesh_Generation/facet_mesh.xdmf"
+
       # load mesh
       mesh = Mesh()
       with XDMFFile(stri) as infile:
         infile.read(mesh)
+
+      if load_mesh:
+          mvc = MeshValueCollection("size_t", mesh, 1)
+          with XDMFFile(stri3) as infile:
+              infile.read(mvc)
+      else:
+          mvc = MeshValueCollection("size_t", mesh, 2)
+          with XDMFFile(stri) as infile:
+            infile.read(mvc, "name_to_read")
+      domains = cpp.mesh.MeshFunctionSizet(mesh,mvc)
+      dfile = File("./Output/Tests/ForwardEquation/domains.pvd")
+      dfile << domains
 
       # read boundary parts
       mfile = File("./Output/Tests/ForwardEquation/mesh.pvd")
@@ -125,6 +139,7 @@ class Initialize_Mesh_and_FunctionSpaces():
       self.dmesh = dmesh
       self.params = params
       self.boundaries = boundaries
+      self.domains = domains
 
       self.ds = ds
 
@@ -513,6 +528,10 @@ class Initialize_Mesh_and_FunctionSpaces():
     def get_boundaries(self):
       #print('load boundary data...................................................')
       return self.boundaries
+
+    def get_domains(self):
+      #print('load domain data.....................................................')
+      return self.domains
   
     def get_V(self):
       return self.V
