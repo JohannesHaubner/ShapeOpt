@@ -287,5 +287,10 @@ class IPOPTSolver(OptimizationSolver):
         nlp.add_option('max_iter', self.param["maxiter_IPOPT"])
         nlp.add_option('tol', 1e-5)
 
+        alpha = nlp.solve(x0)
+        print('here')
+        print(alpha)
+        exit(0)
+
         x, info = nlp.solve(x0)
         return x, info

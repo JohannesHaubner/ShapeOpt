@@ -94,7 +94,7 @@ def reduced_objective(mesh, domains, boundaries, params, param, flag =False, red
     aphat = Constant(1e-9)
 
     t = 0.0
-    T = 0.005
+    T = 7.5
     deltat = 0.001
     k = Constant(deltat)
     theta = Constant(0.5 + 0.5 * deltat)
