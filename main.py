@@ -188,7 +188,6 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
   param["lb_off_p"] = lb_off
   Jred = ro_stokes.reduced_objective(mesh, domains, boundaries,params, param, red_func=True)
   problem = MinimizationProblem(Jred)
-
   IPOPT = ipopt_so.IPOPTSolver(problem, init_mfs, param)
   x, info = IPOPT.solve(x0)
   x0 = x
@@ -196,6 +195,13 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
   #plt.figure()
   #plot(mesh)
   #plt.show()
+
+xdmf = XDMFFile("./Output/Mesh_Generation/mesh_triangles_final.xdmf")
+xdmf2 = XDMFFile("./Output/Mesh_Generation/facet_mesh_final.xdmf")
+xdmf3 = XDMFFile("./Output/Mesh_Generation/domains_final.xdmf")
+xdmf.write(new_mesh)
+xdmf2.write(new_boundaries)
+xdmf3.write(new_domains)
 
 deformation = ctt.Extension(init_mfs, param).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
 defo = project(deformation, Vn)
