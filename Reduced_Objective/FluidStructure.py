@@ -264,8 +264,8 @@ def reduced_objective(mesh, domains, boundaries, params, param, flag =False, red
         bc_nso_2 = DirichletBC(W.sub(2), V_1, boundaries, params["noslip_obstacle"])  # ns   v
 
         # update pressure boundary condition
-        bc1 = [bc_in_0_1, bc_ns_0, bc_d_0, bc_in_2, bc_ns_2, bc_d_2]
-        bc2 = [bc_in_0_2, bc_ns_0, bc_d_0, bc_in_2, bc_ns_2, bc_d_2]
+        bc1 = [bc_in_0_1, bc_ns_0, bc_d_0, bc_in_2, bc_ns_2, bc_d_2, bc_nso_0, bc_nso_2]
+        bc2 = [bc_in_0_2, bc_ns_0, bc_d_0, bc_in_2, bc_ns_2, bc_d_2, bc_nso_0, bc_nso_2]
         if t <= 2.0:
             solve(F == 0, w, bc1,
                   solver_parameters={"nonlinear_solver": "newton", "newton_solver": {"maximum_iterations": 10}})
