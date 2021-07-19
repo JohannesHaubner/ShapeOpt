@@ -13,7 +13,7 @@ from pyadjoint.reduced_functional_numpy import ReducedFunctionalNumPy
 
 import Control_to_Trafo.dof_to_trafo as ctt
 
-import Reduced_Objective.Stokes as Stokes
+import Reduced_Objective.FluidStructure as Stokes
 
 import cyipopt
 
@@ -142,7 +142,7 @@ class IPOPTSolver(OptimizationSolver):
             #j1 =  self.rfn(deformation.vector()) #self.rfn(deformation)
 
             # add regularization (note that due to preconditioning no matrix is needed)
-            j = j1 + 0.5 * self.param["reg"] * np.dot(x,x)  # regularization
+            j = j1[0] + 0.5 * self.param["reg"] * np.dot(x,x)  # regularization
             return j
 
         def gradient(self, x):
