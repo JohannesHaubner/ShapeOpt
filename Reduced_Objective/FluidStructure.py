@@ -94,8 +94,8 @@ def reduced_objective(mesh, domains, boundaries, params, param, flag =False, red
     aphat = Constant(1e-9)
 
     t = 0.0
-    T = 7.5
-    deltat = 0.001
+    T = 0.02
+    deltat = 0.01
     k = Constant(deltat)
     theta = Constant(0.5 + 0.5 * deltat)
 
@@ -302,7 +302,7 @@ def reduced_objective(mesh, domains, boundaries, params, param, flag =False, red
                 ALE.move(mesh, u_p_inv)
 
             ##########################
-        J += assemble((-1.0 / T * (inner(tJhat * Jhat * rhof * (
+        J += assemble(float(deltat)*(-1.0 / T * (inner(tJhat * Jhat * rhof * (
                 (v - v_) / float(deltat) + ((grad(v) * tFhati * Fhati * (v - (u - u_) / float(deltat))))), phiv) * dxf
                                 - Jhat * tJhat * p * tr(grad(phiv) * tFhati * Fhati) * dxf)
                  + 2.0 * nyf * inner(Jhat * tJhat * (grad(v) * tFhati * Fhati + Fhatti * tFhatti * grad(v).T),
@@ -313,9 +313,10 @@ def reduced_objective(mesh, domains, boundaries, params, param, flag =False, red
 
     def smoothmax(r, eps=1e-4):
         return conditional(gt(r, eps), r - eps / 2, conditional(lt(r, 0), 0, r ** 2 / (2 * eps)))
-    
+
     #objective function
-    J+=assemble(inner(grad(u)*tFhati, grad(u)*tFhati)*tJhat*dx(mesh) +0.5*gammaP * smoothmax(etaP - tJhat)**2*dx(mesh))
+    J += assemble(0.5*gammaP * smoothmax(etaP - tJhat)**2*dx(mesh))
+
     flag = True
     if flag:
       dJ = compute_gradient(J,Control(tu))

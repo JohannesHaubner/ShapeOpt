@@ -4,7 +4,7 @@ import pygmsh, meshio
 import h5py
 
 # resolution
-resolution = 0.025  #0.05 #1 # 0.005 #0.1
+resolution = 0.05  #0.05 #1 # 0.005 #0.1
 
 # geometric properties
 L = 2.5 #2.5 #20            # length of channel
