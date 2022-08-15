@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jun 26 09:27:20 2020
-
-@author: haubnerj
-"""
 from dolfin import *
 from pyadjoint import *
 import numpy as np
@@ -15,6 +8,7 @@ import sys
 sys.path.insert(0, str(here.parent.parent) + "/shapeopt")
 
 import Tools.settings_mesh as tsm
+from Constraints import constraints
 from Control_to_Trafo import Extension
 from Reduced_Objective import reduced_objectives
 
@@ -73,8 +67,6 @@ v = interpolate(Constant("1.0"),V)
 #reduced_objectives[application].test(init_mfs, param)
 
 exit(0)
-
-#ctt.Extension(mesh, boundaries, dmesh, params).test_design_boundary_mesh()
 
 
 #Cv.Volume_Constraint(init_mfs, param["Vol_O"]).test()

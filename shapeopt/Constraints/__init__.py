@@ -1,8 +1,10 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Sep 23 15:48:00 2020
+from .barycenter import Barycenter
+from .volume import Volume
+from .determinant import Determinant
 
-@author: haubnerj
-"""
+constraints = {
+    'volume': Volume,
+    'barycenter': Barycenter,
+    'determinant': Determinant,
+}
 
