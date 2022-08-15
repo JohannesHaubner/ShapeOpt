@@ -21,7 +21,7 @@ class Barycenter(Constraint):
         self.H = param["H"]
 
         
-    def eval(self,y):
+    def eval(self, y):
         L = self.L
         H = self.H
         deformation = ctt.Extension(self.Mesh_, self.param, self.boundary_option, self.extension_option).dof_to_deformation_precond(y)
@@ -33,7 +33,7 @@ class Barycenter(Constraint):
         bc = [bc1, bc2]
         return bc
     
-    def grad(self,y):
+    def grad(self, y):
         L = self.L
         H = self.H
         deformation = ctt.Extension(self.Mesh_, self.param, self.boundary_option, self.extension_option).dof_to_deformation_precond(y)
@@ -52,11 +52,11 @@ class Barycenter(Constraint):
         x0 = interpolate(Expression("(x[0]-0.2)", degree=1), self.Vd).vector().get_local()
         ds = interpolate(Expression("10000*(x[0]-0.2)", degree=1), self.Vd).vector().get_local()
         # ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
-        j0 = self.eval(x0)[0]
-        djx = self.grad(x0)[0]
+        j0 = self.eval(self.Mesh_.vec_to_Vd(x0))[0]
+        djx = self.grad(self.Mesh_.vec_to_Vd(x0))[0]
         # print(djx.max())
         epslist = [0.0005, 0.0001, 0.00005, 0.00001, 0.000005, 0.000001, 0.0000005, 0.0000001, 0.00000005, 0.00000001]
-        ylist = [x0 + eps * ds for eps in epslist]
+        ylist = [self.Mesh_.vec_to_Vd(x0 + eps * ds) for eps in epslist]
         jlist = [self.eval(y)[0] for y in ylist]
         ds_ = ds
         self.perform_first_order_check(jlist, j0, djx, ds_, epslist)

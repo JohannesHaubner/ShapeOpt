@@ -6,15 +6,20 @@ import backend
 from pyadjoint.optimization.optimization_solver import OptimizationSolver
 from pyadjoint.reduced_functional_numpy import ReducedFunctionalNumPy
 
-import src.Control_to_Trafo.dof_to_trafo as ctt
-
-from src import Reduced_Objective as Stokes, Constraints as Cv, Constraints as Cb
+from pathlib import Path
+here = Path(__file__).parent.resolve()
+import sys
+sys.path.insert(0, str(here.parent.parent) + "/shapeopt")
+import Control_to_Trafo.dof_to_trafo as ctt
+from Constraints import constraints
+from Reduced_Objective import reduced_objectives
+from Control_to_Trafo import Extension
 
 import cyipopt
 
 
 class IPOPTSolver(OptimizationSolver):
-    def __init__(self, problem, Mesh_, param, parameters=None):
+    def __init__(self, problem, Mesh_, param, application, constraint_ids, boundary_option, extension_option, parameters=None):
         try:
             import cyipopt
         except ImportError:
@@ -31,8 +36,12 @@ class IPOPTSolver(OptimizationSolver):
         self.rfn = ReducedFunctionalNumPy(self.problem.reduced_functional)
         self.ncontrols = len(self.rfn.get_controls())
         self.rf = self.problem.reduced_functional
-        self.problem_obj = self.create_problem_obj(self)
         self.dmesh = self.Mesh_.get_design_boundary_mesh()
+        self.boundary_option = boundary_option
+        self.extension_option = extension_option
+        self.application = application
+        self.constraint_ids = constraint_ids
+        self.problem_obj = self.create_problem_obj(self)
         
         #self.param.reg contains regularization parameter
         print('Initialization of IPOPTSolver finished')
@@ -115,6 +124,10 @@ class IPOPTSolver(OptimizationSolver):
             self.param = outer.param
             self.Vd = outer.Vd
             self.scale = outer.scalingfactor
+            self.bo = outer.boundary_option
+            self.eo = outer.extension_option
+            self.application = outer.application
+            self.constraint_ids = outer.constraint_ids
             self.mesh = self.Mesh_.get_mesh()
             self.domains = self.Mesh_.get_domains()
             self.boundaries = self.Mesh_.get_boundaries()
@@ -126,16 +139,16 @@ class IPOPTSolver(OptimizationSolver):
             #
             # x to deformation
             print('evaluate objective')
-            deformation = ctt.Extension(self.Mesh_, self.param).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
+            deformation = Extension(self.Mesh_, self.param, self.bo, self.eo).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             #deformation = project(deformation, self.mesh)
 
             # move mesh in direction of deformation
-            j1 = Stokes.reduced_objective(self.mesh, self.domains, self.boundaries, self.params, self.param,
+            j1 = reduced_objectives[self.application].eval(self.mesh, self.domains, self.boundaries, self.params, self.param,
                                           control=deformation)  #
             #j1 =  self.rfn(deformation.vector()) #self.rfn(deformation)
 
             # add regularization (note that due to preconditioning no matrix is needed)
-            j = j1[0] + 0.5 * self.param["reg"] * np.dot(x,x)  # regularization
+            j = j1 + 0.5 * self.param["reg"] * np.dot(x,x)  # regularization
             return j
 
         def gradient(self, x):
@@ -143,11 +156,11 @@ class IPOPTSolver(OptimizationSolver):
             # The callback for calculating the gradient
             #
             print('evaluate derivative of objective function')
-            deformation = ctt.Extension(self.Mesh_, self.param).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
+            deformation = Extension(self.Mesh_, self.param, self.bo, self.eo).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             # deformation = project(deformation, self.mesh)
 
             # compute gradient
-            j, dJf = Stokes.reduced_objective(self.mesh, self.domains, self.boundaries, self.params,
+            j, dJf = reduced_objectives[self.application].eval(self.mesh, self.domains, self.boundaries, self.params,
                                               self.param, flag=True, control=deformation)
             #new_params = [self.__copy_data(p.data()) for p in self.rfn.controls]
             #self.rfn.set_local(new_params, deformation.vector().get_local())
@@ -157,7 +170,7 @@ class IPOPTSolver(OptimizationSolver):
             # ufile = File("./Output/Forward/dJf2.pvd")
             # ufile << dJf
 
-            dJ1 = ctt.Extension(self.Mesh_, self.param).dof_to_deformation_precond_chainrule(dJf.vector(), 2)
+            dJ1 = Extension(self.Mesh_, self.param, self.bo, self.eo).dof_to_deformation_precond_chainrule(dJf.vector(), 2)
             dJ = dJ1 + self.param["reg"] * x  # derivative of the regularization
 
             return dJ

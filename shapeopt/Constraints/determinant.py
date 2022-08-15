@@ -11,7 +11,7 @@ class Determinant(Constraint):
     def __init__(self, Mesh_, param, boundary_option, extension_option):
         # Consider constraint of the form volume >= V
         super().__init__(Mesh_, param, boundary_option, extension_option)
-        self.eta = eta
+        self.eta = param["det_lb"]
         self.scalingfactor = 1.0
         
     def eval(self,x):

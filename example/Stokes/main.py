@@ -8,6 +8,7 @@ import sys
 sys.path.insert(0, str(here.parent.parent) + "/shapeopt")
 
 import Tools.settings_mesh as tsm
+import Ipopt.ipopt_solver as ipopt_solver
 from Constraints import constraints
 from Control_to_Trafo import Extension
 from Reduced_Objective import reduced_objectives
@@ -21,6 +22,8 @@ boundary_option = 'laplace_beltrami'
 extension_option = 'linear_elasticity'
 # governing equations
 application = 'stokes' #'fluid structure' needs to be tested: if no fluid domain assigned --> error since no fluid part of domain
+# constraints
+constraint_ids = ['volume', 'barycenter', 'determinant']
 
 # set and load parameters
 geom_prop = np.load(path_mesh + '/geom_prop.npy', allow_pickle='TRUE').item()
@@ -35,7 +38,7 @@ param = {"reg": 1e-2, # regularization parameter
          "H": geom_prop["heigth_pipe"],
          "relax_eq": 0.0, #relax barycenter
          #"Bary_eps": 0.0, # slack for barycenter
-         #"det_lb": 2e-1, # lower bound for determinant of transformation gradient
+         "det_lb": 2e-1, # lower bound for determinant of transformation gradient
          "maxiter_IPOPT": 50
          }
 
@@ -63,14 +66,11 @@ Vn = init_mfs.get_Vn()
 V = init_mfs.get_V()
 v = interpolate(Constant("1.0"),V)
 
-# test reduced objective
+# test reduced objective and constraints
 #reduced_objectives[application].test(init_mfs, param)
-
-constraints['volume'](init_mfs, param, boundary_option, extension_option).test()
-exit(0)
-#Cv.Volume_Constraint(init_mfs, param["Vol_O"]).test()
-#Cb.Barycenter_Constraint(init_mfs, param).test()
-#Cd.Determinant_Constraint(init_mfs, param["det_lb"]).test()
+#constraints['volume'](init_mfs, param, boundary_option, extension_option).test()
+#constraints['barycenter'](init_mfs, param, boundary_option, extension_option).test()
+#constraints['determinant'](init_mfs, param, boundary_option, extension_option).test()
 
 x0 = interpolate(Constant('0.0'), Vd)
 d0 = interpolate(Constant(('0.0','0.0')), Vn)
@@ -79,17 +79,16 @@ d0 = interpolate(Constant(('0.0','0.0')), Vn)
 param["Vol_DmO"] = assemble(v*dx)
 param["Vol_O"] = param["Vol_D"] - param["Vol_DmO"]
 bo = param["Bary_O"]
-bc = Cb.Barycenter_Constraint(init_mfs, param).eval(x0)
+bc = constraints['barycenter'](init_mfs, param, boundary_option, extension_option).eval(x0)
 param["Bary_O"] = np.add(bc, bo)
 
-#print(param["Bary_O"])
-#Jred = ro_stokes.reduced_objective(mesh, boundaries,params, param, red_func=True)
-#problem = MinimizationProblem(Jred)
+# solve optimization problem
+Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
+problem = MinimizationProblem(Jred)
+ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, boundary_option, extension_option).test_objective()
+#ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids).test_constraints()
+exit(0)
 
-#ipopt_so.IPOPTSolver(problem, init_mfs, param).test_objective()
-#ipopt_so.IPOPTSolver(problem, init_mfs, param).test_constraints()
-#exit(0)
-#
 
 bdfile = File(MPI.comm_self, "./Output/mesh_optimize_test.pvd")
 

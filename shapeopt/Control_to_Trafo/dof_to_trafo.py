@@ -132,7 +132,7 @@ class Extension():
       x = self.Mesh_.Vd_to_vec(vcf)
       return x
   
-    def vec_to_func_precond(self,v):
+    def vec_to_func_precond(self, v):
       """ takes a Vd function, and multiplies with (lumped mass matrix)^0.5 """
       #v = self.Mesh_.vec_to_Vd(x)
       vc = self.M_lumped_m05 * v.vector()
@@ -140,12 +140,12 @@ class Extension():
       v.vector().apply("")
       return v
   
-    def dof_to_deformation_precond(self,x):
+    def dof_to_deformation_precond(self, x):
       xd = self.vec_to_func_precond(x)
       v = self.dof_to_deformation(xd)
       return v
   
-    def dof_to_deformation_precond_chainrule(self,djy, option2):
+    def dof_to_deformation_precond_chainrule(self, djy, option2):
       djy = self.dof_to_deformation_chainrule(djy, option2)
       djyy = Function(self.Vd)
       djyy.vector().set_local(djy)
