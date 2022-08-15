@@ -3,7 +3,7 @@ from dolfin import *
 import numpy as np
 
 class Constraint(object):
-    def __init__(self, Mesh_, param):
+    def __init__(self, Mesh_, param, boundary_option, extension_option):
         self.Mesh_ = Mesh_
         self.mesh = Mesh_.get_mesh()
         self.dim = self.Mesh_.mesh.geometric_dimension()
@@ -11,6 +11,8 @@ class Constraint(object):
         self.Vn = Mesh_.get_Vn()
         self.V = Mesh_.get_V()
         self.param = param
+        self.boundary_option = boundary_option
+        self.extension_option = extension_option
 
     def eval(self, x):
         raise NotImplementedError

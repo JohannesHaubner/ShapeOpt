@@ -8,12 +8,12 @@ sys.path.insert(0, str(here.parent.parent) + "/shapeopt")
 import Control_to_Trafo.dof_to_trafo as ctt
 
 class Barycenter(Constraint):
-    def __init__(self, Mesh_, param):
+    def __init__(self, Mesh_, param, boundary_option, extension_option):
         # Volume_mesh_and_obstacle is a constant that has to be given manually and
         # describes the volume of the hold all domain (mesh + obstacle to be optimized)
         # Barycenter_mesh_and_obstacle is a vector that describes the barycenter
         # of the hold all domain
-        super().__init__(Mesh_, param)
+        super().__init__(Mesh_, param, boundary_option, extension_option)
         self.scalingfactor = 1.0
         self.Bary_O = param["Bary_O"]
         self.Vol = param["Vol_DmO"]
@@ -24,7 +24,7 @@ class Barycenter(Constraint):
     def eval(self,y):
         L = self.L
         H = self.H
-        deformation = ctt.Extension(self.Mesh_, self.param).dof_to_deformation_precond(y)
+        deformation = ctt.Extension(self.Mesh_, self.param, self.boundary_option, self.extension_option).dof_to_deformation_precond(y)
         x = SpatialCoordinate(self.mesh)
         dF = Identity(self.dim) + grad(deformation)
         Jhat = det(dF)
@@ -36,14 +36,14 @@ class Barycenter(Constraint):
     def grad(self,y):
         L = self.L
         H = self.H
-        deformation = ctt.Extension(self.Mesh_, self.param).dof_to_deformation_precond(y)
+        deformation = ctt.Extension(self.Mesh_, self.param, self.boundary_option, self.extension_option).dof_to_deformation_precond(y)
         x = SpatialCoordinate(self.mesh)
         form1 = (x[0]+deformation[0])*det(Identity(self.dim) + grad(deformation)) * dx
         form2 = (x[1]+deformation[1])*det(Identity(self.dim) + grad(deformation)) * dx
         df1 = -1.0/ (L * H - self.Vol)*assemble(derivative(form1, deformation))
         df2 = -1.0/ (L * H - self.Vol)*assemble(derivative(form2, deformation))
-        cgf1 = ctt.Extension(self.Mesh_,self.param).dof_to_deformation_precond_chainrule(df1, 2)
-        cgf2 = ctt.Extension(self.Mesh_,self.param).dof_to_deformation_precond_chainrule(df2, 2)
+        cgf1 = ctt.Extension(self.Mesh_,self.param, self.boundary_option, self.extension_option).dof_to_deformation_precond_chainrule(df1, 2)
+        cgf2 = ctt.Extension(self.Mesh_,self.param, self.boundary_option, self.extension_option).dof_to_deformation_precond_chainrule(df2, 2)
         return [cgf1, cgf2]
 
     def test(self):

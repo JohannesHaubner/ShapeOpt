@@ -66,12 +66,11 @@ v = interpolate(Constant("1.0"),V)
 # test reduced objective
 #reduced_objectives[application].test(init_mfs, param)
 
+constraints['volume'](init_mfs, param, boundary_option, extension_option).test()
 exit(0)
-
-
 #Cv.Volume_Constraint(init_mfs, param["Vol_O"]).test()
 #Cb.Barycenter_Constraint(init_mfs, param).test()
-##Cd.Determinant_Constraint(init_mfs, param["det_lb"]).test()
+#Cd.Determinant_Constraint(init_mfs, param["det_lb"]).test()
 
 x0 = interpolate(Constant('0.0'), Vd)
 d0 = interpolate(Constant(('0.0','0.0')), Vn)
