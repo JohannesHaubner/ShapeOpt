@@ -30,10 +30,12 @@ params = init_mfs.get_params()
 dnormal = init_mfs.get_dnormalf()
 
 
-from Control_to_Trafo.Boundary_Operator import boundary_operators
-boundary_operators['laplace_beltrami'](dmesh, dnormal, 0.0).test()
-from Control_to_Trafo.Extension_Operator import extension_operators
-extension_operators['linear_elasticity'](mesh, boundaries, params).test()
+#from Control_to_Trafo.Boundary_Operator import boundary_operators
+#boundary_operators['laplace_beltrami'](dmesh, dnormal, 0.0).test()
+#from Control_to_Trafo.Extension_Operator import extension_operators
+#extension_operators['linear_elasticity'](mesh, boundaries, params).test()
+from Control_to_Trafo import Extension
+Extension.print_options()
 breakpoint()
 
 ###

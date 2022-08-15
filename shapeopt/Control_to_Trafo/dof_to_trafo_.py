@@ -158,7 +158,7 @@ class Extension():
       # TODO: write the values of x at the values of xf
       return xf
 
-    def biharmonic(self,xd):
+    def biharmonic(self, xd):
       # x: corresponds to vector valued function in self.Vdn
       #print('Exension.biharmonic started.......................')
 

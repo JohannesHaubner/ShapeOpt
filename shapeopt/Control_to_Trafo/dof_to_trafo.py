@@ -86,7 +86,12 @@ class Extension():
 
     @staticmethod
     def print_options():
-      breakpoint()
+      print('Options for boundary_option:')
+      for key, value in boundary_operators.items():
+        print('...', key)
+      print('\nOptions for extension_option:')
+      for key, value in extension_operators.items():
+        print('...', key)
 
     def dof_to_deformation(self, x):
       # x: corresponds to control in self.Vd
