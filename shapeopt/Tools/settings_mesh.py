@@ -15,14 +15,14 @@ import matplotlib.pyplot as plt
 
 
 class Initialize_Mesh_and_FunctionSpaces():
-    def __init__(self, load_mesh=False):
+    def __init__(self, path_mesh, load_mesh=False):
       if load_mesh:
-        stri = "./Output/Mesh_Generation/mesh_triangles_new.xdmf"
-        stri2 = "./Output/Mesh_Generation/facet_mesh_new.xdmf"
-        stri3 = "./Output/Mesh_Generation/domains_new.xdmf"
+        stri = path_mesh + "/mesh_triangles_new.xdmf"
+        stri2 = path_mesh + "/facet_mesh_new.xdmf"
+        stri3 = path_mesh + "/domains_new.xdmf"
       else:
-        stri = "./Output/Mesh_Generation/mesh_triangles.xdmf"
-        stri2 = "./Output/Mesh_Generation/facet_mesh.xdmf"
+        stri = path_mesh + "/mesh_triangles.xdmf"
+        stri2 = path_mesh + "/facet_mesh.xdmf"
 
       # load mesh
       mesh = Mesh()
@@ -91,7 +91,7 @@ class Initialize_Mesh_and_FunctionSpaces():
       bdfile << boundaries
 
       # load mesh parameters
-      params = np.load('./Mesh_Generation/params.npy', allow_pickle='TRUE').item()
+      params = np.load(path_mesh + '/params.npy', allow_pickle='TRUE').item()
 
       # define design boundary mesh on each process
 

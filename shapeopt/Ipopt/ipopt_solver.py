@@ -1,23 +1,16 @@
 from dolfin import *
 from dolfin_adjoint import *
-from copy import deepcopy
 import numpy as np
 import backend
-
-import Constraints.volume as Cv
-import Constraints.barycenter_ as Cb
-import Constraints.determinant as Cd
 
 from pyadjoint.optimization.optimization_solver import OptimizationSolver
 from pyadjoint.reduced_functional_numpy import ReducedFunctionalNumPy
 
-import Control_to_Trafo.dof_to_trafo as ctt
+import src.Control_to_Trafo.dof_to_trafo as ctt
 
-import Reduced_Objective.FluidStructure as Stokes
+from src import Reduced_Objective as Stokes, Constraints as Cv, Constraints as Cb
 
 import cyipopt
-
-import matplotlib.pyplot as plt
 
 
 class IPOPTSolver(OptimizationSolver):

@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jun 26 08:39:51 2020
-
-@author: Johannes Haubner
-"""
-
 import numpy as np
 from ogs5py import OGS
 import pygmsh, meshio
@@ -26,7 +18,7 @@ outflow = 2
 walls = 3
 obstacle = 4
 
-params = {"inflow" : inflow, 
+params = {"inflow" : inflow,
           "outflow": outflow,
           "noslip": walls,
           "design": obstacle
@@ -41,15 +33,25 @@ geom_prop = {"barycenter_hold_all_domain": [0.5*L, 0.5*H],
              "heigth_pipe": H,
              "barycenter_obstacle": [ c[0], c[1]],
              }
-np.save('./Mesh_Generation/params.npy', params)
-np.save('./Mesh_Generation/geom_prop.npy', geom_prop)
+np.save('./mesh/params.npy', params)
+np.save('./mesh/geom_prop.npy', geom_prop)
 
 # Initialize empty geometry using the build in kernel in GMSH
 geometry = pygmsh.geo.Geometry()
 # Fetch model we would like to add data to
 model = geometry.__enter__()
 # Add circle
-circle = model.add_circle(c, r, mesh_size=0.1*resolution)
+pc = model.add_point(c)
+sin = 0.5 # sin(30°)
+cos = np.sqrt(3)/2 # cos(30°)
+pc0 = model.add_point(c)
+pc1 = model.add_point((c[0]-r, c[1], 0), mesh_size=0.1*resolution)
+pc2 = model.add_point((c[0]+cos*r, c[1]+sin*r, 0), mesh_size=0.1*resolution)
+pc3 = model.add_point((c[0]+cos*r, c[1]-sin*r,0), mesh_size=0.1*resolution)
+circle1 = model.add_circle_arc(pc2, pc0, pc1)
+circle2 = model.add_circle_arc(pc1, pc0, pc3)
+circle3 = model.add_circle_arc(pc3, pc0, pc2)
+circle = model.add_curve_loop([circle1, circle2, circle3])
 
 # Add points with finer resolution on left side
 points = [model.add_point((0, 0, 0), mesh_size=resolution),
@@ -64,7 +66,7 @@ channel_lines = [model.add_line(points[i], points[i+1])
 # Create a line loop and plane surface for meshing
 channel_loop = model.add_curve_loop(channel_lines)
 plane_surface = model.add_plane_surface(
-    channel_loop, holes=[circle.curve_loop])
+    channel_loop, holes=[circle])
 
 # Call gmsh kernel before add physical entities
 model.synchronize()
@@ -72,18 +74,18 @@ model.synchronize()
 volume_marker = 6
 model.add_physical([channel_lines[0]], "inflow") # mark inflow boundary with 1
 model.add_physical([channel_lines[2]], "outflow") # mark outflow boundary with 2
-model.add_physical([channel_lines[1], channel_lines[3]], "walls") # mark walls with 3
-model.add_physical(circle.curve_loop.curves, "obstacle") # mark obstacle with 4
+model.add_physical([channel_lines[1], channel_lines[3], circle3], "walls") # mark walls with 3
+model.add_physical([circle1, circle2], "obstacle") # mark obstacle with 4
 model.add_physical([plane_surface], "Volume")
 
 geometry.generate_mesh(dim=2)
 import gmsh
-gmsh.write("mesh.msh")
+gmsh.write("./mesh/mesh.msh")
 gmsh.clear()
 geometry.__exit__()
 
 import meshio
-mesh_from_file = meshio.read("mesh.msh")
+mesh_from_file = meshio.read("./mesh/mesh.msh")
 
 import numpy
 def create_mesh(mesh, cell_type, prune_z=False):
@@ -95,14 +97,14 @@ def create_mesh(mesh, cell_type, prune_z=False):
     return out_mesh
 
 line_mesh = create_mesh(mesh_from_file, "line", prune_z=True)
-meshio.write("./Output/Mesh_Generation/facet_mesh.xdmf", line_mesh)
+meshio.write("./mesh/facet_mesh.xdmf", line_mesh)
 
 triangle_mesh = create_mesh(mesh_from_file, "triangle", prune_z=True)
-meshio.write("./Output/Mesh_Generation/mesh_triangles.xdmf", triangle_mesh)
+meshio.write("./mesh/mesh_triangles.xdmf", triangle_mesh)
 
 #mesh = line_mesh
-#mesh_boundary = meshio.Mesh(points=mesh.points, 
-#                                               cells={"line": mesh.get_cells_type("line")}, 
+#mesh_boundary = meshio.Mesh(points=mesh.points,
+#                                               cells={"line": mesh.get_cells_type("line")},
 #                                               cell_data={"name_to_read": [mesh.get_cell_data("gmsh:physical", "line")]})
 #meshio.write("../Output/Mesh_Generation/mesh_boundary.xdmf", mesh_boundary)
 
@@ -110,4 +112,3 @@ meshio.write("./Output/Mesh_Generation/mesh_triangles.xdmf", triangle_mesh)
 #model = OGS()
 #model.msh.generate("gmsh", geo_object=geom)
 #model.msh.show()
-

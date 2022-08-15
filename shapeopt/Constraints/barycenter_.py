@@ -9,7 +9,7 @@ Created on Wed Sep 23 15:48:29 2020
 from dolfin import *
 #from dolfin_adjoint import *
 import numpy as np
-import Control_to_Trafo.dof_to_trafo as ctt
+import src.Control_to_Trafo.dof_to_trafo as ctt
 
 class Barycenter_Constraint():
     def __init__(self, Mesh_, param):

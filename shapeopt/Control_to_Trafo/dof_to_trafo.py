@@ -6,20 +6,20 @@ Created on Fri Jul 10 08:45:52 2020
 @author: haubnerj
 """
 from dolfin import *
-#from dolfin_adjoint import *
 import numpy as np
-import matplotlib.pyplot as plt
 
-import Control_to_Trafo.Extension_Equation.Elastic_extension_subdom as extension
-import Control_to_Trafo.Boundary_Operator.LaplaceBeltrami as boundary
+from .Boundary_Operator import boundary_operators
+from .Extension_Operator import extension_operators
+
 
 class Extension():
-    def __init__(self, Mesh_, param):
+    def __init__(self, Mesh_, param, boundary_option : str, extension_option : str):
+      """
       # mesh: reference mesh
-      # boundaries: labels for boundary
-      # dmesh: design boundary mesh
-      # Vd: function space in which the control lives
       # params: params.design, params.inflow, params.outflow, params.noslip
+      # boundary_option: boundary operator (to see options run Extension.print_options())
+      # extension_option: extension operator (to see options run Extension.print_options())
+      """
       mesh = Mesh_.get_mesh()
       dmesh = Mesh_.get_design_boundary_mesh()
       boundaries = Mesh_.get_boundaries()
@@ -71,6 +71,23 @@ class Extension():
       #print((self.M_lumped_m05 * func.vector()).get_local())
       #exit(0)
 
+      self.boundary_option = boundary_option
+      self.extension_option = extension_option
+      try:
+        self.extension_operator = extension_operators[self.extension_option]
+      except:
+        print('Extension operator specified in extension_option not implemented. \
+               Run Extension.print_options() to see options for extension operator')
+      try:
+        self.boundary_operator = boundary_operators[self.boundary_option]
+      except:
+        print('Boundary operator specified in boundary_option not implemented. \
+               Run Extension.print_options() to see options for extension operator')
+
+    @staticmethod
+    def print_options():
+      breakpoint()
+
     def dof_to_deformation(self, x):
       # x: corresponds to control in self.Vd
       #xd = boundary.Boundary_Operator(self.dmesh, self.dnormalf, self.lb_off).eval(x)
@@ -79,9 +96,9 @@ class Extension():
       #deformation = extension.Extension(self.mesh, self.boundaries, self.params).eval(xd)
 
       ## strategy 3
-      xd = boundary.Boundary_Operator(self.dmesh, self.dnormalf, self.lb_off).eval(x) #self.lb_off).eval(x)
+      xd = self.boundary_operator(self.dmesh, self.dnormalf, self.lb_off).eval(x) #self.lb_off).eval(x)
       xd = self.Mesh_.Vdn_to_Vn(xd)
-      deformation = extension.Extension(self.mesh, self.domains, self.boundaries, self.params).eval(xd)
+      deformation = self.extension_operator(self.mesh, self.domains, self.boundaries, self.params).eval(xd)
       ###
       return deformation
 
@@ -94,9 +111,9 @@ class Extension():
       #djy = boundary.Boundary_Operator(self.dmesh, self.dnormalf, self.lb_off).chainrule(djxdf)
 
       ### strategy 3
-      djxd = extension.Extension(self.mesh, self.domains, self.boundaries, self.params).chainrule(djy, 1, option2)
+      djxd = self.extension_operator(self.mesh, self.domains, self.boundaries, self.params).chainrule(djy, 1, option2)
       djxdf = self.Mesh_.Vn_to_Vdn(djxd)
-      djy = boundary.Boundary_Operator(self.dmesh, self.dnormalf, self.lb_off).chainrule(djxdf)
+      djy = self.boundary_operator(self.dmesh, self.dnormalf, self.lb_off).chainrule(djxdf)
       ###
       return djy
 

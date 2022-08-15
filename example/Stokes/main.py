@@ -8,47 +8,33 @@ Created on Fri Jun 26 09:27:20 2020
 from dolfin import *
 from pyadjoint import *
 
-import Reduced_Objective.FluidStructure as ro_stokes
-import Tools.save_load_obj as tool
-import Control_to_Trafo.dof_to_trafo as ctt
+from pathlib import Path
+here = Path(__file__).parent.resolve()
+import sys
+sys.path.insert(0, str(here.parent.parent) + "/shapeopt")
 
 import Tools.settings_mesh as tsm
-#import Tools.settings_mesh_storagebad as tsm
-import Constraints.volume as Cv
-import Constraints.barycenter_ as Cb
-import Constraints.determinant as Cd
-import Ipopt.ipopt_solver as ipopt_so #_pa as ipopt_so
-import numpy as np
-
-import Mesh_Postprocessing.post_process as mpp
-
-import meshio
-
-
-#from mpi4py import MPI
-from pyadjoint.overloaded_type import create_overloaded_object
-
-##
-import Control_to_Trafo.Extension_Equation.Elastic_extension as extension
-import Control_to_Trafo.Boundary_Operator.LaplaceBeltrami as boundary
 
 stop_annotating()
 
-import matplotlib.pyplot as plt
-
-#print('---------------------------------------------------------------------')
-#print('main.py started......................................................')
-#print('---------------------------------------------------------------------')
+# specify path of directory that contains the files 'mesh_triangles.xdmf' and 'facet_mesh.xdmf'
+path_mesh = str(here) + "/mesh"
 
 #load mesh
-
-init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces()
+init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh)
 mesh = init_mfs.get_mesh()
 dmesh = init_mfs.get_design_boundary_mesh()
 boundaries = init_mfs.get_boundaries()
 domains = init_mfs.get_domains()
 params = init_mfs.get_params()
 dnormal = init_mfs.get_dnormalf()
+
+
+from Control_to_Trafo.Boundary_Operator import boundary_operators
+boundary_operators['laplace_beltrami'](dmesh, dnormal, 0.0).test()
+from Control_to_Trafo.Extension_Operator import extension_operators
+extension_operators['linear_elasticity'](mesh, boundaries, params).test()
+breakpoint()
 
 ###
 #extension.Extension(mesh, boundaries, params).test()
@@ -161,10 +147,10 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
       xdmf2.write(new_boundaries)
       xdmf3.write(new_domains)
 
-      init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(load_mesh=True)
+      init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh = path_mesh, load_mesh=True)
   else:
       bdfile << defo
-      init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces()
+      init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh = path_mesh)
   mesh = init_mfs.get_mesh()
   dmesh = init_mfs.get_design_boundary_mesh()
   boundaries = init_mfs.get_boundaries()
