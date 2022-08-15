@@ -103,7 +103,7 @@ class Extension():
       ## strategy 3
       xd = self.boundary_operator(self.dmesh, self.dnormalf, self.lb_off).eval(x) #self.lb_off).eval(x)
       xd = self.Mesh_.Vdn_to_Vn(xd)
-      deformation = self.extension_operator(self.mesh, self.domains, self.boundaries, self.params).eval(xd)
+      deformation = self.extension_operator(self.mesh, self.boundaries, self.params).eval(xd)
       ###
       return deformation
 
@@ -116,7 +116,7 @@ class Extension():
       #djy = boundary.Boundary_Operator(self.dmesh, self.dnormalf, self.lb_off).chainrule(djxdf)
 
       ### strategy 3
-      djxd = self.extension_operator(self.mesh, self.domains, self.boundaries, self.params).chainrule(djy, 1, option2)
+      djxd = self.extension_operator(self.mesh, self.boundaries, self.params).chainrule(djy, 1, option2)
       djxdf = self.Mesh_.Vn_to_Vdn(djxd)
       djy = self.boundary_operator(self.dmesh, self.dnormalf, self.lb_off).chainrule(djxdf)
       ###

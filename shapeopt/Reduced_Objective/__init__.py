@@ -1,8 +1,8 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jun 26 08:50:16 2020
+from .Stokes import Stokes
+from .FluidStructure import FluidStructure
 
-@author: haubnerj
-"""
+reduced_objectives = {
+    'fluid_structure': FluidStructure(),
+    'stokes': Stokes(),
+}
 
