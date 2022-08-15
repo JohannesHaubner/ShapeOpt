@@ -7,6 +7,7 @@ Created on Fri Jun 26 09:27:20 2020
 """
 from dolfin import *
 from pyadjoint import *
+import numpy as np
 
 from pathlib import Path
 here = Path(__file__).parent.resolve()
@@ -14,51 +15,21 @@ import sys
 sys.path.insert(0, str(here.parent.parent) + "/shapeopt")
 
 import Tools.settings_mesh as tsm
+from Control_to_Trafo import Extension
+from Reduced_Objective import reduced_objectives
 
 stop_annotating()
 
 # specify path of directory that contains the files 'mesh_triangles.xdmf' and 'facet_mesh.xdmf'
 path_mesh = str(here) + "/mesh"
+# specify boundary and extension operator (use Extension.print_options())
+boundary_option = 'laplace_beltrami'
+extension_option = 'linear_elasticity'
+# governing equations
+application = 'stokes' #'fluid structure' needs to be tested: if no fluid domain assigned --> error since no fluid part of domain
 
-#load mesh
-init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh)
-mesh = init_mfs.get_mesh()
-dmesh = init_mfs.get_design_boundary_mesh()
-boundaries = init_mfs.get_boundaries()
-domains = init_mfs.get_domains()
-params = init_mfs.get_params()
-dnormal = init_mfs.get_dnormalf()
-
-
-#from Control_to_Trafo.Boundary_Operator import boundary_operators
-#boundary_operators['laplace_beltrami'](dmesh, dnormal, 0.0).test()
-#from Control_to_Trafo.Extension_Operator import extension_operators
-#extension_operators['linear_elasticity'](mesh, boundaries, params).test()
-from Control_to_Trafo import Extension
-Extension.print_options()
-breakpoint()
-
-###
-#extension.Extension(mesh, boundaries, params).test()
-#boundary.Boundary_Operator(dmesh, dnormal, 0.0).test()
-#ctt.Extension(init_mfs).test_dof_to_deformation_precond()
-
-#function space in which the control lives
-Vd = init_mfs.get_Vd()
-Vn = init_mfs.get_Vn()
-V = init_mfs.get_V()
-v = interpolate(Constant("1.0"),V)
-
-## test deformation
-#vn = interpolate(Constant(("1.0", "1.0")), Vn)
-#init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(deformation=vn)
-#exit(0)
-
-#ctt.Extension(init_mfs).test_dof_to_deformation_precond()
-
-
-geom_prop = np.load('./Mesh_Generation/geom_prop.npy', allow_pickle='TRUE').item()
-
+# set and load parameters
+geom_prop = np.load(path_mesh + '/geom_prop.npy', allow_pickle='TRUE').item()
 param = {"reg": 1e-2, # regularization parameter
          "lb_off_p": 1.0, #Laplace Beltrami weighting
          "Vol_D": geom_prop["volume_hold_all_domain"], # volume parameter
@@ -74,24 +45,43 @@ param = {"reg": 1e-2, # regularization parameter
          "maxiter_IPOPT": 50
          }
 
+#load mesh
+init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh)
+mesh = init_mfs.get_mesh()
+dmesh = init_mfs.get_design_boundary_mesh()
+boundaries = init_mfs.get_boundaries()
+domains = init_mfs.get_domains()
+params = init_mfs.get_params()
+dnormal = init_mfs.get_dnormalf()
 
-#ro_stokes.test(init_mfs, param)
-#exit(0)
+
+# Print options for extensions
+#Extension.print_options()
+#from Control_to_Trafo.Boundary_Operator import boundary_operators
+#boundary_operators['laplace_beltrami'](dmesh, dnormal, 0.0).test()
+#from Control_to_Trafo.Extension_Operator import extension_operators
+#extension_operators['linear_elasticity'](mesh, boundaries, params).test()
+#Extension(init_mfs, param, boundary_option='laplace_beltrami', extension_option='linear_elasticity').test_dof_to_deformation_precond()
+
+#function space in which the control lives
+Vd = init_mfs.get_Vd()
+Vn = init_mfs.get_Vn()
+V = init_mfs.get_V()
+v = interpolate(Constant("1.0"),V)
+
+# test reduced objective
+#reduced_objectives[application].test(init_mfs, param)
+
+exit(0)
 
 #ctt.Extension(mesh, boundaries, dmesh, params).test_design_boundary_mesh()
 
-#xf = Function(Vd)
-
-
-
-#print(xf.vector().max())
-#exit(0)
 
 #Cv.Volume_Constraint(init_mfs, param["Vol_O"]).test()
 #Cb.Barycenter_Constraint(init_mfs, param).test()
 ##Cd.Determinant_Constraint(init_mfs, param["det_lb"]).test()
 
-x0 = interpolate(Constant('0.0'),Vd)
+x0 = interpolate(Constant('0.0'), Vd)
 d0 = interpolate(Constant(('0.0','0.0')), Vn)
 
 # update discretized params
@@ -112,7 +102,7 @@ param["Bary_O"] = np.add(bc, bo)
 
 bdfile = File(MPI.comm_self, "./Output/mesh_optimize_test.pvd")
 
-x0 = interpolate(Constant("0.0"),Vd).vector().get_local()
+x0 = interpolate(Constant("0.0"), Vd).vector().get_local()
 
 deform_mesh = True
 
@@ -120,7 +110,7 @@ param["lb_off_p"] = 1.0
 
 for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:  #[1e0, 0.5, 0.25, 0.125, 0.1, 0.05, 0.025, 0.0125, 0.01, 0.005, 0.0025, 0.00125, 0.001, 0.0001, 0.00001, 1e-6]:
 
-  deformation = ctt.Extension(init_mfs, param).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
+  deformation = Extension(init_mfs, param, boundary_option='laplace_beltrami', extension_option='linear_elasticity').dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
   defo = project(deformation, Vn)
   ALE.move(mesh, defo, annotate=False)
   if deform_mesh == True:
@@ -149,10 +139,10 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
       xdmf2.write(new_boundaries)
       xdmf3.write(new_domains)
 
-      init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh = path_mesh, load_mesh=True)
+      init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh, load_mesh=True)
   else:
       bdfile << defo
-      init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh = path_mesh)
+      init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh)
   mesh = init_mfs.get_mesh()
   dmesh = init_mfs.get_design_boundary_mesh()
   boundaries = init_mfs.get_boundaries()
@@ -174,7 +164,7 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
   set_working_tape(Tape())
   #param["reg"] = reg
   param["lb_off_p"] = lb_off
-  Jred = ro_stokes.reduced_objective(mesh, domains, boundaries,params, param, red_func=True)
+  Jred = reduced_objectives[application].eval(mesh, domains, boundaries,params, param, red_func=True)
   problem = MinimizationProblem(Jred)
   IPOPT = ipopt_so.IPOPTSolver(problem, init_mfs, param)
   x, info = IPOPT.solve(x0)
@@ -191,7 +181,7 @@ xdmf.write(new_mesh)
 xdmf2.write(new_boundaries)
 xdmf3.write(new_domains)
 
-deformation = ctt.Extension(init_mfs, param).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
+deformation = Extension(init_mfs, param, boundary_option='laplace_beltrami', extension_option='linear_elasticity').dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
 defo = project(deformation, Vn)
 ALE.move(mesh, defo, annotate=False)
 bdfile << defo
