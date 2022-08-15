@@ -13,6 +13,9 @@ class Determinant(Constraint):
         super().__init__(Mesh_, param, boundary_option, extension_option)
         self.eta = param["det_lb"]
         self.scalingfactor = 1.0
+
+    def output_dim(self):
+        return 1
         
     def eval(self,x):
         # x dof

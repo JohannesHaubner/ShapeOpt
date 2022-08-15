@@ -23,7 +23,7 @@ extension_option = 'linear_elasticity'
 # governing equations
 application = 'stokes' #'fluid structure' needs to be tested: if no fluid domain assigned --> error since no fluid part of domain
 # constraints
-constraint_ids = ['volume', 'barycenter', 'determinant']
+constraint_ids = ['volume', 'barycenter', 'determinant'] #needs to be a list
 
 # set and load parameters
 geom_prop = np.load(path_mesh + '/geom_prop.npy', allow_pickle='TRUE').item()
@@ -85,9 +85,10 @@ param["Bary_O"] = np.add(bc, bo)
 # solve optimization problem
 Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
 problem = MinimizationProblem(Jred)
-ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, boundary_option, extension_option).test_objective()
-#ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids).test_constraints()
-exit(0)
+#ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, boundary_option, extension_option).test_objective()
+#constraint_ids_ = ['volume'] #only works for scalar valued constraints
+#ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids_, boundary_option, extension_option).test_constraints() #only works for scalar valued constraints
+#exit(0)
 
 
 bdfile = File(MPI.comm_self, "./Output/mesh_optimize_test.pvd")

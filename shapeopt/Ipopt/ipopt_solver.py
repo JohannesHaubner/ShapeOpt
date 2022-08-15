@@ -11,7 +11,7 @@ here = Path(__file__).parent.resolve()
 import sys
 sys.path.insert(0, str(here.parent.parent) + "/shapeopt")
 import Control_to_Trafo.dof_to_trafo as ctt
-from Constraints import constraints
+from Constraints import constraints as constraints_
 from Reduced_Objective import reduced_objectives
 from Control_to_Trafo import Extension
 
@@ -19,7 +19,7 @@ import cyipopt
 
 
 class IPOPTSolver(OptimizationSolver):
-    def __init__(self, problem, Mesh_, param, application, constraint_ids, boundary_option, extension_option, parameters=None):
+    def __init__(self, problem, Mesh_, param, application, constraint_ids : list, boundary_option, extension_option, parameters=None):
         try:
             import cyipopt
         except ImportError:
@@ -179,10 +179,14 @@ class IPOPTSolver(OptimizationSolver):
             #
             # The callback for calculating the constraints
             # print('evaluate constraint')
-            v_ct = Cv.Volume_Constraint(self.Mesh_, self.param).eval(self.Mesh_.vec_to_Vd(x))
-            b_ct = Cb.Barycenter_Constraint(self.Mesh_, self.param).eval(self.Mesh_.vec_to_Vd(x))
-            # d_ct = Cd.Determinant_Constraint(self.Mesh_, self.param["det_lb"]).eval(x)
-            con = self.scale * np.array((v_ct, b_ct[0], b_ct[1]))  # , d_ct))
+            cs = []
+            for c in self.constraint_ids:
+                cs_ = constraints_[c](self.Mesh_, self.param, self.bo, self.eo).eval(self.Mesh_.vec_to_Vd(x))
+                if isinstance(cs_, float):
+                    cs.append([cs_])
+                else:
+                    cs.append(cs_)
+            con = self.scale * np.concatenate(cs, axis=0, out=None)
             return con
 
         def jacobian(self, x):
@@ -190,10 +194,18 @@ class IPOPTSolver(OptimizationSolver):
             # The callback for calculating the Jacobian
             #
             # print('evaluate jacobian')
-            b_ct_d = Cb.Barycenter_Constraint(self.Mesh_, self.param).grad(self.Mesh_.vec_to_Vd(x))
-            v_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param).grad(self.Mesh_.vec_to_Vd(x))
-            # d_ct_d = Cv.Volume_Constraint(self.Mesh_, self.param["det_lb"]).grad(x)
-            jaccon = self.scale * np.concatenate((v_ct_d, b_ct_d[0], b_ct_d[1]))  # , d_ct_d))
+            #b_ct_d = constraints_['barycenter'](self.Mesh_, self.param, self.bo, self.eo).grad(self.Mesh_.vec_to_Vd(x))
+            #v_ct_d = constraints_['volume'](self.Mesh_, self.param, self.bo, self.eo).grad(self.Mesh_.vec_to_Vd(x))
+            #jaccon1 = self.scale * np.concatenate((v_ct_d, b_ct_d[0], b_ct_d[1]))  # , d_ct_d))
+            cs = []
+            for c in self.constraint_ids:
+                cs_ = constraints_[c](self.Mesh_, self.param, self.bo, self.eo).grad(self.Mesh_.vec_to_Vd(x))
+                if isinstance(cs_, list):
+                    for i in range(len(cs_)):
+                        cs.append(cs_[i])
+                else:
+                    cs.append(cs_)
+            jaccon = self.scale * np.concatenate(cs, axis=0, out=None)
             return jaccon
 
 
@@ -271,8 +283,13 @@ class IPOPTSolver(OptimizationSolver):
         min_float = np.finfo(np.double).min
 
         cr = self.param["relax_eq"]
-        cl = [0.0, -cr, -cr] #, min_float]
-        cu = [0.0, cr, cr] #, 0.0]
+        cl = [] #[0.0, -cr, -cr] #, min_float]
+        cu = [] #[0.0, cr, cr] #, 0.0]
+        for c in self.constraint_ids:
+            dim = constraints_[c](self.Mesh_, self.param, self.bo, self.eo).output_dim()
+            cl += [-cr] * dim
+            cu += [ cr] * dim
+        breakpoint()
 
         ub = np.array([max_float] * len(x0))
         lb = np.array([min_float] * len(x0))

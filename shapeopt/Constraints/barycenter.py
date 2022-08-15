@@ -20,6 +20,8 @@ class Barycenter(Constraint):
         self.L = param["L"]
         self.H = param["H"]
 
+    def output_dim(self):
+        return self.mesh.geometry().dim()
         
     def eval(self, y):
         L = self.L
