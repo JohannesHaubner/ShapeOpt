@@ -286,10 +286,9 @@ class IPOPTSolver(OptimizationSolver):
         cl = [] #[0.0, -cr, -cr] #, min_float]
         cu = [] #[0.0, cr, cr] #, 0.0]
         for c in self.constraint_ids:
-            dim = constraints_[c](self.Mesh_, self.param, self.bo, self.eo).output_dim()
+            dim = constraints_[c](self.Mesh_, self.param, self.boundary_option, self.extension_option).output_dim()
             cl += [-cr] * dim
             cu += [ cr] * dim
-        breakpoint()
 
         ub = np.array([max_float] * len(x0))
         lb = np.array([min_float] * len(x0))

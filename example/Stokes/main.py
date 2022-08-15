@@ -4,11 +4,13 @@ import numpy as np
 
 from pathlib import Path
 here = Path(__file__).parent.resolve()
-import sys
+import sys, os
 sys.path.insert(0, str(here.parent.parent) + "/shapeopt")
 
 import Tools.settings_mesh as tsm
+import Mesh_Postprocessing.post_process as mpp
 import Ipopt.ipopt_solver as ipopt_solver
+
 from Constraints import constraints
 from Control_to_Trafo import Extension
 from Reduced_Objective import reduced_objectives
@@ -23,7 +25,7 @@ extension_option = 'linear_elasticity'
 # governing equations
 application = 'stokes' #'fluid structure' needs to be tested: if no fluid domain assigned --> error since no fluid part of domain
 # constraints
-constraint_ids = ['volume', 'barycenter', 'determinant'] #needs to be a list
+constraint_ids = ['volume', 'barycenter'] #needs to be a list
 
 # set and load parameters
 geom_prop = np.load(path_mesh + '/geom_prop.npy', allow_pickle='TRUE').item()
@@ -52,7 +54,7 @@ params = init_mfs.get_params()
 dnormal = init_mfs.get_dnormalf()
 
 
-# Print options for extensions
+# Print options for extensions --> in test file
 #Extension.print_options()
 #from Control_to_Trafo.Boundary_Operator import boundary_operators
 #boundary_operators['laplace_beltrami'](dmesh, dnormal, 0.0).test()
@@ -66,7 +68,7 @@ Vn = init_mfs.get_Vn()
 V = init_mfs.get_V()
 v = interpolate(Constant("1.0"),V)
 
-# test reduced objective and constraints
+# test reduced objective and constraints --> in test file
 #reduced_objectives[application].test(init_mfs, param)
 #constraints['volume'](init_mfs, param, boundary_option, extension_option).test()
 #constraints['barycenter'](init_mfs, param, boundary_option, extension_option).test()
@@ -85,13 +87,15 @@ param["Bary_O"] = np.add(bc, bo)
 # solve optimization problem
 Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
 problem = MinimizationProblem(Jred)
+
+#check ipopt --> in test file
 #ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, boundary_option, extension_option).test_objective()
 #constraint_ids_ = ['volume'] #only works for scalar valued constraints
 #ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids_, boundary_option, extension_option).test_constraints() #only works for scalar valued constraints
-#exit(0)
 
-
-bdfile = File(MPI.comm_self, "./Output/mesh_optimize_test.pvd")
+if not os.path.exists(path_mesh + "/Output"):
+    os.makedirs(path_mesh + "/Output")
+bdfile = File(MPI.comm_self, path_mesh + "/Output/mesh_optimize_test.pvd")
 
 x0 = interpolate(Constant("0.0"), Vd).vector().get_local()
 
@@ -123,9 +127,9 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
       #plt.show()
 
 
-      xdmf = XDMFFile("./Output/Mesh_Generation/mesh_triangles_new.xdmf")
-      xdmf2 = XDMFFile("./Output/Mesh_Generation/facet_mesh_new.xdmf")
-      xdmf3 = XDMFFile("./Output/Mesh_Generation/domains_new.xdmf")
+      xdmf = XDMFFile(path_mesh + "/mesh_triangles_new.xdmf")
+      xdmf2 = XDMFFile(path_mesh + "/facet_mesh_new.xdmf")
+      xdmf3 = XDMFFile(path_mesh + "/domains_new.xdmf")
       xdmf.write(new_mesh)
       xdmf2.write(new_boundaries)
       xdmf3.write(new_domains)
@@ -155,9 +159,9 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
   set_working_tape(Tape())
   #param["reg"] = reg
   param["lb_off_p"] = lb_off
-  Jred = reduced_objectives[application].eval(mesh, domains, boundaries,params, param, red_func=True)
+  Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
   problem = MinimizationProblem(Jred)
-  IPOPT = ipopt_so.IPOPTSolver(problem, init_mfs, param)
+  IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, boundary_option, extension_option)
   x, info = IPOPT.solve(x0)
   x0 = x
 
@@ -165,9 +169,9 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
   #plot(mesh)
   #plt.show()
 
-xdmf = XDMFFile("./Output/Mesh_Generation/mesh_triangles_final.xdmf")
-xdmf2 = XDMFFile("./Output/Mesh_Generation/facet_mesh_final.xdmf")
-xdmf3 = XDMFFile("./Output/Mesh_Generation/domains_final.xdmf")
+xdmf = XDMFFile(path_mesh + "/mesh_triangles_final.xdmf")
+xdmf2 = XDMFFile(path_mesh + "/facet_mesh_final.xdmf")
+xdmf3 = XDMFFile(path_mesh + "/domains_final.xdmf")
 xdmf.write(new_mesh)
 xdmf2.write(new_boundaries)
 xdmf3.write(new_domains)
