@@ -12,7 +12,8 @@ stop_annotating()
 class FluidStructure(ReducedObjective):
     def __init__(self):
         super().__init__()
-    def meanflow_function(mesh, boundaries, params):
+
+    def meanflow_function(self, mesh, boundaries, params):
         # compute function that is (1, 0) on the obstacles boundary and 0 on the outer boundary
         V1 = VectorElement("CG", mesh.ufl_cell(), 1)
         VC = FunctionSpace(mesh, V1)

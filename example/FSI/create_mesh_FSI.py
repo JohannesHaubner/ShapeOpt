@@ -2,6 +2,10 @@ import numpy as np
 from ogs5py import OGS
 import pygmsh, meshio
 import h5py
+import os
+
+if not os.path.exists("./mesh"):
+    os.makedirs("./mesh")
 
 # resolution
 resolution = 0.05  #0.05 #1 # 0.005 #0.1
@@ -43,8 +47,8 @@ geom_prop = {"barycenter_hold_all_domain": [0.5*L, 0.5*H],
              "heigth_pipe": H,
              "barycenter_obstacle": [ c[0], c[1]],
              }
-np.save('./Mesh_Generation/params.npy', params)
-np.save('./Mesh_Generation/geom_prop.npy', geom_prop)
+np.save('./mesh/params.npy', params)
+np.save('./mesh/geom_prop.npy', geom_prop)
 
 # Initialize empty geometry using the build in kernel in GMSH
 geometry = pygmsh.geo.Geometry()
@@ -105,12 +109,12 @@ model.add_physical([plane_surface2], "solid") # mark solid domain with 7
 
 geometry.generate_mesh(dim=2)
 import gmsh
-gmsh.write("mesh.msh")
+gmsh.write("./mesh/mesh.msh")
 gmsh.clear()
 geometry.__exit__()
 
 import meshio
-mesh_from_file = meshio.read("mesh.msh")
+mesh_from_file = meshio.read("./mesh/mesh.msh")
 
 import numpy
 def create_mesh(mesh, cell_type, prune_z=False):
@@ -122,10 +126,10 @@ def create_mesh(mesh, cell_type, prune_z=False):
     return out_mesh
 
 line_mesh = create_mesh(mesh_from_file, "line", prune_z=True)
-meshio.write("./Output/Mesh_Generation/facet_mesh.xdmf", line_mesh)
+meshio.write("./mesh/facet_mesh.xdmf", line_mesh)
 
 triangle_mesh = create_mesh(mesh_from_file, "triangle", prune_z=True)
-meshio.write("./Output/Mesh_Generation/mesh_triangles.xdmf", triangle_mesh)
+meshio.write("./mesh/mesh_triangles.xdmf", triangle_mesh)
 
 #mesh = line_mesh
 #mesh_boundary = meshio.Mesh(points=mesh.points,
