@@ -167,8 +167,8 @@ class Extension():
       epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
       ylist = [self.dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x0+eps*ds)) for eps in epslist]
       jlist = [assemble(0.5*inner(y, y)*dx) for y in ylist]
-      self.perform_first_order_check(jlist, j0, djx, ds, epslist)
-      return
+      order, diff = self.perform_first_order_check(jlist, j0, djx, ds, epslist)
+      return order, diff
 
   
     def test_dof_to_deformation(self):
@@ -241,5 +241,5 @@ class Extension():
       for i in range(len(epslist)):
         print('eps\t', epslist[i], '\t\t check continuity\t', order0[i], '\t\t diff0 \t', diff0[i], '\t\t check derivative \t', order1[i], '\t\t diff1 \t', diff1[i], '\n'),
         
-      return
+      return order1[-1], diff1[-1]
       

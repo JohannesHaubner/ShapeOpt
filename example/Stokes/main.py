@@ -53,10 +53,6 @@ domains = init_mfs.get_domains()
 params = init_mfs.get_params()
 dnormal = init_mfs.get_dnormalf()
 
-
-# Print options for extensions --> in test file
-#Extension(init_mfs, param, boundary_option='laplace_beltrami', extension_option='linear_elasticity').test_dof_to_deformation_precond()
-
 #function space in which the control lives
 Vd = init_mfs.get_Vd()
 Vn = init_mfs.get_Vn()
