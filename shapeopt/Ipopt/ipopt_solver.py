@@ -60,13 +60,12 @@ class IPOPTSolver(OptimizationSolver):
         djx = self.problem_obj.gradient(x0)
         epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
         jlist = [self.problem_obj.objective(x0+eps*ds) for eps in epslist]
-        self.perform_first_order_check(jlist, j0, djx, ds, epslist)
-        print('here')
-        return
+        order, diff = self.perform_first_order_check(jlist, j0, djx, ds, epslist)
+        return order, diff
 
     def test_constraints(self):
         # check dof_to_deformation with first order derivative check
-        print('Extension.test_dof_to_deformation started.......................')
+        print('test_constraints started.......................')
         xl = self.dmesh.num_vertices()
         x0 = interpolate(Constant(0.01), self.Vd).vector().get_local()
         ds = interpolate(Constant(100.0), self.Vd).vector().get_local()
@@ -83,9 +82,8 @@ class IPOPTSolver(OptimizationSolver):
         djx = self.problem_obj.jacobian(x0)
         epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
         jlist = [self.problem_obj.constraints(x0 + eps * ds) for eps in epslist]
-        self.perform_first_order_check(jlist, j0, djx, ds, epslist)
-        print('here')
-        return
+        order, diff = self.perform_first_order_check(jlist, j0, djx, ds, epslist)
+        return order, diff
             
     def perform_first_order_check(self,jlist, j0, gradj0, ds, epslist):
         # j0: function value at x0
@@ -113,7 +111,7 @@ class IPOPTSolver(OptimizationSolver):
         for i in range(len(epslist)):
             print('eps\t', epslist[i], '\t\t check continuity\t', order0[i], '\t\t diff0 \t', diff0[i], '\t\t check derivative \t', order1[i], '\t\t diff1 \t', diff1[i], '\n'),
                                 
-        return
+        return order1[-1], diff1[-1]
 
 
     class shape_opt_prob(object):

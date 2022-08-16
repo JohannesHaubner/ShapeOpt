@@ -73,11 +73,6 @@ param["Bary_O"] = np.add(bc, bo)
 Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
 problem = MinimizationProblem(Jred)
 
-#check ipopt --> in test file
-#ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, boundary_option, extension_option).test_objective()
-#constraint_ids_ = ['volume'] #only works for scalar valued constraints
-#ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids_, boundary_option, extension_option).test_constraints() #only works for scalar valued constraints
-
 if not os.path.exists(path_mesh + "/Output"):
     os.makedirs(path_mesh + "/Output")
 bdfile = File(MPI.comm_self, path_mesh + "/Output/mesh_optimize_test.pvd")
