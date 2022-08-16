@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jul 10 08:45:52 2020
-
-@author: haubnerj
-"""
 from dolfin import *
 #from dolfin_adjoint import *
 import numpy as np

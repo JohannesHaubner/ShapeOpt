@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jun 26 08:39:51 2020
-
-@author: Johannes Haubner
-"""
-
 import numpy as np
 from ogs5py import OGS
 import pygmsh, meshio
