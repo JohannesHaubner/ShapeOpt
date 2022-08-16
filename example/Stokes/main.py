@@ -59,12 +59,6 @@ Vn = init_mfs.get_Vn()
 V = init_mfs.get_V()
 v = interpolate(Constant("1.0"),V)
 
-# test reduced objective and constraints --> in test file
-#reduced_objectives[application].test(init_mfs, param)
-#constraints['volume'](init_mfs, param, boundary_option, extension_option).test()
-#constraints['barycenter'](init_mfs, param, boundary_option, extension_option).test()
-#constraints['determinant'](init_mfs, param, boundary_option, extension_option).test()
-
 x0 = interpolate(Constant('0.0'), Vd)
 d0 = interpolate(Constant(('0.0','0.0')), Vn)
 

@@ -58,7 +58,7 @@ class ReducedObjective():
         ndof = dJ.vector().size()
         dj = dJ.vector().gather(range(ndof))
         w = w.vector().gather(range(ndof))
-        self.perform_first_order_check(jlist, J, dj, w, epslist)
+        order, diff = self.perform_first_order_check(jlist, J, dj, w, epslist)
 
         ## plot solution
         # import matplotlib.pyplot as plt
@@ -71,7 +71,7 @@ class ReducedObjective():
         # plot(w[1], zorder=1)
         # plt.axis("off")
         # plt.savefig("Output/ReducedObjective/disturb.png", dpi=800, bbox_inches="tight", pad_inches=0)
-        return
+        return order, diff
 
     @staticmethod
     def perform_first_order_check(jlist, j0, gradj0, ds, epslist):
@@ -101,4 +101,4 @@ class ReducedObjective():
             print('eps\t', epslist[i], '\t\t check continuity\t', order0[i], '\t\t diff0 \t', diff0[i],
                   '\t\t check derivative \t', order1[i], '\t\t diff1 \t', diff1[i], '\n'),
 
-        return
+        return order1[-1], diff1[-1]

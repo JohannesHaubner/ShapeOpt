@@ -61,5 +61,5 @@ class Barycenter(Constraint):
         ylist = [self.Mesh_.vec_to_Vd(x0 + eps * ds) for eps in epslist]
         jlist = [self.eval(y)[0] for y in ylist]
         ds_ = ds
-        self.perform_first_order_check(jlist, j0, djx, ds_, epslist)
-        return
+        order, diff = self.perform_first_order_check(jlist, j0, djx, ds_, epslist)
+        return order, diff
