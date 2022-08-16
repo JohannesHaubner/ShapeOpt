@@ -233,7 +233,7 @@ class FluidStructure(ReducedObjective):
         F = A_T + A_P + A_I + theta * A_E + (1.0 - theta) * A_E_rhs
 
         # output files
-        saveoption = True
+        saveoption = False
         if saveoption == True:
             fssim = save_directory + "/"
             vstring = fssim + 'velocity.pvd'
