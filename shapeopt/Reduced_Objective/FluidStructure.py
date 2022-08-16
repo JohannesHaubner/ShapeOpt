@@ -7,6 +7,13 @@ import matplotlib.pyplot as plt
 
 from .ReducedObjective import ReducedObjective
 
+from pathlib import Path
+here = Path(__file__).parent.resolve()
+save_directory = str(here.parent.parent) + "/example/FSI/Output/Forward"
+import os
+if not os.path.exists(save_directory):
+    os.makedirs(save_directory)
+
 stop_annotating()
 
 class FluidStructure(ReducedObjective):
@@ -70,6 +77,8 @@ class FluidStructure(ReducedObjective):
         WE = FunctionSpace(mesh, MixedElement(V1, V1))
         U1 = FunctionSpace(mesh, V1)
         VC = FunctionSpace(mesh, V1)
+        U = FunctionSpace(mesh, V1)
+        P = FunctionSpace(mesh, S1)
 
         phiv = self.meanflow_function(mesh, boundaries, params)
 
@@ -92,7 +101,7 @@ class FluidStructure(ReducedObjective):
         aphat = Constant(1e-9)
 
         t = 0.0
-        T = 0.02
+        T = param["T"]
         deltat = 0.01
         k = Constant(deltat)
         theta = Constant(0.5 + 0.5 * deltat)
@@ -224,8 +233,9 @@ class FluidStructure(ReducedObjective):
         F = A_T + A_P + A_I + theta * A_E + (1.0 - theta) * A_E_rhs
 
         # output files
-        saveoption = False
+        saveoption = True
         if saveoption == True:
+            fssim = save_directory + "/"
             vstring = fssim + 'velocity.pvd'
             v2string = fssim + 'velocity2.pvd'
             pstring = fssim + 'pressure.pvd'
@@ -273,7 +283,8 @@ class FluidStructure(ReducedObjective):
 
             if saveoption == True:
                 # append displacementy
-                u_p = project(u, U1, annotate=False, name="projection")
+                u_p = project(u, U1, annotate=False)
+                u_p.rename("projection", "projection")
                 try:
                     displacementy.append(u_p(Point(0.6, 0.2))[1])
                     np.savetxt(dstring, displacementy)
@@ -292,9 +303,6 @@ class FluidStructure(ReducedObjective):
                     pp.rename("pressure", "pressure")
                     pfile << pp
                     vfile << vp
-                    # vp modified
-                    # vp.vector()[:] *= charFunc.vector()
-                    charfile << charFunc
                     v2file << vp
 
                     ALE.move(mesh, u_p_inv)
