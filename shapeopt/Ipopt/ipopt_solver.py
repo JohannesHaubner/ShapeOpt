@@ -142,11 +142,11 @@ class IPOPTSolver(OptimizationSolver):
 
             # move mesh in direction of deformation
             j1 = reduced_objectives[self.application].eval(self.mesh, self.domains, self.boundaries, self.params, self.param,
-                                          control=deformation)  #
+                                          control=deformation, flag=False)  #
             #j1 =  self.rfn(deformation.vector()) #self.rfn(deformation)
 
             # add regularization (note that due to preconditioning no matrix is needed)
-            j = j1 + 0.5 * self.param["reg"] * np.dot(x,x)  # regularization
+            j = j1 + 0.5 * self.param["reg"] * np.dot(x, x)  # regularization
             return j
 
         def gradient(self, x):

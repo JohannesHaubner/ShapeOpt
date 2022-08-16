@@ -315,7 +315,6 @@ class FluidStructure(ReducedObjective):
         #objective function
         J += assemble(0.5*gammaP * smoothmax(etaP - tJhat)**2*dx(mesh))
 
-        flag = True
         if flag:
           dJ = compute_gradient(J,Control(tu))
 
@@ -333,7 +332,7 @@ class FluidStructure(ReducedObjective):
         stop_annotating
         if red_func:
           m = Control(tu)
-          return ReducedFunctional(J,m)
+          return ReducedFunctional(J, m)
         else:
           if flag:
             return J, dJ

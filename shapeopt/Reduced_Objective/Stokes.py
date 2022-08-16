@@ -20,7 +20,7 @@ class Stokes(ReducedObjective):
     def __init__(self):
         super().__init__()
 
-    def eval(self, mesh, domains, boundaries, params, param, flag =False, red_func = False, control = False):
+    def eval(self, mesh, domains, boundaries, params, param, flag=False, red_func=False, control=False):
         # mesh generated
         # params dictionary, includes labels for boundary parts:
         # params.inflow
@@ -80,14 +80,14 @@ class Stokes(ReducedObjective):
 
         # solve equations
 
-        solve(F==0, w, bcs) #, solver_parameters={'newton_solver':{'linear_solver':'mumps'}})
+        solve(F == 0, w, bcs) #, solver_parameters={'newton_solver':{'linear_solver':'mumps'}})
         stop_annotating()
         u, p = w.split()
 
         # plot solution to check
         # save to pvd file for testing
         ufile = File("./Output/Forward/velocity.pvd")
-        up = project(u,VU)
+        up = project(u, VU)
         ufile << up
         #plt.figure()
         #plot(u[0])
@@ -103,7 +103,7 @@ class Stokes(ReducedObjective):
         J = assemble(inner(grad(u)*tFhati, grad(u)*tFhati)*tJhat*dx(mesh)
                      + 0.5*gammaP * smoothmax(etaP - tJhat)**2*dx(mesh))
         if flag:
-          dJ = compute_gradient(J,Control(tu))
+          dJ = compute_gradient(J, Control(tu))
 
         ## plot solution
         #import matplotlib.pyplot as plt
@@ -119,7 +119,7 @@ class Stokes(ReducedObjective):
         stop_annotating()
         if red_func:
           m = Control(tu)
-          return ReducedFunctional(J,m)
+          return ReducedFunctional(J, m)
         else:
           if flag:
             return J, dJ
