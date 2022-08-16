@@ -55,11 +55,6 @@ dnormal = init_mfs.get_dnormalf()
 
 
 # Print options for extensions --> in test file
-#Extension.print_options()
-#from Control_to_Trafo.Boundary_Operator import boundary_operators
-#boundary_operators['laplace_beltrami'](dmesh, dnormal, 0.0).test()
-#from Control_to_Trafo.Extension_Operator import extension_operators
-#extension_operators['linear_elasticity'](mesh, boundaries, params).test()
 #Extension(init_mfs, param, boundary_option='laplace_beltrami', extension_option='linear_elasticity').test_dof_to_deformation_precond()
 
 #function space in which the control lives

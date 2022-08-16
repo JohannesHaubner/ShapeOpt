@@ -54,8 +54,8 @@ class ExtensionOperator(object):
           ndof = ds.vector().size()
           ds_ = ds.vector().gather(range(ndof))
           djx_ = djx.vector().gather(range(ndof))
-          self.perform_first_order_check(jlist, j0, djx_, ds_, epslist)
-          return
+          order, diff = self.perform_first_order_check(jlist, j0, djx_, ds_, epslist)
+          return order, diff
 
     def perform_first_order_check(self, jlist, j0, gradj0, ds, epslist):
         # j0: function value at x0
@@ -84,4 +84,4 @@ class ExtensionOperator(object):
             print('eps\t', epslist[i], '\t\t check continuity\t', order0[i], '\t\t diff0 \t', diff0[i],
                   '\t\t check derivative \t', order1[i], '\t\t diff1 \t', diff1[i], '\n'),
 
-        return
+        return order1[-1], diff1[-1]
