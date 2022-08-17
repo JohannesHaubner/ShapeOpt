@@ -16,7 +16,8 @@ jobs:
     - uses: actions/checkout@v3
     - name: Build the Docker image
       run: |
-        docker build -t shapeopt .
+        echo $(pwd)
+        #docker build -t shapeopt .
     - name: Test with pytest
       run: |
         docker run -v "/var/run/docker.sock":"/var/run/docker.sock" shapeopt pytest
