@@ -1,4 +1,5 @@
 [![GNU GPLv3 License](https://img.shields.io/badge/license-GNU_GPLv3-green?style=plastic)](https://choosealicense.com/licenses/gpl-3.0/)
+[![Test ShapeOpt](https://github.com/JohannesHaubner/ShapeOpt/actions/workflows/docker-image.yml/badge.svg?style=plastic)](https://github.com/JohannesHaubner/ShapeOpt/actions/workflows/docker-image.yml)
 
 # ShapeOpt
 
@@ -8,6 +9,9 @@ Code repository for the manuscript
 
 >J. Haubner, M. Ulbrich: Advanced Numerical Methods for Shape Optimal Design of Fluid-Structure Interaction Problems. 
 
+and the PhD thesis
+
+>J. Haubner: Shape Optimization for Fluid-Structure Interaction, Doctoral Dissertation, Technische Universität München, 2020
 
 ## Usage/Examples
 
@@ -47,8 +51,12 @@ can be evaluated. An example for a simple Stokes flow is given.
 ### Constraints
 Collection of constraint for the optimization problem: volume, barycenter, determinant.
 
+### Mesh_Postprocessing
+Postprocessing step for improving the mesh quality after each optimization problem solve.
+
 ### Ipopt
 Solving the constraint optimization problem is performed using Ipopt.
 
 ### Tools
 Here, different tools are collect, e.g. initialization of function spaces, save and load objects, etc.
+
