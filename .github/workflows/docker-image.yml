@@ -15,7 +15,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      run: docker build -t shapeopt .
+    - name: Run the Docker image
+      run: docker run -it shapeopt
     - name: Test with pytest
       run: |
         pip install pytest
