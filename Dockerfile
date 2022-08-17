@@ -110,6 +110,8 @@ RUN cd dolfin/python \
     && python -m pip install . --no-cache-dir \
     && rm -rf /dolfin
 
+# Install pytest
+RUN python -m pip install pytest
 
 #Install dolfin-adjoint
 
