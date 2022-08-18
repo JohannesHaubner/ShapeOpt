@@ -6,6 +6,7 @@ here = Path(__file__).parent.resolve()
 import sys
 sys.path.insert(0, str(here.parent.parent) + "/shapeopt")
 import Control_to_Trafo.dof_to_trafo as ctt
+from shapeopt.Tools.first_order_check import perform_first_order_check
 
 class Barycenter(Constraint):
     def __init__(self, Mesh_, param, boundary_option, extension_option):
@@ -61,5 +62,5 @@ class Barycenter(Constraint):
         ylist = [self.Mesh_.vec_to_Vd(x0 + eps * ds) for eps in epslist]
         jlist = [self.eval(y)[0] for y in ylist]
         ds_ = ds
-        order, diff = self.perform_first_order_check(jlist, j0, djx, ds_, epslist)
+        order, diff = perform_first_order_check(jlist, j0, djx, ds_, epslist)
         return order, diff

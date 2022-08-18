@@ -1,6 +1,12 @@
 from dolfin import *
 import numpy as np
 
+from pathlib import Path
+here = Path(__file__).parent
+import sys
+sys.path.insert(0, str(here.parent))
+from shapeopt.Tools.first_order_check import perform_first_order_check
+
 class BoundaryOperator(object):
     def __init__(self, dmesh, dnormal, lb_off):
         self.dmesh = dmesh
@@ -40,34 +46,5 @@ class BoundaryOperator(object):
         ylist = [self.eval(x0 + eps * ds) for eps in epslist]
         jlist = [assemble(0.5 * inner(y, y) * dx) / rank for y in ylist]  # includes correction
         ds_ = ds.vector().get_local()
-        order, diff = self.perform_first_order_check(jlist, j0, djx, ds_, epslist)
+        order, diff = perform_first_order_check(jlist, j0, djx, ds_, epslist)
         return order, diff
-
-    def perform_first_order_check(self, jlist, j0, gradj0, ds, epslist):
-        # j0: function value at x0
-        # gradj0: gradient value at x0
-        # epslist: list of decreasing eps-values
-        # jlist: list of function values at x0+eps*ds for all eps in epslist
-        diff0 = []
-        diff1 = []
-        order0 = []
-        order1 = []
-        i = 0
-        for eps in epslist:
-            je = jlist[i]
-            di0 = je - j0
-            di1 = je - j0 - eps * np.dot(gradj0, ds)
-            diff0.append(abs(di0))
-            diff1.append(abs(di1))
-            if i == 0:
-                order0.append(0.0)
-                order1.append(0.0)
-            if i > 0:
-                order0.append(np.log(diff0[i - 1] / diff0[i]) / np.log(epslist[i - 1] / epslist[i]))
-                order1.append(np.log(diff1[i - 1] / diff1[i]) / np.log(epslist[i - 1] / epslist[i]))
-            i = i + 1
-        for i in range(len(epslist)):
-            print('eps\t', epslist[i], '\t\t check continuity\t', order0[i], '\t\t diff0 \t', diff0[i],
-                  '\t\t check derivative \t', order1[i], '\t\t diff1 \t', diff1[i], '\n'),
-
-        return order1[-1], diff1[-1]

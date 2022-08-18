@@ -14,6 +14,7 @@ import Control_to_Trafo.dof_to_trafo as ctt
 from Constraints import constraints as constraints_
 from Reduced_Objective import reduced_objectives
 from Control_to_Trafo import Extension
+from Tools.first_order_check import perform_first_order_check
 
 import cyipopt
 
@@ -60,7 +61,7 @@ class IPOPTSolver(OptimizationSolver):
         djx = self.problem_obj.gradient(x0)
         epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
         jlist = [self.problem_obj.objective(x0+eps*ds) for eps in epslist]
-        order, diff = self.perform_first_order_check(jlist, j0, djx, ds, epslist)
+        order, diff = perform_first_order_check(jlist, j0, djx, ds, epslist)
         return order, diff
 
     def test_constraints(self):
@@ -82,36 +83,8 @@ class IPOPTSolver(OptimizationSolver):
         djx = self.problem_obj.jacobian(x0)
         epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
         jlist = [self.problem_obj.constraints(x0 + eps * ds) for eps in epslist]
-        order, diff = self.perform_first_order_check(jlist, j0, djx, ds, epslist)
+        order, diff = perform_first_order_check(jlist, j0, djx, ds, epslist)
         return order, diff
-            
-    def perform_first_order_check(self,jlist, j0, gradj0, ds, epslist):
-        # j0: function value at x0
-        # gradj0: gradient value at x0
-        # epslist: list of decreasing eps-values
-        # jlist: list of function values at x0+eps*ds for all eps in epslist
-        diff0 = []
-        diff1 = []
-        order0 = []
-        order1 = []
-        i = 0 
-        for eps in epslist:
-            je = jlist[i]
-            di0 = je - j0
-            di1 = je - j0 - eps*np.dot(gradj0,ds)
-            diff0.append(abs(di0))
-            diff1.append(abs(di1))
-            if i == 0:
-                order0.append(0.0)
-                order1.append(0.0)
-            if i > 0:
-                order0.append(np.log(diff0[i-1]/diff0[i])/ np.log(epslist[i-1]/epslist[i]))
-                order1.append(np.log(diff1[i-1]/diff1[i])/ np.log(epslist[i-1]/epslist[i]))
-            i = i+1
-        for i in range(len(epslist)):
-            print('eps\t', epslist[i], '\t\t check continuity\t', order0[i], '\t\t diff0 \t', diff0[i], '\t\t check derivative \t', order1[i], '\t\t diff1 \t', diff1[i], '\n'),
-                                
-        return order1[-1], diff1[-1]
 
 
     class shape_opt_prob(object):
