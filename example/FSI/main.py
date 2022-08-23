@@ -93,7 +93,7 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
   defo = project(deformation, Vn)
   ALE.move(mesh, defo, annotate=False)
   if deform_mesh == True:
-      defo_new  = mpp.harmonic(defo)
+      defo_new  = mpp.biharmonic(defo)
       ALE.move(mesh, defo_new, annotate=False)
 
       new_mesh = Mesh(mesh)
