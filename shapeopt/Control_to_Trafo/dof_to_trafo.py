@@ -7,8 +7,8 @@ from .Extension_Operator import extension_operators
 from pathlib import Path
 here = Path(__file__).parent
 import sys
-sys.path.insert(0, str(here))
-from shapeopt.Tools.first_order_check import perform_first_order_check
+sys.path.insert(0, str(here.parent))
+from Tools.first_order_check import perform_first_order_check
 
 class Extension():
     def __init__(self, Mesh_, param, boundary_option : str, extension_option : str):

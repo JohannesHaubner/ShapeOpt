@@ -5,15 +5,15 @@ import numpy as np
 from pathlib import Path
 here = Path(__file__).parent.resolve()
 import sys, os
-sys.path.insert(0, str(here.parent.parent) + "/shapeopt")
+sys.path.insert(0, str(here.parent.parent))
 
-import Tools.settings_mesh as tsm
-import Mesh_Postprocessing.post_process as mpp
-import Ipopt.ipopt_solver as ipopt_solver
+import shapeopt.Tools.settings_mesh as tsm
+import shapeopt.Mesh_Postprocessing.post_process as mpp
+import shapeopt.Ipopt.ipopt_solver as ipopt_solver
 
-from Constraints import constraints
-from Control_to_Trafo import Extension
-from Reduced_Objective import reduced_objectives
+from shapeopt.Constraints import constraints
+from shapeopt.Control_to_Trafo import Extension
+from shapeopt.Reduced_Objective import reduced_objectives
 
 stop_annotating()
 

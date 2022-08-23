@@ -4,8 +4,8 @@ import numpy as np
 from pathlib import Path
 here = Path(__file__).parent
 import sys
-sys.path.insert(0, str(here.parent))
-from shapeopt.Tools.first_order_check import perform_first_order_check
+sys.path.insert(0, str(here.parent.parent))
+from Tools.first_order_check import perform_first_order_check
 
 class ExtensionOperator(object):
     def __init__(self, mesh, boundaries, params):

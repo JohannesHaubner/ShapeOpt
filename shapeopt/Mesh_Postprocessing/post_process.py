@@ -20,3 +20,9 @@ def harmonic(defo):
     solve(a == L, u, bc)
 
     return u
+
+def biharmonic(defo):
+    V = defo.function_space()
+    mesh = defo.function_space().mesh()
+
+    breakpoint()

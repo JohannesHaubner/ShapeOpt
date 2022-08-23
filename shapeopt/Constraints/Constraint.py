@@ -6,7 +6,7 @@ from pathlib import Path
 here = Path(__file__).parent
 import sys
 sys.path.insert(0, str(here.parent))
-from shapeopt.Tools.first_order_check import perform_first_order_check
+from Tools.first_order_check import perform_first_order_check
 
 class Constraint(object):
     def __init__(self, Mesh_, param, boundary_option, extension_option):

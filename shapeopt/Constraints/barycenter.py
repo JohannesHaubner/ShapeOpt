@@ -4,8 +4,8 @@ from .Constraint import Constraint
 from pathlib import Path
 here = Path(__file__).parent.resolve()
 import sys
-sys.path.insert(0, str(here.parent.parent) + "/shapeopt")
-import Control_to_Trafo.dof_to_trafo as ctt
+sys.path.insert(0, str(here.parent.parent))
+import shapeopt.Control_to_Trafo.dof_to_trafo as ctt
 from shapeopt.Tools.first_order_check import perform_first_order_check
 
 class Barycenter(Constraint):
