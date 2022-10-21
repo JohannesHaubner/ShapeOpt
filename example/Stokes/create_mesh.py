@@ -13,6 +13,7 @@ c = [10, 3, 0]  #[0.2, 0.2, 0] #[10, 3, 0]  # position of object
 r = 0.5 #0.05 #0.5 # radius of object
 
 # labels
+boundary_labels = [1, 2, 3, 4]
 inflow = 1
 outflow = 2
 walls = 3
@@ -21,7 +22,8 @@ obstacle = 4
 params = {"inflow" : inflow, 
           "outflow": outflow,
           "noslip": walls,
-          "design": obstacle
+          "design": obstacle,
+          "boundary_labels": boundary_labels
           }
 vol = L*H
 vol_D_minus_obs = vol - np.pi*r*r

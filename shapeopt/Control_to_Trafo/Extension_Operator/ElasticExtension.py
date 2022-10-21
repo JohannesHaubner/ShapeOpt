@@ -18,10 +18,10 @@ class ElasticExtension(ExtensionOperator):
 
 
         # Define boundary conditions
-        bc1 = DirichletBC(self.Vn, Constant(("0.0", "0.0")), self.boundaries, self.params["inflow"])
-        bc2 = DirichletBC(self.Vn, Constant(("0.0", "0.0")), self.boundaries, self.params["outflow"])
-        bc3 = DirichletBC(self.Vn, Constant(("0.0", "0.0")), self.boundaries, self.params["noslip"])
-        bc = [bc1, bc2, bc3]
+        bc = []
+        for i in self.params.keys():
+            if i != "design" and not isinstance(self.params[i], bool) and self.params[i] in self.params["boundary_labels"]:
+                bc.append(DirichletBC(self.Vn, Constant(("0.0", "0.0")), self.boundaries, self.params[i]))
 
         # Define bilinear form
         a = self.mu*inner(grad(u) + np.transpose(grad(u)), grad(v)) * dx  # + inner(u,v)*dx
