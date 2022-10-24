@@ -42,7 +42,7 @@ param = {"reg": 1e-2, # regularization parameter
          #"Bary_eps": 0.0, # slack for barycenter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient
          "maxiter_IPOPT": 50,
-         "T": 0.02, # simulation horizon for Fluid-Structure interaction simulation
+         "T": 15.0, # simulation horizon for Fluid-Structure interaction simulation
          }
 
 #load mesh
@@ -93,7 +93,7 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
   defo = project(deformation, Vn)
   ALE.move(mesh, defo, annotate=False)
   if deform_mesh == True:
-      defo_new  = mpp.biharmonic(defo)
+      defo_new  = mpp.biharmonic(defo, params, boundaries)
       ALE.move(mesh, defo_new, annotate=False)
 
       new_mesh = Mesh(mesh)

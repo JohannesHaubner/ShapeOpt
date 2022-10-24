@@ -13,7 +13,7 @@ def harmonic(defo):
     def boundary(x, on_boundary):
         return on_boundary
 
-    bc = DirichletBC(V, Constant(("0.0","0.0")), boundary)
+    bc = DirichletBC(V, Constant(("0.0", "0.0")), boundary)
 
     u = Function(V)
 
@@ -21,7 +21,7 @@ def harmonic(defo):
 
     return u
 
-def biharmonic(defo):
+def biharmonic(defo, params=None, boundaries=None):
     V = defo.function_space()
     mesh = defo.function_space().mesh()
 
@@ -36,7 +36,13 @@ def biharmonic(defo):
     a = (inner(w, psiw) - inner(grad(u), grad(psiw)) - inner(grad(w), grad(psiu)))*dx
     L = Constant(0.0)*(psiw[0] + psiu[0])*dx
 
-    bc = DirichletBC(VV.sub(0), defo, "on_boundary")
+    if params == None:
+        bc = DirichletBC(VV.sub(0), defo, "on_boundary")
+    else:
+        bc = []
+        for i in params.keys():
+            if not isinstance(params[i], bool) and params[i] in params["boundary_labels"]:
+                bc.append(DirichletBC(VV.sub(0), defo, boundaries, params[i]))
 
     uw = Function(VV)
 
