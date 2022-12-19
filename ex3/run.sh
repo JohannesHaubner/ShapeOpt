@@ -7,5 +7,6 @@
 
 module purge
 module load singularity-ce
+module load mpich-3.3.2
 
-mpiexec -n 4 singularity exec ghcr.io/johanneshaubner/shapeopt:latest python3 /home/haubnerj/ShapeOpt/example/FSI/main.py
+srun -n 4 singularity exec ghcr.io/johanneshaubner/shapeopt:latest python3 /home/haubnerj/ShapeOpt/example/FSI/main.py
