@@ -8,7 +8,7 @@ jobs:
     name: Pytest in Pipenv    # runs on the latest Ubuntu
     runs-on: ubuntu-latest     # runs within your Docker container
     container:
-      image: docker://johanneshaubner/shapeopt:latest    # checkout your code from your repository
+      image: ghcr.io/johanneshaubner/shapeopt:latest   # checkout your code from your repository
     # and runs pytest in your pipenv environment
     steps:
     - uses: actions/checkout@v2
