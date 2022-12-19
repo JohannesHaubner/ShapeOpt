@@ -1,5 +1,5 @@
 [![GNU GPLv3 License](https://img.shields.io/badge/license-GNU_GPLv3-green?style=plastic)](https://choosealicense.com/licenses/gpl-3.0/)
-[![Test ShapeOpt](https://github.com/JohannesHaubner/ShapeOpt/actions/workflows/docker-image.yml/badge.svg?style=plastic)](https://github.com/JohannesHaubner/ShapeOpt/actions/workflows/docker-image.yml)
+[![Test ShapeOpt](https://github.com/JohannesHaubner/ShapeOpt/actions/workflows/test_shapeopt.yml/badge.svg?style=plastic)](https://github.com/JohannesHaubner/ShapeOpt/actions/workflows/docker-image.yml)
 
 # ShapeOpt
 
