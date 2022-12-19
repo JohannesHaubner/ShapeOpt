@@ -11,7 +11,12 @@ jobs:
       image: ghcr.io/johanneshaubner/shapeopt:latest   # checkout your code from your repository
     # and runs pytest in your pipenv environment
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+    '''
+    - name: Install package # in case the package is installable
+      run: |
+          python3 -m pip install .
+      '''
     - name: Test with pytest
       run: |
           python3 -m pytest tests/
