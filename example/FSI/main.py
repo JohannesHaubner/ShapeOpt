@@ -5,7 +5,7 @@ import numpy as np
 from pathlib import Path
 here = Path(__file__).parent.resolve()
 import sys, os
-sys.path.insert(0, str(here.parent.parent))
+sys.path.insert(0, str(here.parent.parent) + '/src')
 
 import shapeopt.Tools.settings_mesh as tsm
 import shapeopt.Mesh_Postprocessing.post_process as mpp
