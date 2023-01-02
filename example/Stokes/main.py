@@ -86,10 +86,10 @@ param["lb_off_p"] = 1.0
 for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:  #[1e0, 0.5, 0.25, 0.125, 0.1, 0.05, 0.025, 0.0125, 0.01, 0.005, 0.0025, 0.00125, 0.001, 0.0001, 0.00001, 1e-6]:
 
   deformation = Extension(init_mfs, param, boundary_option='laplace_beltrami', extension_option='linear_elasticity').dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
-  defo = project(deformation, Vn)
-  ALE.move(mesh, defo, annotate=False)
+  #defo = project(deformation, Vn)
+  ALE.move(mesh, deformation, annotate=False)
   if deform_mesh == True:
-      defo_new  = mpp.biharmonic(defo)
+      defo_new  = mpp.biharmonic(deformation)
       ALE.move(mesh, defo_new, annotate=False)
 
       new_mesh = Mesh(mesh)
