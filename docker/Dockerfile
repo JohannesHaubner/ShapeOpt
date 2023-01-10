@@ -1,5 +1,8 @@
 FROM finsberg/py310-base
 
+# disable cache 
+ARG CACHEBUST=100123
+
 RUN python -m pip install "numpy<1.22"
 
 RUN apt-get update \
@@ -110,17 +113,35 @@ RUN cd dolfin/python \
     && python -m pip install . --no-cache-dir \
     && rm -rf /dolfin
 
+
 # Install pytest
 RUN python -m pip install pytest
 
-#Install dolfin-adjoint
-
+# Install dolfin-adjoint
 
 RUN /bin/bash -l -c "pip3 install --no-cache git+https://github.com/dolfin-adjoint/pyadjoint.git@constant-adjfloat"
 RUN /bin/bash -l -c "pip3 install matplotlib"
 
+# Install CGAL
+#RUN git clone https://github.com/CGAL/cgal.git cgal \
+#    && cd cgal \
+#    && cmake -DCMAKE_INSTALL_PREFIX=/venv -DCMAKE_PREFIX_PATH=/venv -DCMAKE_BUILD_TYPE=Release -B build -S . \
+#    && cmake --build build -j6 \
+#    && cmake --install build
 
+# Install pygalmesh
+#RUN python -m pip install pygalmesh
 
+# Install IPython
+RUN python -m pip install IPython
+
+# Install gmsh
+RUN python -m pip install gmsh
+RUN python -m pip install meshio
+RUN python -m pip install pygmsh 
+
+RUN apt-get update
+RUN apt-get -y install libglu1 libxcursor-dev libxft2 libxinerama1 libfltk1.3-dev libfreetype6-dev libgl1-mesa-dev libocct-foundation-dev libocct-data-exchange-dev
 
 
 CMD ["bash"]
