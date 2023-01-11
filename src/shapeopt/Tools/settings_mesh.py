@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 
 class Initialize_Mesh_and_FunctionSpaces():
-    def __init__(self, path_mesh, load_mesh=False):
+    def __init__(self, path_mesh, load_mesh=False, domains=True):
       if load_mesh:
         stri = path_mesh + "/mesh_triangles_new.xdmf"
         stri2 = path_mesh + "/facet_mesh_new.xdmf"
@@ -22,7 +22,7 @@ class Initialize_Mesh_and_FunctionSpaces():
       with XDMFFile(stri) as infile:
         infile.read(mesh)
 
-      if load_mesh:
+      if load_mesh and domains:
           mvc = MeshValueCollection("size_t", mesh, 1)
           with XDMFFile(stri3) as infile:
               infile.read(mvc)

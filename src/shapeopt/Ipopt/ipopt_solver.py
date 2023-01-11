@@ -276,6 +276,8 @@ class IPOPTSolver(OptimizationSolver):
 
         nlp.add_option('mu_strategy', 'adaptive')
         #nlp.add_option('derivative_test', 'first-order')
+        nlp.add_option('hessian_approximation', 'limited-memory')
+        nlp.add_option('limited_memory_update_type', 'bfgs')
         nlp.add_option('point_perturbation_radius', 0.0)
         nlp.add_option('max_iter', self.param["maxiter_IPOPT"])
         nlp.add_option('tol', 1e-5)

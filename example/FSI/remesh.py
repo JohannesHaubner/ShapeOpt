@@ -20,21 +20,21 @@ from shapeopt.Tools.subdomains import SubMeshCollection
 
 # restricted to FSI example
 
-def remesh(mesh_ending_read: str, mesh_ending_write: str)
+def remesh(mesh_ending_read: str, mesh_ending_write: str, pathmesh: str):
     """
     :param mesh_ending_read: reads in files in mr_mesh, mr_dom and mr_bound (see below)
     :param mesh_ending_write: writes remeshed facet and boundary mesh in files defined in mw_facet, mw_boundary (see below)
+    :param pathmesh: path where mesh is stored
     """
 
     mr = mesh_ending_read
     mw = mesh_ending_write
 
-    mr_mesh = './mesh/mesh_triangles_' + mr + '.xdmf'
-    mr_dom = './mesh/domains_' + mr + '.xdmf'
-    mr_bound = './mesh/facet_mesh_' + mr + '.xdmf'
+    mr_mesh = pathmesh + '/mesh_triangles' + mr + '.xdmf'
+    mr_bound = pathmesh + '/facet_mesh' + mr + '.xdmf'
 
-    mw_facet = './mesh/facet_mesh_' + mw + '.xdmf' './mesh/mesh_triangles_' + mw + '.xdmf'
-    mw_boundary = './mesh/mesh_triangles_' + mw + '.xdmf'
+    mw_facet = pathmesh + '/facet_mesh' + mw + '.xdmf'
+    mw_boundary = pathmesh + '/mesh_triangles' + mw + '.xdmf'
 
     if mpi4py.MPI.COMM_WORLD.rank == 0:
 
@@ -43,15 +43,11 @@ def remesh(mesh_ending_read: str, mesh_ending_write: str)
         with XDMFFile(MPI.comm_self, mr_mesh) as infile:
             infile.read(mesh)
 
-        print('here1', flush=True)
-
         # load markers
         mvc = MeshValueCollection('size_t', mesh, 2)
-        with XDMFFile(MPI.comm_self, mr_dom) as infile:
+        with XDMFFile(MPI.comm_self, mr_mesh) as infile:
             infile.read(mvc)
         domains = MeshFunction('size_t', mesh, mvc)
-
-        print('here3', flush=True)
 
         mvc = MeshValueCollection('size_t', mesh, 1)
         with XDMFFile(MPI.comm_self, mr_bound) as infile:
@@ -113,8 +109,6 @@ def remesh(mesh_ending_read: str, mesh_ending_write: str)
         H = 0.41 #0.4 #6           # heigth of channel
         c = [0.2, 0.2, 0]  #[0.2, 0.2, 0] #[10, 3, 0]  # position of object
         r = 0.05
-
-        print('here')
 
         # Initialize empty geometry using the build in kernel in GMSH
         geometry = pygmsh.geo.Geometry()
@@ -194,13 +188,13 @@ def remesh(mesh_ending_read: str, mesh_ending_write: str)
 
         print('geometry generated')
 
-        gmsh.write( "./mesh/mesh.msh")
+        gmsh.write( pathmesh + "/mesh.msh")
         gmsh.clear()
         geometry.__exit__()
 
         print('write complete', flush=True)
 
-        mesh_from_file = meshio.read("./mesh/mesh.msh")
+        mesh_from_file = meshio.read(pathmesh + "/mesh.msh")
 
         def create_mesh(mesh, cell_type, prune_z=False):
             cells = mesh.get_cells_type(cell_type)
@@ -216,7 +210,6 @@ def remesh(mesh_ending_read: str, mesh_ending_write: str)
             if os.path.isfile(i):
                 os.remove(i)
                 os.remove(i[:-4] + "h5")
-
 
         line_mesh = create_mesh(mesh_from_file, "line", prune_z=True)
         meshio.write(facet_mesh_path, line_mesh)

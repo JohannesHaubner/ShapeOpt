@@ -1,7 +1,7 @@
 FROM finsberg/py310-base
 
 # disable cache 
-ARG CACHEBUST=100123
+ARG CACHEBUST=110123
 
 RUN python -m pip install "numpy<1.22"
 
@@ -54,7 +54,7 @@ ENV PKG_CONFIG_PATH=/venv/lib/pkgconfig:$PKG_CONFIG_PATH
 RUN /bin/bash -l -c "pip3 install Cython"
 RUN /bin/bash -l -c "pip3 install six"
 
-RUN /bin/bash -l -c "pip3 install git+https://github.com/mechmotum/cyipopt.git@v0.3.0"
+RUN /bin/bash -l -c "pip3 install git+https://github.com/mechmotum/cyipopt.git@v1.1.0"
 
 # Install petsc
 RUN git clone -b release https://gitlab.com/petsc/petsc petsc \

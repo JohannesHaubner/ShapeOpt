@@ -15,6 +15,8 @@ from shapeopt.Constraints import constraints
 from shapeopt.Control_to_Trafo import Extension
 from shapeopt.Reduced_Objective import reduced_objectives
 
+from remesh import remesh
+
 stop_annotating()
 
 # specify path of directory that contains the files 'mesh_triangles.xdmf' and 'facet_mesh.xdmf'
@@ -41,8 +43,8 @@ param = {"reg": 1e-2, # regularization parameter
          "relax_eq": 0.0, #relax barycenter
          #"Bary_eps": 0.0, # slack for barycenter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient
-         "maxiter_IPOPT": 50,
-         "T": 15.0, # simulation horizon for Fluid-Structure interaction simulation
+         "maxiter_IPOPT": 2, # 50,
+         "T": 0.03, # 15.0, # simulation horizon for Fluid-Structure interaction simulation
          }
 
 #load mesh
@@ -83,44 +85,26 @@ bdfile = File(MPI.comm_self, path_mesh + "/Output/mesh_optimize_test.pvd")
 
 x0 = interpolate(Constant("0.0"), Vd).vector().get_local()
 
-deform_mesh = True
+remesh_flag = True
 
 param["lb_off_p"] = 1.0
+
+counter = 0
 
 for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:  #[1e0, 0.5, 0.25, 0.125, 0.1, 0.05, 0.025, 0.0125, 0.01, 0.005, 0.0025, 0.00125, 0.001, 0.0001, 0.00001, 1e-6]:
 
   deformation = Extension(init_mfs, param, boundary_option=boundary_option, extension_option=extension_option).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
   defo = deformation # project(deformation, Vn)
   ALE.move(mesh, defo, annotate=False)
-  if deform_mesh == True:
-      defo_new  = mpp.biharmonic(defo, params, boundaries)
-      ALE.move(mesh, defo_new, annotate=False)
-
-      new_mesh = Mesh(mesh)
-
-      mvc2 = MeshValueCollection("size_t", new_mesh, 2)
-      new_domains = cpp.mesh.MeshFunctionSizet(new_mesh, mvc2)
-      new_domains.set_values(domains.array())
-
-      mvc = MeshValueCollection("size_t", new_mesh, 1)
-      new_boundaries = cpp.mesh.MeshFunctionSizet(new_mesh, mvc)
-      new_boundaries.set_values(boundaries.array())
-
-      #plt.figure()
-      #plot(new_domains)
-      #plt.show()
-
-
-      xdmf = XDMFFile(path_mesh + "/mesh_triangles_new.xdmf")
-      xdmf2 = XDMFFile(path_mesh + "/facet_mesh_new.xdmf")
-      xdmf3 = XDMFFile(path_mesh + "/domains_new.xdmf")
-      xdmf.write(new_mesh)
-      xdmf2.write(new_boundaries)
-      xdmf3.write(new_domains)
-
-      init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh, load_mesh=True)
+  bdfile << defo
+  if remesh_flag == True:
+      if counter == 0:
+          remesh("", "_new", path_mesh)
+      else:
+          remesh("_new", "_new", path_mesh)
+      counter += 1
+      init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh, load_mesh=True, domains=False)
   else:
-      bdfile << defo
       init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh)
   mesh = init_mfs.get_mesh()
   dmesh = init_mfs.get_design_boundary_mesh()
@@ -128,16 +112,13 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
   domains = init_mfs.get_domains()
   params = init_mfs.get_params()
   dnormal = init_mfs.get_dnormalf()
-  if deform_mesh == True:
-    bdfile << domains
 
   Vd = init_mfs.get_Vd()
   Vn = init_mfs.get_Vn()
   V = init_mfs.get_V()
   v = interpolate(Constant("1.0"), V)
 
-  if deform_mesh:
-    x0 = interpolate(Constant("0.0"), Vd).vector().get_local()
+  x0 = interpolate(Constant("0.0"), Vd).vector().get_local()
 
   stop_annotating()
   set_working_tape(Tape())
@@ -149,18 +130,4 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
   x, info = IPOPT.solve(x0)
   x0 = x
 
-  #plt.figure()
-  #plot(mesh)
-  #plt.show()
-
-xdmf = XDMFFile(path_mesh + "/mesh_triangles_final.xdmf")
-xdmf2 = XDMFFile(path_mesh + "/facet_mesh_final.xdmf")
-xdmf3 = XDMFFile(path_mesh + "/domains_final.xdmf")
-xdmf.write(new_mesh)
-xdmf2.write(new_boundaries)
-xdmf3.write(new_domains)
-
-deformation = Extension(init_mfs, param, boundary_option=boundary_option, extension_option=extension_option).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
-defo = project(deformation, Vn)
-ALE.move(mesh, defo, annotate=False)
-bdfile << defo
+print("FSI_main completed", flush=True)
