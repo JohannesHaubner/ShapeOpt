@@ -224,7 +224,7 @@ RUN apt-get update
 RUN apt-get -y install libglu1 libxcursor-dev libxft2 libxinerama1 libfltk1.3-dev libfreetype6-dev libgl1-mesa-dev libocct-foundation-dev libocct-data-exchange-dev
 
 # disable cache 
-ARG CACHEBUST=110123
+ARG CACHEBUST=120123
 
 ## Install Ipopt
 WORKDIR /usr/local
@@ -241,3 +241,5 @@ RUN /bin/bash -l -c "pip3 install Cython"
 RUN /bin/bash -l -c "pip3 install six"
 
 RUN /bin/bash -l -c "pip3 install git+https://github.com/mechmotum/cyipopt.git"
+
+RUN /bin/bash -l -c "pip3 install --upgrade numpy"
