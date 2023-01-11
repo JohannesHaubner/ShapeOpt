@@ -223,13 +223,13 @@ RUN python3 -m pip install pygmsh
 RUN apt-get update
 RUN apt-get -y install libglu1 libxcursor-dev libxft2 libxinerama1 libfltk1.3-dev libfreetype6-dev libgl1-mesa-dev libocct-foundation-dev libocct-data-exchange-dev
 
-# Install Ipopt
-WORKDIR cd /usr/local
+# disable cache 
+ARG CACHEBUST=100123
+
+## Install Ipopt
+WORKDIR /usr/local
 RUN git clone https://github.com/coin-or/Ipopt.git
-RUN cd Ipopt
-RUN mkdir build && cd build
-RUN ../configure --with-lapack --with-mumps --prefix=/usr/local/ipopt
-RUN make && make install
+RUN cd Ipopt && mkdir build && cd build && ../configure --with-lapack --with-mumps --with-prefix=$IPOPT_PATH && make && make install
 
 ENV LD_LIBRARY_PATH=$IPOPT_PATH/lib:$LD_LIBRARY_PATH
 ENV PATH=$IPOPT_PATH/bin:$PATH
