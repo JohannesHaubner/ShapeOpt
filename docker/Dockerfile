@@ -8,6 +8,9 @@ ARG FFC_BRANCH="master"
 ARG DIJITSO_BRANCH="master"
 ARG FIAT_BRANCH="master"
 
+# disable cache 
+ARG CACHEBUST=0123
+
 # Flags to pass to ninja build system.
 ARG MAKEFLAGS
 # Compiler optimisation flags for SLEPc and PETSc, all languages.
@@ -84,6 +87,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     wget && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN /bin/bash -l -c "pip3 install --upgrade numpy"
+RUN /bin/bash -l -c "pip3 install h5py --no-binary=h5py"
 
 
 # Install Python packages (via pip)
@@ -223,9 +229,6 @@ RUN python3 -m pip install pygmsh
 RUN apt-get update
 RUN apt-get -y install libglu1 libxcursor-dev libxft2 libxinerama1 libfltk1.3-dev libfreetype6-dev libgl1-mesa-dev libocct-foundation-dev libocct-data-exchange-dev
 
-# disable cache 
-ARG CACHEBUST=120123
-
 ## Install Ipopt
 WORKDIR /usr/local
 RUN git clone https://github.com/coin-or/Ipopt.git
@@ -241,5 +244,3 @@ RUN /bin/bash -l -c "pip3 install Cython"
 RUN /bin/bash -l -c "pip3 install six"
 
 RUN /bin/bash -l -c "pip3 install git+https://github.com/mechmotum/cyipopt.git"
-
-RUN /bin/bash -l -c "pip3 install --upgrade numpy"
