@@ -233,7 +233,7 @@ RUN cd Ipopt && mkdir build && cd build && ../configure --with-lapack --with-mum
 
 ENV LD_LIBRARY_PATH=$IPOPT_PATH/lib:$LD_LIBRARY_PATH
 ENV PATH=$IPOPT_PATH/bin:$PATH
-ENV PKG_CONFIG_PATH=$IPOPT_PATH/pkgconfig:$PKG_CONFIG_PATH
+ENV PKG_CONFIG_PATH=$IPOPT_PATH/lib/pkgconfig:$PKG_CONFIG_PATH
 
 
 # Install cyipopt
