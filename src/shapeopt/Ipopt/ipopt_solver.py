@@ -264,8 +264,6 @@ class IPOPTSolver(OptimizationSolver):
         ub = np.array([max_float] * len(x0))
         lb = np.array([min_float] * len(x0))
 
-        from IPython import embed; embed()
-
         nlp = cyipopt.Problem(
                         n=len(x0),
                         m=len(cl),

@@ -229,14 +229,20 @@ RUN python3 -m pip install pygmsh
 RUN apt-get update
 RUN apt-get -y install libglu1 libxcursor-dev libxft2 libxinerama1 libfltk1.3-dev libfreetype6-dev libgl1-mesa-dev libocct-foundation-dev libocct-data-exchange-dev
 
+
+# disable cache 
+ARG CACHEBUST=01236
+
 ## Install Ipopt
 WORKDIR /usr/local
 RUN git clone https://github.com/coin-or/Ipopt.git
-RUN cd Ipopt && mkdir build && cd build && ../configure --with-lapack --with-mumps --prefix=$IPOPT_PATH && make && make install
+RUN git clone https://github.com/coin-or-tools/ThirdParty-Mumps.git
+RUN cd ThirdParty-Mumps && ./get.Mumps && ./configure --prefix=/usr/local && make && make install
+RUN cd Ipopt && mkdir build && cd build && ../configure --without-hsl --without-asl --with-lapack --with-mumps --prefix=/usr/local && make && make test && make install
 
-ENV LD_LIBRARY_PATH=$IPOPT_PATH/lib:$LD_LIBRARY_PATH
-ENV PATH=$IPOPT_PATH/bin:$PATH
-ENV PKG_CONFIG_PATH=$IPOPT_PATH/lib/pkgconfig:$PKG_CONFIG_PATH
+ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+ENV PATH=/usr/local/bin:$PATH
+ENV PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
 
 
 # Install cyipopt
