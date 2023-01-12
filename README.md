@@ -60,3 +60,6 @@ Solving the constraint optimization problem is performed using Ipopt.
 ### Tools
 Here, different tools are collect, e.g. initialization of function spaces, save and load objects, etc.
 
+## Acknowledgement
+Thanks go to Jørgen Dokken and Henrik Finsberg for the help, support and discussions on reproducibility.
+
