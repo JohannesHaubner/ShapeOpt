@@ -7,6 +7,11 @@
 name: Create and publish a Docker image for sub-directory
 
 on:
+  push:
+    branches:
+      - "!*"
+    tags:
+      - "v*"
   workflow_dispatch:
     inputs:
       release_tag:
