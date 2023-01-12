@@ -22,6 +22,11 @@ The Dockerfile (preliminary version) can be used by running:
 docker build -t shapeopt .
 docker run -it shapeopt
 ```
+or
+```
+docker pull ghcr.io/johanneshaubner/shapeopt:latest
+docker run -it ghcr.io/johanneshaubner/shapeopt:latest
+```
 
 
 ## Running Tests
