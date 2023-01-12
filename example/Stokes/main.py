@@ -30,7 +30,7 @@ constraint_ids = ['volume', 'barycenter'] #needs to be a list
 # set and load parameters
 geom_prop = np.load(path_mesh + '/geom_prop.npy', allow_pickle='TRUE').item()
 param = {"reg": 1e-2, # regularization parameter
-         "lb_off_p": 1.0, #Laplace Beltrami weighting
+         "lb_off_p": Constant(1.0), #Laplace Beltrami weighting
          "Vol_D": geom_prop["volume_hold_all_domain"], # volume parameter
          "Bary_D": geom_prop["barycenter_hold_all_domain"], # barycenter
          "Vol_O": geom_prop["volume_obstacle"],
@@ -138,7 +138,7 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
   stop_annotating()
   set_working_tape(Tape())
   #param["reg"] = reg
-  param["lb_off_p"] = lb_off
+  param["lb_off_p"] = Constant(lb_off)
   Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
   problem = MinimizationProblem(Jred)
   IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, boundary_option, extension_option)

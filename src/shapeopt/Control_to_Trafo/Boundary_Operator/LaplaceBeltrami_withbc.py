@@ -1,6 +1,5 @@
 from dolfin import *
 from .BoundaryOperator import BoundaryOperator
-import numpy as np
 
 class LaplaceBeltrami_withbc(BoundaryOperator):
     def __init__(self, dmesh, dnormal, lb_off):
@@ -12,14 +11,13 @@ class LaplaceBeltrami_withbc(BoundaryOperator):
         u = TrialFunction(self.Vd)
         v = TestFunction(self.Vd)
         # Define boundary conditions
-        def boundary(x, on_boundary):
-            return on_boundary
-        self.bc_param = DirichletBC(self.Vd, Constant("1.0"), boundary)
+        self.bc_param = DirichletBC(self.Vd, Constant("1.0"), 'on_boundary')
         # Define bilinear form
         a = lb_off*inner(grad(u), grad(v)) * dx(self.dmesh) + inner(u, v) * dx(self.dmesh)
         A = assemble(a)
         self.bc_param.apply(A)
         self.solver_param = PETScKrylovSolver('cg', 'hypre_amg')
+        self.solver_param.set_operator(A)
 
         # set solver for extension
 
@@ -29,25 +27,28 @@ class LaplaceBeltrami_withbc(BoundaryOperator):
         u = TrialFunction(self.Vdn)
         v = TestFunction(self.Vdn)
         # Define boundary conditions
-        def boundary(x, on_boundary):
-            return on_boundary
-        self.bc = DirichletBC(self.Vdn, Constant(("0.0", "0.0")), boundary)
+        self.bc = DirichletBC(self.Vdn, Constant(("0.0", "0.0")), 'on_boundary')
         # Define bilinear form
         a = self.lb_off * inner(grad(u), grad(v)) * dx(self.dmesh) + inner(u, v) * dx(self.dmesh)
         A = assemble(a)
         self.bc.apply(A)
         self.solver = PETScKrylovSolver('cg', 'hypre_amg')
+        self.solver.set_operator(A)
+
+        # space dependent weighting
+        self.lb_off = self.param(lb_off)
 
     def param(self, lb_off):
     
         # Define linear form
+        v = TestFunction(self.Vd)
         L = inner(lb_off, v) * dx(self.dmesh)
         b = assemble(L)
         self.bc_param.apply(b)
 
         # solve variational problem
         u = Function(self.Vd)
-        self.solver_param(u.vector(), b)
+        self.solver_param.solve(u.vector(), b)
 
         return u
 
@@ -57,13 +58,14 @@ class LaplaceBeltrami_withbc(BoundaryOperator):
         # print('Extension.vector_laplace_beltrami started.......................')
 
         # Define linear form
+        v = TestFunction(self.Vdn)
         L = inner(x * self.dnormalf, v) * dx(self.dmesh)
         b = assemble(L)
         self.bc.apply(b)
 
         # solve variational problem
         u = Function(self.Vdn)
-        self.solver(u.vector(), b)
+        self.solver.solve(u.vector(), b)
 
         return u
 
@@ -73,16 +75,19 @@ class LaplaceBeltrami_withbc(BoundaryOperator):
         # print('Extension.vector_laplace_beltrami_chainrule started.............')
 
         # Define linear form
+        z = TestFunction(self.Vdn)
         L = inner(djy, z) * dx(self.dmesh)
         b = assemble(L)
         self.bc.apply(b)
 
         # solve variational problem
         v = Function(self.Vdn)
-        self.solver(v.vector(), b)
-        
+        self.solver.solve(v.vector(), b)
+
         # evaluate dj/dx
         xt = TrialFunction(self.Vd)
         djx = assemble(inner(v, self.dnormalf) * xt * dx(self.dmesh))
 
         return djx
+
+

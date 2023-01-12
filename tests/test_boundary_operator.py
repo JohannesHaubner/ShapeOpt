@@ -28,7 +28,7 @@ dnormal = init_mfs.get_dnormalf()
 )
 def test_boundary_operator(bo_id):
     print('test boundary operator \t', bo_id)
-    order, diff = boundary_operators[bo_id](dmesh, dnormal, 0.0).test()
+    order, diff = boundary_operators[bo_id](dmesh, dnormal, Constant(0.0)).test()
     assert order > 1.8 or diff < 1e-12
 
 #test_boundary_operator(bo_ids[0])

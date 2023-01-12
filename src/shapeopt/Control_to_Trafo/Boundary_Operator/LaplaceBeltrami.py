@@ -6,10 +6,6 @@ class LaplaceBeltrami(BoundaryOperator):
     def __init__(self, dmesh, dnormal, lb_off):
         super().__init__(dmesh, dnormal, lb_off)
 
-    def eval(self, x):
-        # x: corresponds to control in self.Vd
-        # print('Extension.vector_laplace_beltrami started.......................')
-
         parameters["form_compiler"]["cpp_optimize"] = True
         parameters["form_compiler"]["optimize"] = True
 
@@ -18,16 +14,36 @@ class LaplaceBeltrami(BoundaryOperator):
         v = TestFunction(self.Vdn)
 
         # Define boundary conditions
-        bc = []
+        self.bc = []
 
         # Define bilinear form
         a = self.lb_off * inner(grad(u), grad(v)) * dx(self.dmesh) + inner(u, v) * dx(self.dmesh)
+        A = assemble(a)
+        A = self.apply_bc(self.bc, A) 
+        self.solver = PETScKrylovSolver("cg", "hypre_amg")
+        self.solver.set_operator(A)
+
+    def apply_bc(self, bc, A):
+        for i in bc:
+            bc.apply(A)
+        return A
+
+
+    def eval(self, x):
+        # x: corresponds to control in self.Vd
+        # print('Extension.vector_laplace_beltrami started.......................')
+
+        # Define trial and test functions
+        v = TestFunction(self.Vdn)
+
         # Define linear form
         L = inner(x * self.dnormalf, v) * dx(self.dmesh)
+        b = assemble(L)
+        b = self.apply_bc(self.bc, b)
 
         # solve variational problem
         u = Function(self.Vdn)
-        solve(a == L, u, bc)
+        self.solver.solve(u.vector(), b)
         return u
 
     def chainrule(self, djy):
@@ -35,24 +51,17 @@ class LaplaceBeltrami(BoundaryOperator):
         # djy = nabla j(y) (gradient)
         # print('Extension.vector_laplace_beltrami_chainrule started.............')
 
-        parameters["form_compiler"]["cpp_optimize"] = True
-        parameters["form_compiler"]["optimize"] = True
-
         # solve adjoint equation
-        v = TrialFunction(self.Vdn)
         z = TestFunction(self.Vdn)
 
-        # define boundary conditions
-        bc = []
-
-        # Define bilinear form
-        a = self.lb_off * inner(grad(v), grad(z)) * dx(self.dmesh) + inner(v, z) * dx(self.dmesh)
         # Define linear form
         L = inner(djy, z) * dx(self.dmesh)
+        b = assemble(L)
+        b = self.apply_bc(self.bc, b)
 
         # solve variational problem
         v = Function(self.Vdn)
-        solve(a == L, v, bc)
+        self.solver.solve(v.vector(), b)
 
         # evaluate dj/dx
         xt = TrialFunction(self.Vd)
