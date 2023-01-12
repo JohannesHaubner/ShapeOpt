@@ -13,4 +13,4 @@ class NoBCO(BoundaryOperator):
     def chainrule(self, djy):
         # compute derivative of j(vector_laplace_beltrami(x)) under the knowledge of
         # djy = nabla j(y) (gradient)
-        return djy
+        return djy.vector()
