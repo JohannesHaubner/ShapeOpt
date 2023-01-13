@@ -44,7 +44,7 @@ param = {"reg": 1e-2, # regularization parameter
          #"Bary_eps": 0.0, # slack for barycenter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient
          "maxiter_IPOPT": 50,
-         "T": 0.05, #15.0, # simulation horizon for Fluid-Structure interaction simulation
+         "T": 15.0, # simulation horizon for Fluid-Structure interaction simulation
          }
 
 #load mesh

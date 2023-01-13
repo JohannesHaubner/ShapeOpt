@@ -19,6 +19,7 @@ example/test_remeshing
 *.vtu
 *.pyc 
 *.pyo
+*.msh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
