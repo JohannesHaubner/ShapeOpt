@@ -252,6 +252,51 @@ class FluidStructure(ReducedObjective):
 
         J = 0
 
+        # boundary conditions
+        bc_in_0_1 = DirichletBC(W.sub(0), V_01, boundaries, params["inflow"])  # in   v
+        bc_in_0_2 = DirichletBC(W.sub(0), V_02, boundaries, params["inflow"])  # in   v
+        bc_ns_0 = DirichletBC(W.sub(0), V_1, boundaries, params["noslip"])  # ns   v
+        bc_d_0 = DirichletBC(W.sub(0), V_1, boundaries, params["design"])  # ns   v
+        bc_in_2 = DirichletBC(W.sub(2), V_1, boundaries, params["inflow"])  # in   u
+        bc_ns_2 = DirichletBC(W.sub(2), V_1, boundaries, params["noslip"])  # ns   u
+        bc_d_2 = DirichletBC(W.sub(2), V_1, boundaries, params["design"])  # ns   u
+        bc_nso_0 = DirichletBC(W.sub(0), V_1, boundaries, params["noslip_obstacle"])  # ns   v
+        bc_nso_2 = DirichletBC(W.sub(2), V_1, boundaries, params["noslip_obstacle"])  # ns   v
+
+        # update pressure boundary condition
+        bc1 = [bc_in_0_1, bc_ns_0, bc_d_0, bc_in_2, bc_ns_2, bc_d_2, bc_nso_0, bc_nso_2]
+        bc2 = [bc_in_0_2, bc_ns_0, bc_d_0, bc_in_2, bc_ns_2, bc_d_2, bc_nso_0, bc_nso_2]
+        Jac = derivative(F, w)
+        problem1 = NonlinearVariationalProblem(F, w, bc1, J=Jac)
+        problem2 = NonlinearVariationalProblem(F, w, bc2, J=Jac)
+
+        solver1 = NonlinearVariationalSolver(problem1)
+        solver2 = NonlinearVariationalSolver(problem2) 
+
+        solver_parameters = {"nonlinear_solver": "newton", "newton_solver": {"maximum_iterations": 10}}
+
+        solver1.parameters.update(solver_parameters)
+        solver2.parameters.update(solver_parameters)
+
+        class Projector():
+            def __init__(self, V):
+                self.v = TestFunction(V)
+                u = TrialFunction(V)
+                form = inner(u, self.v)*dx
+                self.A = assemble(form, annotate=False)
+                self.solver = LUSolver(self.A)
+                self.uh = Function(V)
+            def project(self, f):
+                L = inner(f, self.v)*dx
+                b = assemble(L, annotate=False)
+                self.solver.solve(self.uh.vector(), b)
+                return self.uh
+
+        projectorU = Projector(U)
+        projectorU1 = Projector(U1)
+        projectorP = Projector(P)
+
+
         while t < T - 0.5 * deltat:
             print("t = \t", t + deltat, "\n", flush=True)
             w_.assign(w)
@@ -260,30 +305,14 @@ class FluidStructure(ReducedObjective):
             V_01.t = t
             V_02.t = t
 
-            # boundary conditions
-            bc_in_0_1 = DirichletBC(W.sub(0), V_01, boundaries, params["inflow"])  # in   v
-            bc_in_0_2 = DirichletBC(W.sub(0), V_02, boundaries, params["inflow"])  # in   v
-            bc_ns_0 = DirichletBC(W.sub(0), V_1, boundaries, params["noslip"])  # ns   v
-            bc_d_0 = DirichletBC(W.sub(0), V_1, boundaries, params["design"])  # ns   v
-            bc_in_2 = DirichletBC(W.sub(2), V_1, boundaries, params["inflow"])  # in   u
-            bc_ns_2 = DirichletBC(W.sub(2), V_1, boundaries, params["noslip"])  # ns   u
-            bc_d_2 = DirichletBC(W.sub(2), V_1, boundaries, params["design"])  # ns   u
-            bc_nso_0 = DirichletBC(W.sub(0), V_1, boundaries, params["noslip_obstacle"])  # ns   v
-            bc_nso_2 = DirichletBC(W.sub(2), V_1, boundaries, params["noslip_obstacle"])  # ns   v
-
-            # update pressure boundary condition
-            bc1 = [bc_in_0_1, bc_ns_0, bc_d_0, bc_in_2, bc_ns_2, bc_d_2, bc_nso_0, bc_nso_2]
-            bc2 = [bc_in_0_2, bc_ns_0, bc_d_0, bc_in_2, bc_ns_2, bc_d_2, bc_nso_0, bc_nso_2]
             if t <= 2.0:
-                solve(F == 0, w, bc1,
-                      solver_parameters={"nonlinear_solver": "newton", "newton_solver": {"maximum_iterations": 10}})
+                solver1.solve()
             else:
-                solve(F == 0, w, bc2,
-                      solver_parameters={"nonlinear_solver": "newton", "newton_solver": {"maximum_iterations": 10}})
+                solver2.solve()
 
             if saveoption == True:
                 # append displacementy
-                u_p = project(u, U1, annotate=False)
+                u_p = projectorU1(u)
                 u_p.rename("projection", "projection")
                 try:
                     displacementy.append(u_p(Point(0.6, 0.2))[1])
@@ -294,11 +323,11 @@ class FluidStructure(ReducedObjective):
                 # plot transformed mesh
                 if abs(counter / 4.0 - int(counter / 4.0)) == 0:
                     # u_p = project(u,U2, annotate=False)
-                    u_p_inv = project((-1.0 * u), U1, annotate=False)
+                    u_p_inv = projectorU1(-1.0 * u)
                     ALE.move(mesh, u_p)
-                    up = project(u, U, annotate=False)
-                    vp = project(v, U, annotate=False)
-                    pp = project(p, P, annotate=False)
+                    up = projectorU(u)
+                    vp = projectorU(v)
+                    pp = projectorP(p)
                     vp.rename("velocity", "velocity")
                     pp.rename("pressure", "pressure")
                     pfile << pp

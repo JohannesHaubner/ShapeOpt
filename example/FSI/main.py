@@ -44,7 +44,7 @@ param = {"reg": 1e-2, # regularization parameter
          #"Bary_eps": 0.0, # slack for barycenter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient
          "maxiter_IPOPT": 50,
-         "T": 15.0, # simulation horizon for Fluid-Structure interaction simulation
+         "T": 0.05, #15.0, # simulation horizon for Fluid-Structure interaction simulation
          }
 
 #load mesh
@@ -60,10 +60,10 @@ dnormal = init_mfs.get_dnormalf()
 Vd = init_mfs.get_Vd()
 Vn = init_mfs.get_Vn()
 V = init_mfs.get_V()
-v = interpolate(Constant("1.0"),V)
+v = interpolate(Constant(1.0),V)
 
-x0 = interpolate(Constant('0.0'), Vd)
-d0 = interpolate(Constant(('0.0','0.0')), Vn)
+x0 = interpolate(Constant(0.0), Vd)
+d0 = interpolate(Constant((0.0, 0.0)), Vn)
 
 # update discretized params
 param["Vol_DmO"] = assemble(v*dx)
@@ -87,7 +87,7 @@ x0 = interpolate(Constant("0.0"), Vd).vector().get_local()
 
 remesh_flag = True
 
-param["lb_off_p"] = 1.0
+param["lb_off_p"] = Constant(1.0)
 
 counter = 0
 
