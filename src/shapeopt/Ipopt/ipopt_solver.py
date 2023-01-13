@@ -45,14 +45,14 @@ class IPOPTSolver(OptimizationSolver):
         self.problem_obj = self.create_problem_obj(self)
         
         #self.param.reg contains regularization parameter
-        print('Initialization of IPOPTSolver finished')
+        print('Initialization of IPOPTSolver finished', flush=True)
 
     def create_problem_obj(self, outer):
         return IPOPTSolver.shape_opt_prob(outer)
 
     def test_objective(self):
         # check dof_to_deformation with first order derivative check
-        print('Extension.test_objective started.......................')
+        print('Extension.test_objective started.......................', flush=True)
         xl = self.dmesh.num_vertices()
         x0 = 0.5*np.ones(xl)
         ds = 1.0*np.ones(xl)
@@ -109,7 +109,7 @@ class IPOPTSolver(OptimizationSolver):
             # The callback for calculating the objective
             #
             # x to deformation
-            print('evaluate objective')
+            print('evaluate objective', flush=True)
             deformation = Extension(self.Mesh_, self.param, self.bo, self.eo).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             #deformation = project(deformation, self.mesh)
 
@@ -126,7 +126,7 @@ class IPOPTSolver(OptimizationSolver):
             #
             # The callback for calculating the gradient
             #
-            print('evaluate derivative of objective function')
+            print('evaluate derivative of objective function', flush=True)
             deformation = Extension(self.Mesh_, self.param, self.bo, self.eo).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             # deformation = project(deformation, self.mesh)
 
@@ -235,7 +235,7 @@ class IPOPTSolver(OptimizationSolver):
             #
             # Example for the use of the intermediate callback.
             #
-            print("Objective value at iteration ", iter_count, " is ", obj_value)
+            print("Objective value at iteration ", iter_count, " is ", obj_value, flush=True)
             return
 
         def __copy_data(self, m):

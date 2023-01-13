@@ -16,7 +16,7 @@ class LaplaceBeltrami_withbc(BoundaryOperator):
         a = lb_off*inner(grad(u), grad(v)) * dx(self.dmesh) + inner(u, v) * dx(self.dmesh)
         A = assemble(a)
         self.bc_param.apply(A)
-        self.solver_param = PETScKrylovSolver('cg', 'hypre_amg')
+        self.solver_param = PETScLUSolver()
         self.solver_param.set_operator(A)
 
         # set solver for extension
@@ -32,7 +32,7 @@ class LaplaceBeltrami_withbc(BoundaryOperator):
         a = self.lb_off * inner(grad(u), grad(v)) * dx(self.dmesh) + inner(u, v) * dx(self.dmesh)
         A = assemble(a)
         self.bc.apply(A)
-        self.solver = PETScKrylovSolver('cg', 'hypre_amg')
+        self.solver = PETScLUSolver()
         self.solver.set_operator(A)
 
         # space dependent weighting

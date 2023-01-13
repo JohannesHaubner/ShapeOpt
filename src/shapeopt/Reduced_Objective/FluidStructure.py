@@ -57,7 +57,7 @@ class FluidStructure(ReducedObjective):
         # params.noslip
         # params.design
 
-        print("Use FluidStructure to compute reduced objective")
+        print("Use FluidStructure to compute reduced objective",flush=True)
 
         #parameters["adjoint"]["stop_annotating"] = False
 
@@ -121,7 +121,7 @@ class FluidStructure(ReducedObjective):
             tu.vector().set_local(control.vector().get_local())
             tu.vector().apply("")
             if flag == True:
-                print(tu.vector().get_local())
+                print(tu.vector().get_local(),flush=True)
 
         # test and trial functions
         w = Function(W, name="state")
@@ -253,7 +253,7 @@ class FluidStructure(ReducedObjective):
         J = 0
 
         while t < T - 0.5 * deltat:
-            print("t = \t", t + deltat, "\n" )
+            print("t = \t", t + deltat, "\n", flush=True)
             w_.assign(w)
             counter += 1
             t += deltat

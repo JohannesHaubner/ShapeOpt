@@ -20,7 +20,7 @@ class LaplaceBeltrami(BoundaryOperator):
         a = self.lb_off * inner(grad(u), grad(v)) * dx(self.dmesh) + inner(u, v) * dx(self.dmesh)
         A = assemble(a)
         A = self.apply_bc(self.bc, A) 
-        self.solver = PETScKrylovSolver("cg", "hypre_amg")
+        self.solver = PETScLUSolver()
         self.solver.set_operator(A)
 
     def apply_bc(self, bc, A):
