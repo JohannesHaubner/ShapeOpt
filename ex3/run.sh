@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -p milanq, dgx2q
+#SBATCH -p milanq,dgx2q
 #SBATCH -N 1
 #SBATCH -n 8
 #SBATCH -o slurm.%N.%j.out
