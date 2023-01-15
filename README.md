@@ -34,7 +34,11 @@ If the code is executed on clusters, we currently work with a version of IPOPT t
 ```
 docker save myimage:latest | gzip > shapeopt_hsl.tar.gz
 ``` 
-Then we copy the shapeopt_hsl.tar.gz file into the shapeopt folder on the cluster and run the code using
+Then we copy the shapeopt_hsl.tar.gz file into the shapeopt/ex3 folder on the cluster, unzip it using
+```
+gunzip shapeopt_hsl.tar.gz
+```
+and run the code using
 ```
 sbatch run.sh
 ```
