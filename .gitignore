@@ -13,6 +13,7 @@ example/test_remeshing
 */Output
 */__pycache__/
 */mesh
+*/coinhsl
 
 # files
 *.pvd
