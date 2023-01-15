@@ -15,7 +15,7 @@ RUN /bin/bash -l -c "pip3 uninstall -y cyipopt"
 RUN cd /usr/local &&\
     git clone https://github.com/coin-or-tools/ThirdParty-HSL.git &&\
     cd ThirdParty-HSL &&\
-    cp -r $HOME/shapeopt/hsl/coinhsl . &&\
+    cp -r ${HOME]/shapeopt/hsl/coinhsl . &&\
     mkdir build && cd build && ../configure --prefix=/usr/local &&\
     make && make install &&\
     cd /usr/local/Ipopt && rm -r build && mkdir build && cd build &&\
