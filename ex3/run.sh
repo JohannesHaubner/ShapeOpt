@@ -15,5 +15,6 @@ export SINGULARITY_DOCKER_PASSWORD=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
 
 # in SINGULARITY_DOCKER_PASSWORD there is a github-token that has just access to read:packages
 
-singularity build shapeopt.sif docker-arxiv://shapopt_hsl.tar.gz 
+# if shapeopt.sif not existing include this line: 
+#singularity build shapeopt.sif docker-arxiv://shapopt_hsl.tar.gz 
 srun -n 4 singularity exec shapeopt.sif python3 /home/haubnerj/shapeopt/example/FSI/main.py
