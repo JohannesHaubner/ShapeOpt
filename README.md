@@ -42,11 +42,11 @@ and run the code using
 ```
 sbatch run.sh
 ```
-(Only for the very first time that run.sh is executed, it is neccessary to uncomment one line in the run.sh script to do
+If shapeopt/ex3/shapeopt.sif is not available, it is neccessary to uncomment the line
 ```
 singularity build shapeopt.sif docker-arxiv://shapopt_hsl.tar
 ```
-)
+in the run.sh script.
 
 ## Running Tests
 
