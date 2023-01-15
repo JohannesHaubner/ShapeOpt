@@ -28,6 +28,17 @@ docker pull ghcr.io/johanneshaubner/shapeopt:latest
 docker run -it ghcr.io/johanneshaubner/shapeopt:latest
 ```
 
+### Running IPOPT with HSL
+
+If the code is executed on clusters, we currently work with a version of IPOPT that is compiled against HSL (and also works in parallel). To do so, the Coin-HSL sources archive needs to be added such that it becomes shapeopt/hsl/coinhsl. Afterwards we build the docker image via Dockerfile_hsl and save it to a tar.gz file via:
+```
+docker save myimage:latest | gzip > shapeopt_hsl.tar.gz
+``` 
+Then we copy the shapeopt_hsl.tar.gz file into the shapeopt folder on the cluster and run the code using
+```
+sbatch run.sh
+```
+
 
 ## Running Tests
 
