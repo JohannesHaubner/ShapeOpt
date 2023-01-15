@@ -21,7 +21,7 @@ RUN cd /usr/local &&\
     cd /usr/local/Ipopt && rm -r build && mkdir build && cd build &&\
     ../configure --without-asl --without-mumpos --with-lapack --with-hsl --prefix=/usr/local &&\
     make && make test && make install
-RUN RUN /bin/bash -l -c "pip3 install git+https://github.com/mechmotum/cyipopt.git"
+RUN /bin/bash -l -c "pip3 install git+https://github.com/mechmotum/cyipopt.git"
 
 # Change ownership of home directory
 USER root
