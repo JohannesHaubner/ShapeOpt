@@ -42,7 +42,11 @@ and run the code using
 ```
 sbatch run.sh
 ```
-
+(Only for the very first time that run.sh is executed, it is neccessary to uncomment one line in the run.sh script to do
+```
+singularity build shapeopt.sif docker-arxiv://shapopt_hsl.tar.gz 
+```
+)
 
 ## Running Tests
 
