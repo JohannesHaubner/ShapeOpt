@@ -19,7 +19,7 @@ RUN cd /usr/local &&\
     mkdir build && cd build && ../configure --prefix=/usr/local &&\
     make && make install &&\
     cd /usr/local/Ipopt && rm -r build && mkdir build && cd build &&\
-    ../configure --without-asl --without-mumpos --with-lapack --with-hsl --prefix=/usr/local &&\
+    ../configure --without-asl --without-mumps --with-lapack --with-hsl --prefix=/usr/local &&\
     make && make test && make install
 RUN /bin/bash -l -c "pip3 install git+https://github.com/mechmotum/cyipopt.git"
 
