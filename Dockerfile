@@ -1,5 +1,5 @@
 # Use github pages for docker image
-FROM ghcr.io/johanneshaubner/shapeopt:v0.1.0
+FROM ghcr.io/johanneshaubner/shapeopt:latest
 
 # Create user with a home directory
 ARG NB_USER
