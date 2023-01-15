@@ -11,6 +11,13 @@ ENV HOME /home/${NB_USER}
 WORKDIR ${HOME}
 COPY . ${HOME}
 
+# Change ownership of home directory
+USER root
+RUN chown -R ${NB_UID} ${HOME}
+
+USER ${NB_USER}
+ENTRYPOINT []
+
 RUN /bin/bash -l -c "pip3 uninstall -y cyipopt"
 RUN cd /usr/local &&\
     git clone https://github.com/coin-or-tools/ThirdParty-HSL.git &&\
@@ -22,10 +29,3 @@ RUN cd /usr/local &&\
     ../configure --without-asl --without-mumps --with-lapack --with-hsl --prefix=/usr/local &&\
     make && make test && make install
 RUN /bin/bash -l -c "pip3 install git+https://github.com/mechmotum/cyipopt.git"
-
-# Change ownership of home directory
-USER root
-RUN chown -R ${NB_UID} ${HOME}
-
-USER ${NB_USER}
-ENTRYPOINT []
