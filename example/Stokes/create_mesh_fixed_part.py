@@ -90,13 +90,14 @@ import meshio
 mesh_from_file = meshio.read("./mesh/mesh.msh")
 
 import numpy
-def create_mesh(mesh, cell_type, prune_z=False):
+def create_mesh(mesh: meshio.Mesh, cell_type: str, data_name: str = "name_to_read",
+                prune_z: bool = False):
     cells = mesh.get_cells_type(cell_type)
     cell_data = mesh.get_cell_data("gmsh:physical", cell_type)
-    out_mesh = meshio.Mesh(points=mesh.points, cells={cell_type: cells}, cell_data={"name_to_read":[cell_data]})
-    if prune_z:
-        out_mesh.prune_z_0()
-    return out_mesh
+    points = mesh.points[:, :2] if prune_z else mesh.points
+    out_mesh = meshio.Mesh(points=points, cells={cell_type: cells}, cell_data={
+                           data_name: [cell_data]})
+    return out_mesh #https://fenicsproject.discourse.group/t/what-is-wrong-with-my-mesh/7504/8
 
 line_mesh = create_mesh(mesh_from_file, "line", prune_z=True)
 meshio.write("./mesh/facet_mesh.xdmf", line_mesh)
