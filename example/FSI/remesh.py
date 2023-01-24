@@ -32,26 +32,37 @@ def remesh(mesh_ending_read: str, mesh_ending_write: str, pathmesh: str):
 
     mr_mesh = pathmesh + '/mesh_triangles' + mr + '.xdmf'
     mr_bound = pathmesh + '/facet_mesh' + mr + '.xdmf'
+    mr_domain = pathmesh + '/domains' + mr + '.xdmf'
 
     mw_facet = pathmesh + '/facet_mesh' + mw + '.xdmf'
     mw_boundary = pathmesh + '/mesh_triangles' + mw + '.xdmf'
 
     if mpi4py.MPI.COMM_WORLD.rank == 0:
-
+            
         # load mesh
         mesh = Mesh(MPI.comm_self)
         with XDMFFile(MPI.comm_self, mr_mesh) as infile:
             infile.read(mesh)
 
         # load markers
-        mvc = MeshValueCollection('size_t', mesh, 2)
-        with XDMFFile(MPI.comm_self, mr_mesh) as infile:
-            infile.read(mvc)
+        
+        try:
+            mvc = MeshValueCollection("size_t", mesh, 2)
+            with XDMFFile(MPI.comm_self, mr_domain) as infile:
+                infile.read(mvc)
+        except:
+            mvc = MeshValueCollection("size_t", mesh, 2)
+            with XDMFFile(MPI.comm_self, mr_mesh) as infile:
+                infile.read(mvc, "name_to_read")
         domains = MeshFunction('size_t', mesh, mvc)
 
         mvc = MeshValueCollection('size_t', mesh, 1)
-        with XDMFFile(MPI.comm_self, mr_bound) as infile:
-            infile.read(mvc)
+        try:
+          with XDMFFile(MPI.comm_self, mr_bound) as infile:
+              infile.read(mvc)
+        except:
+          with XDMFFile(MPI.comm_self, mr_bound) as infile:
+            infile.read(mvc, "name_to_read")
         boundaries = MeshFunction('size_t', mesh, mvc)
 
 
