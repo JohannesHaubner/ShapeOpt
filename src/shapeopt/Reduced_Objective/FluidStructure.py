@@ -49,7 +49,7 @@ class FluidStructure(ReducedObjective):
         return u
 
 
-    def eval(self, mesh, domains, boundaries, params, param, flag=False, red_func=False, control=False):
+    def eval(self, mesh, domains, boundaries, params, param, flag=False, red_func=False, control=False, add_penalty=True):
         # mesh generated
         # params dictionary, includes labels for boundary parts:
         # params.inflow
@@ -230,7 +230,7 @@ class FluidStructure(ReducedObjective):
                                                                           , grad(psiv).T) * dxs)
 
         # shifted crank nicolson scheme
-        F = A_T + A_P + A_I + theta * A_E + (1.0 - theta) * A_E_rhs
+        F = A_T + A_P + A_I + theta * A_E + (Constant(1.0) - theta) * A_E_rhs
 
         # output files
         saveoption = False
@@ -350,7 +350,8 @@ class FluidStructure(ReducedObjective):
             return conditional(gt(r, eps), r - eps / 2, conditional(lt(r, 0), 0, r ** 2 / (2 * eps)))
 
         #objective function
-        J += assemble(0.5*gammaP * smoothmax(etaP - tJhat)**2*dx(mesh))
+        if add_penalty:
+            J += assemble(0.5*gammaP * smoothmax(etaP - tJhat)**2*dx(mesh))
 
         if flag:
           dJ = compute_gradient(J,Control(tu))
