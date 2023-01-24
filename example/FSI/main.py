@@ -43,10 +43,10 @@ param = {"reg": 1e-2, # regularization parameter
          "relax_eq": 0.0, #relax barycenter
          #"Bary_eps": 0.0, # slack for barycenter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient
-         "maxiter_IPOPT": 50,
+         "maxiter_IPOPT": 1,
          "T": 15.0, # simulation horizon for Fluid-Structure interaction simulation
          "gammaP": 1e5, # penalty parameter for determinant constraint violation
-         "etaP": 0.05, # smoothing parameter for max term in determinant const. violation
+         "etaP": 0.03, # smoothing parameter for max term in determinant const. violation
          }
 
 #load mesh
@@ -95,41 +95,65 @@ counter = 0
 
 for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:  #[1e0, 0.5, 0.25, 0.125, 0.1, 0.05, 0.025, 0.0125, 0.01, 0.005, 0.0025, 0.00125, 0.001, 0.0001, 0.00001, 1e-6]:
 
-  deformation = Extension(init_mfs, param, boundary_option=boundary_option, extension_option=extension_option).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
-  defo = deformation # project(deformation, Vn)
-  ALE.move(mesh, defo, annotate=False)
-  bdfile << defo
-  if remesh_flag == True:
-      if counter == 0:
-          remesh("", "_new", path_mesh)
-      else:
-          remesh("_new", "_new", path_mesh)
-      counter += 1
-      init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh, load_mesh=True, domains=False)
-  else:
-      init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh)
-  mesh = init_mfs.get_mesh()
-  dmesh = init_mfs.get_design_boundary_mesh()
-  boundaries = init_mfs.get_boundaries()
-  domains = init_mfs.get_domains()
-  params = init_mfs.get_params()
-  dnormal = init_mfs.get_dnormalf()
+    deformation = Extension(init_mfs, param, boundary_option=boundary_option, extension_option=extension_option).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
+    defo = deformation # project(deformation, Vn)
 
-  Vd = init_mfs.get_Vd()
-  Vn = init_mfs.get_Vn()
-  V = init_mfs.get_V()
-  v = interpolate(Constant("1.0"), V)
+    # move mesh and save moved mesh
+    ALE.move(mesh, defo, annotate=False)
+    new_mesh = Mesh(mesh)
 
-  x0 = interpolate(Constant("0.0"), Vd).vector().get_local()
+    mvc2 = MeshValueCollection("size_t", new_mesh, 2)
+    new_domains = cpp.mesh.MeshFunctionSizet(new_mesh, mvc2)
+    new_domains.set_values(domains.array())
 
-  stop_annotating()
-  set_working_tape(Tape())
-  #param["reg"] = reg
-  param["lb_off_p"] = Constant(lb_off)
-  Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
-  problem = MinimizationProblem(Jred)
-  IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, boundary_option, extension_option)
-  x, info = IPOPT.solve(x0)
-  x0 = x
+    mvc = MeshValueCollection("size_t", new_mesh, 1)
+    new_boundaries = cpp.mesh.MeshFunctionSizet(new_mesh, mvc)
+    new_boundaries.set_values(boundaries.array())
 
-print("FSI_main completed", flush=True)
+    #plt.figure()
+    #plot(new_domains)
+    #plt.show()
+
+
+    xdmf = XDMFFile(path_mesh + "/mesh_triangles_new.xdmf")
+    xdmf2 = XDMFFile(path_mesh + "/facet_mesh_new.xdmf")
+    xdmf3 = XDMFFile(path_mesh + "/domains_new.xdmf")
+    xdmf.write(new_mesh)
+    xdmf2.write(new_boundaries)
+    xdmf3.write(new_domains)
+    bdfile << defo
+
+    if remesh_flag == True:
+        if counter == 0:
+            remesh("", "_new", path_mesh)
+        else:
+            remesh("_new", "_new", path_mesh)
+        counter += 1
+        init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh, load_mesh=True, domains=False)
+    else:
+        init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh, load_mesh=True)
+    mesh = init_mfs.get_mesh()
+    dmesh = init_mfs.get_design_boundary_mesh()
+    boundaries = init_mfs.get_boundaries()
+    domains = init_mfs.get_domains()
+    params = init_mfs.get_params()
+    dnormal = init_mfs.get_dnormalf()
+
+    Vd = init_mfs.get_Vd()
+    Vn = init_mfs.get_Vn()
+    V = init_mfs.get_V()
+    v = interpolate(Constant("1.0"), V)
+
+    x0 = interpolate(Constant("0.0"), Vd).vector().get_local()
+
+    stop_annotating()
+    set_working_tape(Tape())
+    #param["reg"] = reg
+    param["lb_off_p"] = Constant(lb_off)
+    Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
+    problem = MinimizationProblem(Jred)
+    IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, boundary_option, extension_option)
+    x, info = IPOPT.solve(x0)
+    x0 = x
+
+    print("FSI_main completed", flush=True)
