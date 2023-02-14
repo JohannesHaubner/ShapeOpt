@@ -45,8 +45,8 @@ param = {"reg": 1e-2, # regularization parameter
          #"Bary_eps": 0.0, # slack for barycenter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient
          "maxiter_IPOPT": 50,
-         "T": 0.02, #15.0, # simulation horizon for Fluid-Structure interaction simulation
-         "gammaP": 1e3, # penalty parameter for determinant constraint violation
+         "T": 15.0, # simulation horizon for Fluid-Structure interaction simulation
+         "gammaP": 1e2, # penalty parameter for determinant constraint violation
          "etaP": 0.2, # smoothing parameter for max term in determinant const. violation
          }
 
@@ -94,7 +94,7 @@ param["lb_off_p"] = Constant(1.0)
 
 counter = 1
 
-for lb_off in [1e0, 0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625]:# [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:  #[1e0, 0.5, 0.25, 0.125, 0.1, 0.05, 0.025, 0.0125, 0.01, 0.005, 0.0025, 0.00125, 0.001, 0.0001, 0.00001, 1e-6]:
+for lb_off in [1e0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]: # 0.25, 0.125, 0.0625, 0.03125, 0.015625]:# [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:  #[1e0, 0.5, 0.25, 0.125, 0.1, 0.05, 0.025, 0.0125, 0.01, 0.005, 0.0025, 0.00125, 0.001, 0.0001, 0.00001, 1e-6]:
 
     deformation = Extension(init_mfs, param, boundary_option=boundary_option, extension_option=extension_option).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
     defo = deformation # project(deformation, Vn)
