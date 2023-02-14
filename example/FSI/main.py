@@ -1,6 +1,7 @@
 from dolfin import *
 from pyadjoint import *
 import numpy as np
+import gc
 
 from pathlib import Path
 here = Path(__file__).parent.resolve()
@@ -44,7 +45,7 @@ param = {"reg": 1e-2, # regularization parameter
          #"Bary_eps": 0.0, # slack for barycenter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient
          "maxiter_IPOPT": 50,
-         "T": 15.0, # simulation horizon for Fluid-Structure interaction simulation
+         "T": 0.02, #15.0, # simulation horizon for Fluid-Structure interaction simulation
          "gammaP": 1e3, # penalty parameter for determinant constraint violation
          "etaP": 0.2, # smoothing parameter for max term in determinant const. violation
          }
@@ -91,7 +92,7 @@ remesh_flag = True
 
 param["lb_off_p"] = Constant(1.0)
 
-counter = 0
+counter = 1
 
 for lb_off in [1e0, 0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625]:# [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:  #[1e0, 0.5, 0.25, 0.125, 0.1, 0.05, 0.025, 0.0125, 0.01, 0.005, 0.0025, 0.00125, 0.001, 0.0001, 0.00001, 1e-6]:
 
@@ -122,6 +123,13 @@ for lb_off in [1e0, 0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625]:# [1e0, 0.1, 0.
     xdmf2.write(new_boundaries)
     xdmf3.write(new_domains)
     bdfile << defo
+
+    del init_mfs
+    del Vd
+    del Vn 
+    del V
+    del Jred
+    del problem
 
     if remesh_flag == True:
         if counter == 0:

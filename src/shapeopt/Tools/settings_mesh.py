@@ -146,7 +146,7 @@ class Initialize_Mesh_and_FunctionSpaces():
       # dof-maps between V and Vd
       self.Vd_to_V_map = self.__Vd_to_V(Vb, Vb_to_V_map)
       #self.__test_Vdn_to_Vn()
-      self.__test_Vd_to_V()
+      #self.__test_Vd_to_V()
 
       # normal on design boundary
       v = TestFunction(self.Vn)
