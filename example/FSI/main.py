@@ -32,7 +32,7 @@ constraint_ids = ['volume', 'barycenter'] #needs to be a list
 
 # set and load parameters
 geom_prop = np.load(path_mesh + '/geom_prop.npy', allow_pickle='TRUE').item()
-param = {"reg": 1e-2, # regularization parameter
+param = {"reg": 1e-1, # regularization parameter
          "lb_off_p": Constant(1.0), #Laplace Beltrami weighting
          "Vol_D": geom_prop["volume_hold_all_domain"], # volume parameter
          "Bary_D": geom_prop["barycenter_hold_all_domain"], # barycenter
@@ -94,7 +94,7 @@ param["lb_off_p"] = Constant(1.0)
 
 counter = 1
 
-for lb_off in [1e0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]: # 0.25, 0.125, 0.0625, 0.03125, 0.015625]:# [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:  #[1e0, 0.5, 0.25, 0.125, 0.1, 0.05, 0.025, 0.0125, 0.01, 0.005, 0.0025, 0.00125, 0.001, 0.0001, 0.00001, 1e-6]:
+for lb_off in [1e-3]: 
 
     deformation = Extension(init_mfs, param, boundary_option=boundary_option, extension_option=extension_option).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
     defo = deformation # project(deformation, Vn)
@@ -165,3 +165,29 @@ for lb_off in [1e0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]: # 0.25, 0.125,
     x0 = x
 
     print("FSI_main completed", flush=True)
+
+deformation = Extension(init_mfs, param, boundary_option=boundary_option, extension_option=extension_option).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
+defo = deformation # project(deformation, Vn)
+
+# move mesh and save moved mesh
+ALE.move(mesh, defo, annotate=False)
+new_mesh = Mesh(mesh)
+
+mvc2 = MeshValueCollection("size_t", new_mesh, 2)
+new_domains = cpp.mesh.MeshFunctionSizet(new_mesh, mvc2)
+new_domains.set_values(domains.array())
+
+mvc = MeshValueCollection("size_t", new_mesh, 1)
+new_boundaries = cpp.mesh.MeshFunctionSizet(new_mesh, mvc)
+new_boundaries.set_values(boundaries.array())
+
+xdmf = XDMFFile(path_mesh + "/mesh_triangles_final.xdmf")
+xdmf2 = XDMFFile(path_mesh + "/facet_mesh_final.xdmf")
+xdmf3 = XDMFFile(path_mesh + "/domains_final.xdmf")
+xdmf.write(new_mesh)
+xdmf2.write(new_boundaries)
+xdmf3.write(new_domains)
+
+
+defo = project(deformation, Vn)
+bdfile << defo

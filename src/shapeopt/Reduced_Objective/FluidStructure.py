@@ -49,7 +49,7 @@ class FluidStructure(ReducedObjective):
         return u
 
 
-    def eval(self, mesh, domains, boundaries, params, param, flag=False, red_func=False, control=False, add_penalty=True):
+    def eval(self, mesh, domains, boundaries, params, param, flag=False, red_func=False, control=False, add_penalty=False):
         # mesh generated
         # params dictionary, includes labels for boundary parts:
         # params.inflow
