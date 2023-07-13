@@ -8,7 +8,8 @@ if not os.path.exists("./mesh"):
     os.makedirs("./mesh")
 
 # resolution
-resolution = 0.05  #0.05 #1 # 0.005 #0.1
+resolution = 0.025  #0.05 #1 # 0.005 #0.1
+alp = 0.2
 
 # geometric properties
 L = 2.5 #2.5 #20            # length of channel
@@ -61,16 +62,16 @@ pc = model.add_point(c)
 sin = 0.5 # sin(30°)
 cos = np.sqrt(3)/2 # cos(30°)
 pc0 = model.add_point(c)
-pc1 = model.add_point((c[0]-r, c[1], 0), mesh_size=0.1*resolution)
-pc2 = model.add_point((0.24898979485, 0.21, 0), mesh_size=0.1*resolution)
-pc3 = model.add_point((0.24898979485, 0.19,0), mesh_size=0.1*resolution)
+pc1 = model.add_point((c[0]-r, c[1], 0), mesh_size=alp*resolution)
+pc2 = model.add_point((0.24898979485, 0.21, 0), mesh_size=alp*resolution)
+pc3 = model.add_point((0.24898979485, 0.19,0), mesh_size=alp*resolution)
 circle1 = model.add_circle_arc(pc2, pc0, pc1)
 circle2 = model.add_circle_arc(pc1, pc0, pc3)
 circle3 = model.add_circle_arc(pc2, pc0, pc3)
 
 # Add elastic flag
-pf1 = model.add_point((0.6, 0.21, 0), mesh_size=0.1*resolution)
-pf2 = model.add_point((0.6, 0.19, 0), mesh_size=0.1*resolution)
+pf1 = model.add_point((0.6, 0.21, 0), mesh_size=alp*resolution)
+pf2 = model.add_point((0.6, 0.19, 0), mesh_size=alp*resolution)
 fl1 = model.add_line(pc3, pf2)
 fl2 = model.add_line(pf2, pf1)
 fl3 = model.add_line(pf1, pc2)

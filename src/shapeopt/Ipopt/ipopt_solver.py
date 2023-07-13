@@ -1,7 +1,6 @@
 from dolfin import *
 from dolfin_adjoint import *
 import numpy as np
-import backend
 
 from pyadjoint.optimization.optimization_solver import OptimizationSolver
 from pyadjoint.reduced_functional_numpy import ReducedFunctionalNumPy
@@ -103,6 +102,20 @@ class IPOPTSolver(OptimizationSolver):
             self.domains = self.Mesh_.get_domains()
             self.boundaries = self.Mesh_.get_boundaries()
             self.params = self.Mesh_.get_params()
+            self.file_objective = File('./mesh/objective_eval_meshes.pvd') #TODO: fix!
+            self.file_gradient = File('./mesh/gradient_eval_meshes.pvd')
+            self.save_opt = True
+
+        def save_output(self, deformation, grad=True):
+            print('save output')
+            deformation_inv = project(-1.0*deformation, deformation.function_space(), annotate=False)
+            ALE.move(deformation.function_space().mesh(), deformation, annotate=False)
+            if grad:
+                self.file_gradient << deformation.function_space().mesh()
+            else:
+                self.file_objective << deformation.function_space().mesh()
+            ALE.move(deformation.function_space().mesh(), deformation_inv, annotate=False)
+            pass
 
         def objective(self, x):
             #
@@ -111,7 +124,8 @@ class IPOPTSolver(OptimizationSolver):
             # x to deformation
             print('evaluate objective', flush=True)
             deformation = Extension(self.Mesh_, self.param, self.bo, self.eo).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
-            #deformation = project(deformation, self.mesh)
+            if self.save_opt:
+                self.save_output(deformation, grad=False)
 
             # move mesh in direction of deformation
             j1 = reduced_objectives[self.application].eval(self.mesh, self.domains, self.boundaries, self.params, self.param,
@@ -128,7 +142,8 @@ class IPOPTSolver(OptimizationSolver):
             #
             print('evaluate derivative of objective function', flush=True)
             deformation = Extension(self.Mesh_, self.param, self.bo, self.eo).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
-            # deformation = project(deformation, self.mesh)
+            if self.save_opt:
+                self.save_output(deformation)
 
             # compute gradient
             j, dJf = reduced_objectives[self.application].eval(self.mesh, self.domains, self.boundaries, self.params,
@@ -280,7 +295,7 @@ class IPOPTSolver(OptimizationSolver):
         nlp.add_option('limited_memory_update_type', 'bfgs')
         nlp.add_option('point_perturbation_radius', 0.0)
         nlp.add_option('max_iter', self.param["maxiter_IPOPT"])
-        nlp.add_option('tol', 1e-5)
+        nlp.add_option('tol', 1e-3)
 
         x, info = nlp.solve(x0)
         return x, info

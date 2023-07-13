@@ -76,8 +76,8 @@ bc = constraints['barycenter'](init_mfs, param, boundary_option, extension_optio
 param["Bary_O"] = np.add(bc, bo)
 
 # solve optimization problem
-Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
-problem = MinimizationProblem(Jred)
+#Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
+#problem = MinimizationProblem(Jred)
 
 #ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids,
 #                                           boundary_option, extension_option).test_objective()
@@ -95,51 +95,6 @@ param["lb_off_p"] = Constant(1.0)
 counter = 1
 
 for lb_off in [1e-3]: 
-
-    deformation = Extension(init_mfs, param, boundary_option=boundary_option, extension_option=extension_option).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
-    defo = deformation # project(deformation, Vn)
-
-    # move mesh and save moved mesh
-    ALE.move(mesh, defo, annotate=False)
-    new_mesh = Mesh(mesh)
-
-    mvc2 = MeshValueCollection("size_t", new_mesh, 2)
-    new_domains = cpp.mesh.MeshFunctionSizet(new_mesh, mvc2)
-    new_domains.set_values(domains.array())
-
-    mvc = MeshValueCollection("size_t", new_mesh, 1)
-    new_boundaries = cpp.mesh.MeshFunctionSizet(new_mesh, mvc)
-    new_boundaries.set_values(boundaries.array())
-
-    #plt.figure()
-    #plot(new_domains)
-    #plt.show()
-
-
-    xdmf = XDMFFile(path_mesh + "/mesh_triangles_new.xdmf")
-    xdmf2 = XDMFFile(path_mesh + "/facet_mesh_new.xdmf")
-    xdmf3 = XDMFFile(path_mesh + "/domains_new.xdmf")
-    xdmf.write(new_mesh)
-    xdmf2.write(new_boundaries)
-    xdmf3.write(new_domains)
-    bdfile << defo
-
-    del init_mfs
-    del Vd
-    del Vn 
-    del V
-    del Jred
-    del problem
-
-    if remesh_flag == True:
-        if counter == 0:
-            remesh("", "_new", path_mesh)
-        else:
-            remesh("_new", "_new", path_mesh)
-        counter += 1
-        init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh, load_mesh=True, domains=False)
-    else:
-        init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh, load_mesh=True)
     mesh = init_mfs.get_mesh()
     dmesh = init_mfs.get_design_boundary_mesh()
     boundaries = init_mfs.get_boundaries()
