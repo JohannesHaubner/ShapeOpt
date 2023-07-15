@@ -117,6 +117,20 @@ class IPOPTSolver(OptimizationSolver):
             ALE.move(deformation.function_space().mesh(), deformation_inv, annotate=False)
             pass
 
+        def check_mesh_quality(self, deformation):
+            print('check mesh quality')
+            # check mesh quality
+            mesh = deformation.function_space().mesh()
+            dim = mesh.geometric_dimension()
+            V = FunctionSpace(mesh, "DG", 0)
+            dgt = project(det(Identity(dim) + grad(deformation)), V, annotate=False)
+            if dgt.vector().min() < 0.5*self.param['det_lb']:
+                return False
+            else:
+                return True
+
+
+
         def objective(self, x):
             #
             # The callback for calculating the objective
@@ -126,14 +140,18 @@ class IPOPTSolver(OptimizationSolver):
             deformation = Extension(self.Mesh_, self.param, self.bo, self.eo).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             if self.save_opt:
                 self.save_output(deformation, grad=False)
+            mesh_quality = self.check_mesh_quality(deformation)
+            if mesh_quality:
+                # move mesh in direction of deformation
+                j1 = reduced_objectives[self.application].eval(self.mesh, self.domains, self.boundaries, self.params, self.param,
+                                            control=deformation, flag=False)  #
+                #j1 =  self.rfn(deformation.vector()) #self.rfn(deformation)
 
-            # move mesh in direction of deformation
-            j1 = reduced_objectives[self.application].eval(self.mesh, self.domains, self.boundaries, self.params, self.param,
-                                          control=deformation, flag=False)  #
-            #j1 =  self.rfn(deformation.vector()) #self.rfn(deformation)
-
-            # add regularization (note that due to preconditioning no matrix is needed)
-            j = j1 + 0.5 * self.param["reg"] * np.dot(x, x)  # regularization
+                # add regularization (note that due to preconditioning no matrix is needed)
+                j = j1 + 0.5 * self.param["reg"] * np.dot(x, x)  # regularization
+            else:
+                # heuristic 
+                j = 1e16
             return j
 
         def gradient(self, x):
@@ -144,7 +162,7 @@ class IPOPTSolver(OptimizationSolver):
             deformation = Extension(self.Mesh_, self.param, self.bo, self.eo).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             if self.save_opt:
                 self.save_output(deformation)
-
+            
             # compute gradient
             j, dJf = reduced_objectives[self.application].eval(self.mesh, self.domains, self.boundaries, self.params,
                                               self.param, flag=True, control=deformation)
