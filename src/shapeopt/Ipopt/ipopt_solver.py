@@ -162,7 +162,9 @@ class IPOPTSolver(OptimizationSolver):
             deformation = Extension(self.Mesh_, self.param, self.bo, self.eo).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             if self.save_opt:
                 self.save_output(deformation)
-            
+            mesh_quality = self.check_mesh_quality(deformation)
+            if not mesh_quality:
+                print('Warning: Gradient is evaluated at a point, where transformed mesh is degenerated. Check if your parameter setting is reasonable, or implement a routine that can deal with gradient evaluations for degenerated meshes.')
             # compute gradient
             j, dJf = reduced_objectives[self.application].eval(self.mesh, self.domains, self.boundaries, self.params,
                                               self.param, flag=True, control=deformation)
