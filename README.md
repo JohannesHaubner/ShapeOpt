@@ -9,13 +9,11 @@ Code repository for the manuscript
 
 >J. Haubner, M. Ulbrich: Advanced Numerical Methods for Shape Optimal Design of Fluid-Structure Interaction Problems. 
 
-and the PhD thesis
+based on the implementation for the PhD thesis
 
 >J. Haubner: Shape Optimization for Fluid-Structure Interaction, Doctoral Dissertation, Technische Universität München, 2020
 
 ## Usage/Examples
-
-Requires a recent master version of dolfin with MeshView support. It might require the changes propsed in https://bitbucket.org/fenics-project/dolfin/issues/1123/assemble-on-mixed-meshview-forms-returns.
 
 The Dockerfile (preliminary version) can be used by running:
 ```
@@ -28,7 +26,15 @@ docker pull ghcr.io/johanneshaubner/shapeopt:latest
 docker run -it ghcr.io/johanneshaubner/shapeopt:latest
 ```
 
+For runs in parallel, IPOPT needs to be installed with HSL. To do so, the Coin-HSL sources archive needs to be added such that it becomes shapeopt/hsl/coinhsl. Afterwards we build the docker image via Dockerfile_hsl.
+
+If not ran from Docker image:
+Requires a recent master version of dolfin with MeshView support. Requires the changes propsed in https://bitbucket.org/fenics-project/dolfin/issues/1123/assemble-on-mixed-meshview-forms-returns.
+
+
 ### Running IPOPT with HSL
+
+(The following might be outdated:)
 
 If the code is executed on clusters, we currently work with a version of IPOPT that is compiled against HSL (and also works in parallel). To do so, the Coin-HSL sources archive needs to be added such that it becomes shapeopt/hsl/coinhsl. Afterwards we build the docker image via Dockerfile_hsl and save it to a tar.gz file via:
 ```
