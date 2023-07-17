@@ -37,7 +37,8 @@ param = {"reg": 1e-2, # regularization parameter
          "relax_eq": 0.0, #relax barycenter
          #"Bary_eps": 0.0, # slack for barycenter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient
-         "maxiter_IPOPT": 50
+         "maxiter_IPOPT": 50,
+         "output_path": path_mesh + "/Output/", # folder where intermediate results are stored
          }
 
 # specify boundary and extension operator (use Extension.print_options())
