@@ -49,7 +49,7 @@ class FluidStructure(ReducedObjective):
         return u
 
 
-    def eval(self, mesh, domains, boundaries, params, param, flag=False, red_func=False, control=False, add_penalty=True):
+    def eval(self, mesh, domains, boundaries, params, param, flag=False, red_func=False, control=False, add_penalty=True, visualize=False, vis_folder=str()):
         # mesh generated
         # params dictionary, includes labels for boundary parts:
         # params.inflow
@@ -81,6 +81,13 @@ class FluidStructure(ReducedObjective):
         P = FunctionSpace(mesh, S1)
 
         phiv = self.meanflow_function(mesh, boundaries, params)
+        
+        # charFunc
+        CE = FiniteElement("DG", mesh.ufl_cell(), 0)
+        C = FunctionSpace(mesh, CE)
+        charfunc = Function(C)
+        charfunc.vector().set_local(domains.array())
+        charfunc.vector().apply("")
 
         stop_annotating()
         set_working_tape(Tape())
@@ -233,9 +240,12 @@ class FluidStructure(ReducedObjective):
         F = A_T + A_P + A_I + theta * A_E + (Constant(1.0) - theta) * A_E_rhs
 
         # output files
-        saveoption = False
-        if saveoption == True:
+        if visualize:
+            save_directory = str(here.parent.parent.parent) + "/example/FSI/Output/Forward" + vis_folder
             fssim = save_directory + "/"
+            import os
+            if not os.path.exists(save_directory):
+                os.makedirs(save_directory)
             vstring = fssim + 'velocity.pvd'
             v2string = fssim + 'velocity2.pvd'
             pstring = fssim + 'pressure.pvd'
@@ -310,9 +320,9 @@ class FluidStructure(ReducedObjective):
             else:
                 solver2.solve()
 
-            if saveoption == True:
+            if visualize:
                 # append displacementy
-                u_p = projectorU1(u)
+                u_p = projectorU1.project(u)
                 u_p.rename("projection", "projection")
                 try:
                     displacementy.append(u_p(Point(0.6, 0.2))[1])
@@ -323,16 +333,16 @@ class FluidStructure(ReducedObjective):
                 # plot transformed mesh
                 if abs(counter / 4.0 - int(counter / 4.0)) == 0:
                     # u_p = project(u,U2, annotate=False)
-                    u_p_inv = projectorU1(-1.0 * u)
+                    u_p_inv = projectorU1.project(-1.0 * u)
                     ALE.move(mesh, u_p)
-                    up = projectorU(u)
-                    vp = projectorU(v)
-                    pp = projectorP(p)
+                    vp = projectorU.project(v)
+                    pp = projectorP.project(p)
                     vp.rename("velocity", "velocity")
                     pp.rename("pressure", "pressure")
                     pfile << pp
                     vfile << vp
                     v2file << vp
+                    charfile << charfunc
 
                     ALE.move(mesh, u_p_inv)
 
