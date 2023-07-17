@@ -102,8 +102,8 @@ class IPOPTSolver(OptimizationSolver):
             self.domains = self.Mesh_.get_domains()
             self.boundaries = self.Mesh_.get_boundaries()
             self.params = self.Mesh_.get_params()
-            self.file_objective = File('./mesh/objective_eval_meshes.pvd') #TODO: fix!
-            self.file_gradient = File('./mesh/gradient_eval_meshes.pvd')
+            self.file_objective = File(self.param["output_path"] + "/objective_eval_meshes.pvd") #TODO: fix!
+            self.file_gradient = File(self.param["output_path"] + "/gradient_eval_meshes.pvd")
             self.save_opt = True
 
         def save_output(self, deformation, grad=True):
@@ -124,7 +124,7 @@ class IPOPTSolver(OptimizationSolver):
             dim = mesh.geometric_dimension()
             V = FunctionSpace(mesh, "DG", 0)
             dgt = project(det(Identity(dim) + grad(deformation)), V, annotate=False)
-            if dgt.vector().min() < 0.5*self.param['det_lb']:
+            if dgt.vector().min() <= self.param['det_lb']:
                 return False
             else:
                 return True

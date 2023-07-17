@@ -348,7 +348,7 @@ class FluidStructure(ReducedObjective):
 
         #objective function
         if add_penalty:
-            J += assemble(0.5*Constant(param["gammaP"]) * smoothmax(Constant(param["etaP"]) - tJhat)**2*dx(mesh))
+            J += assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["etaP"]))*dx(mesh))
 
         if flag:
           dJ = compute_gradient(J,Control(tu))

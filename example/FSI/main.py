@@ -46,8 +46,9 @@ param = {"reg": 1e-1, # regularization parameter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient
          "maxiter_IPOPT": 50,
          "T": 15.0, # simulation horizon for Fluid-Structure interaction simulation
-         "gammaP": 1e2, # penalty parameter for determinant constraint violation
+         "gammaP": 1e-3, # penalty parameter for determinant constraint violation
          "etaP": 0.2, # smoothing parameter for max term in determinant const. violation
+         "output_path": path_mesh + "/Output/", # folder where intermediate results are stored
          }
 
 #load mesh
