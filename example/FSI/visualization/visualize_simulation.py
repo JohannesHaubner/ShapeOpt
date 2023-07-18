@@ -28,7 +28,8 @@ mesh.point_data.remove("velocity")
 print(mesh.active_scalars)
 print(mesh.array_names)
 print(reader.active_datasets)
-for i in range(2): #range(len(reader.time_values)):
+
+for i in range(len(reader.time_values)):
     reader.set_active_time_point(i)
     reader2.set_active_time_point(i)
     print('active time value:', reader.active_time_value)
