@@ -35,9 +35,10 @@ for i in range(2): #range(len(reader.time_values)):
     mesh.point_data.remove("velocity")
     print(reader.active_datasets)
     pl.view_xy()
-    pl.add_mesh(mesh, cmap=cmap_1)
+    pl.add_mesh(mesh, cmap=cmap_1, clim=[0., 2.5])
     pl.enable_image_style()
     pl.reset_camera_clipping_range()
+    pl.remove_scalar_bar()
     pl.camera.tight()
     pl.write_frame()
     
