@@ -16,8 +16,6 @@ from shapeopt.Constraints import constraints
 from shapeopt.Control_to_Trafo import Extension
 from shapeopt.Reduced_Objective import reduced_objectives
 
-from remesh import remesh
-
 stop_annotating()
 
 # specify path of directory that contains the files 'mesh_triangles.xdmf' and 'facet_mesh.xdmf'
@@ -51,51 +49,10 @@ param = {"reg": 1e-1, # regularization parameter
          "output_path": path_mesh + "/Output/", # folder where intermediate results are stored
          }
 
-#load mesh
-init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh)
-mesh = init_mfs.get_mesh()
-dmesh = init_mfs.get_design_boundary_mesh()
-boundaries = init_mfs.get_boundaries()
-domains = init_mfs.get_domains()
-params = init_mfs.get_params()
-dnormal = init_mfs.get_dnormalf()
 
-#function space in which the control lives
-Vd = init_mfs.get_Vd()
-Vn = init_mfs.get_Vn()
-V = init_mfs.get_V()
-v = interpolate(Constant(1.0),V)
-
-x0 = interpolate(Constant(0.0), Vd)
-d0 = interpolate(Constant((0.0, 0.0)), Vn)
-
-# update discretized params
-param["Vol_DmO"] = assemble(v*dx)
-param["Vol_O"] = param["Vol_D"] - param["Vol_DmO"]
-bo = param["Bary_O"]
-bc = constraints['barycenter'](init_mfs, param, boundary_option, extension_option).eval(x0)
-param["Bary_O"] = np.add(bc, bo)
-
-# solve optimization problem
-#Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
-#problem = MinimizationProblem(Jred)
-
-#ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids,
-#                                           boundary_option, extension_option).test_objective()
-
-if not os.path.exists(path_mesh + "/Output"):
-    os.makedirs(path_mesh + "/Output")
-bdfile = File(MPI.comm_self, path_mesh + "/Output/mesh_optimize_test.pvd")
-
-x0 = interpolate(Constant("0.0"), Vd).vector().get_local()
-
-remesh_flag = True
-
-param["lb_off_p"] = Constant(1.0)
-
-counter = 1
-
-for lb_off in [1e-3]: 
+if __name__ == "__main__":
+    #load mesh
+    init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh)
     mesh = init_mfs.get_mesh()
     dmesh = init_mfs.get_design_boundary_mesh()
     boundaries = init_mfs.get_boundaries()
@@ -103,47 +60,90 @@ for lb_off in [1e-3]:
     params = init_mfs.get_params()
     dnormal = init_mfs.get_dnormalf()
 
+    #function space in which the control lives
     Vd = init_mfs.get_Vd()
     Vn = init_mfs.get_Vn()
     V = init_mfs.get_V()
-    v = interpolate(Constant("1.0"), V)
+    v = interpolate(Constant(1.0),V)
+
+    x0 = interpolate(Constant(0.0), Vd)
+    d0 = interpolate(Constant((0.0, 0.0)), Vn)
+
+    # update discretized params
+    param["Vol_DmO"] = assemble(v*dx)
+    param["Vol_O"] = param["Vol_D"] - param["Vol_DmO"]
+    bo = param["Bary_O"]
+    bc = constraints['barycenter'](init_mfs, param, boundary_option, extension_option).eval(x0)
+    param["Bary_O"] = np.add(bc, bo)
+
+    # solve optimization problem
+    #Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
+    #problem = MinimizationProblem(Jred)
+
+    #ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids,
+    #                                           boundary_option, extension_option).test_objective()
+
+    if not os.path.exists(path_mesh + "/Output"):
+        os.makedirs(path_mesh + "/Output")
+    bdfile = File(MPI.comm_self, path_mesh + "/Output/mesh_optimize_test.pvd")
 
     x0 = interpolate(Constant("0.0"), Vd).vector().get_local()
 
-    stop_annotating()
-    set_working_tape(Tape())
-    #param["reg"] = reg
-    param["lb_off_p"] = Constant(lb_off)
-    Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
-    problem = MinimizationProblem(Jred)
-    IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, boundary_option, extension_option)
-    x, info = IPOPT.solve(x0)
-    x0 = x
+    remesh_flag = True
 
-    print("FSI_main completed", flush=True)
+    param["lb_off_p"] = Constant(1.0)
 
-deformation = Extension(init_mfs, param, boundary_option=boundary_option, extension_option=extension_option).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
-defo = deformation # project(deformation, Vn)
+    counter = 1
 
-# move mesh and save moved mesh
-ALE.move(mesh, defo, annotate=False)
-new_mesh = Mesh(mesh)
+    for lb_off in [1e-3]: 
+        mesh = init_mfs.get_mesh()
+        dmesh = init_mfs.get_design_boundary_mesh()
+        boundaries = init_mfs.get_boundaries()
+        domains = init_mfs.get_domains()
+        params = init_mfs.get_params()
+        dnormal = init_mfs.get_dnormalf()
 
-mvc2 = MeshValueCollection("size_t", new_mesh, 2)
-new_domains = cpp.mesh.MeshFunctionSizet(new_mesh, mvc2)
-new_domains.set_values(domains.array())
+        Vd = init_mfs.get_Vd()
+        Vn = init_mfs.get_Vn()
+        V = init_mfs.get_V()
+        v = interpolate(Constant("1.0"), V)
 
-mvc = MeshValueCollection("size_t", new_mesh, 1)
-new_boundaries = cpp.mesh.MeshFunctionSizet(new_mesh, mvc)
-new_boundaries.set_values(boundaries.array())
+        x0 = interpolate(Constant("0.0"), Vd).vector().get_local()
 
-xdmf = XDMFFile(path_mesh + "/mesh_triangles_final.xdmf")
-xdmf2 = XDMFFile(path_mesh + "/facet_mesh_final.xdmf")
-xdmf3 = XDMFFile(path_mesh + "/domains_final.xdmf")
-xdmf.write(new_mesh)
-xdmf2.write(new_boundaries)
-xdmf3.write(new_domains)
+        stop_annotating()
+        set_working_tape(Tape())
+        #param["reg"] = reg
+        param["lb_off_p"] = Constant(lb_off)
+        Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
+        problem = MinimizationProblem(Jred)
+        IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, boundary_option, extension_option)
+        x, info = IPOPT.solve(x0)
+        x0 = x
+
+        print("FSI_main completed", flush=True)
+
+    deformation = Extension(init_mfs, param, boundary_option=boundary_option, extension_option=extension_option).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
+    defo = deformation # project(deformation, Vn)
+
+    # move mesh and save moved mesh
+    ALE.move(mesh, defo, annotate=False)
+    new_mesh = Mesh(mesh)
+
+    mvc2 = MeshValueCollection("size_t", new_mesh, 2)
+    new_domains = cpp.mesh.MeshFunctionSizet(new_mesh, mvc2)
+    new_domains.set_values(domains.array())
+
+    mvc = MeshValueCollection("size_t", new_mesh, 1)
+    new_boundaries = cpp.mesh.MeshFunctionSizet(new_mesh, mvc)
+    new_boundaries.set_values(boundaries.array())
+
+    xdmf = XDMFFile(path_mesh + "/mesh_triangles_final.xdmf")
+    xdmf2 = XDMFFile(path_mesh + "/facet_mesh_final.xdmf")
+    xdmf3 = XDMFFile(path_mesh + "/domains_final.xdmf")
+    xdmf.write(new_mesh)
+    xdmf2.write(new_boundaries)
+    xdmf3.write(new_domains)
 
 
-defo = project(deformation, Vn)
-bdfile << defo
+    defo = project(deformation, Vn)
+    bdfile << defo
