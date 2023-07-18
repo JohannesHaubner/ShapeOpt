@@ -1,4 +1,5 @@
 import pyvista
+from colormaps import cmap_1, cmap_2
 
 # specify output directory 
 from pathlib import Path
@@ -14,4 +15,6 @@ print(filename)
 reader = pyvista.get_reader(filename)
 
 reader.time_values
-from IPython import embed; embed()
+
+mesh = reader.read()
+mesh.plot()

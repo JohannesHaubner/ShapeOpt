@@ -250,12 +250,14 @@ class FluidStructure(ReducedObjective):
             v2string = fssim + 'velocity2.pvd'
             pstring = fssim + 'pressure.pvd'
             dstring = fssim + 'displacementy.txt'
+            tstring = fssim + 'times.txt'
             charstring = fssim + 'char_sol.pvd'
             vfile = File(vstring)
             pfile = File(pstring)
             v2file = File(v2string)
             charfile = File(charstring)
             displacementy = []
+            times = []
 
         # run forward model
         counter = -1
@@ -326,7 +328,9 @@ class FluidStructure(ReducedObjective):
                 u_p.rename("projection", "projection")
                 try:
                     displacementy.append(u_p(Point(0.6, 0.2))[1])
+                    times.append(t)
                     np.savetxt(dstring, displacementy)
+                    np.savetxt(tstring, times)
                 except:
                     pass
 
