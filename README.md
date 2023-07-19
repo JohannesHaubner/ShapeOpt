@@ -15,6 +15,7 @@ based on the implementation for the PhD thesis
 
 ## Usage/Examples
 
+### Using Docker image
 The Dockerfile (preliminary version) can be used by running:
 ```
 docker build -t shapeopt .
@@ -26,11 +27,13 @@ docker pull ghcr.io/johanneshaubner/shapeopt:latest
 docker run -it ghcr.io/johanneshaubner/shapeopt:latest
 ```
 
+### IPOPT with HSL
 For runs in parallel, IPOPT needs to be installed with HSL. To do so, the Coin-HSL sources archive needs to be added such that it becomes shapeopt/hsl/coinhsl. Afterwards we build the docker image via Dockerfile_hsl.
 
 If not ran from Docker image:
 Requires a recent master version of dolfin with MeshView support. Requires the changes propsed in https://bitbucket.org/fenics-project/dolfin/issues/1123/assemble-on-mixed-meshview-forms-returns.
 
+### Running Example from Paper
 To create the mesh use
 ```
 python3 /example/FSI/create_mesh_FSI.py
@@ -46,8 +49,7 @@ To obtain the tables and figures we ran (in current version of repository at a p
 python3 /example/FSI/visualize.py
 ```
 
-
-### Running IPOPT with HSL
+### HPC Clusters
 
 (The following might be outdated:)
 
