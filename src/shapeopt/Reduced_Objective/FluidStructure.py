@@ -551,6 +551,7 @@ class FluidStructure(ReducedObjective):
 
             #objective function
             if add_penalty:
+                print("Objective value without penalization is ", J)
                 J += assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["etaP"]))*dx(mesh))
 
         else:
