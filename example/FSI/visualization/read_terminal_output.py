@@ -1,7 +1,7 @@
 import re
 
 from pathlib import Path
-here = Path(__file__).parent.resolve()
+here = Path(__file__).parent.parent.resolve()
 
 text_file = open(str(here) + '/mesh/Output/terminal_1707.txt','r')
 
@@ -81,15 +81,32 @@ for i in [1,2,3]:
     data_list[i] = remove_whitespace_from_list(data_list[i]) # remove all 
 
 data_array = []
-data = data_list[2]
-data.append('objective_w/o_reg_pen')
-data_array.append(data)
+#data = data_list[2]
+#data.append('objective_w/o_reg_pen')
+#data_array.append(data)
 for i in range(len(data_list[1])):
     data = data_list[1][i]
     if i <= len(data_list[3])-1:
         data.append(data_list[3][i][-1])
     else:
-        data.append('')
+        data.append(' ')
     data_array.append(data)
 
-from IPython import embed; embed()
+import os.path
+file_txt = os.path.join(str(here) + '/visualization/', 'table.txt')
+
+# write into txt.file which contains latex table code
+with open(file_txt, 'w') as file:
+    file.write("\\begin{table}[ht!]\n")
+    file.write("  \\begin{tabularx}{\\textwidth}{R|x|x|x|xe}\n")
+    file.write("    \\arrayrulecolor{white}\n")
+    file.write("    \\rowcolor{tumblues2}\n")
+    file.write("    \\textcolor{white}{iteration} & \\textcolor{white}{objective}& \\textcolor{white}{objective \mbox{ \small w/o reg. \& pen.}}& \\textcolor{white}{dual infeasibility} & \\textcolor{white}{linesearch-steps} &\\\\[0.5ex]\n")
+    for i in range(len(data_array)):
+        file.write("%s & $%s$ & $%s$ & $%s$ & $%s$ & \\\\[0.5ex]\n" % (data_array[i][0], data_array[i][1], data_array[i][-1], data_array[i][3], data_array[i][-2]))
+        if i%2 == 0:
+            file.write("    \\rowcolor{tumg}\n")
+    file.write("  \\end{tabularx}\n")
+    file.write("  \\caption{Optimization results when IPOPT converges up to an overall NLP tolerance of $10^{-3}$}\n")
+    file.write("  \\label{tab::or2}\n")
+    file.write("\\end{table}")
