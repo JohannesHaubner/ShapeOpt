@@ -123,8 +123,10 @@ class IPOPTSolver(OptimizationSolver):
             mesh = deformation.function_space().mesh()
             dim = mesh.geometric_dimension()
             V = FunctionSpace(mesh, "DG", 0)
+            V1 = FunctionSpace(mesh, "CG", 1)
             dgt = project(det(Identity(dim) + grad(deformation)), V, annotate=False)
-            if dgt.vector().min() <= self.param['det_lb']:
+            dgt1 = project(det(Identity(dim) + grad(deformation)), V, annotate=False)
+            if dgt.vector().min() <= self.param['det_lb'] or dgt1.vector().min() <= self.param['det_lb']:
                 return False
             else:
                 return True
@@ -165,16 +167,18 @@ class IPOPTSolver(OptimizationSolver):
             mesh_quality = self.check_mesh_quality(deformation)
             if not mesh_quality:
                 print('Warning: Gradient is evaluated at a point, where transformed mesh is degenerated. Check if your parameter setting is reasonable, or implement a routine that can deal with gradient evaluations for degenerated meshes.')
-            # compute gradient
-            j, dJf = reduced_objectives[self.application].eval(self.mesh, self.domains, self.boundaries, self.params,
-                                              self.param, flag=True, control=deformation)
-            #new_params = [self.__copy_data(p.data()) for p in self.rfn.controls]
-            #self.rfn.set_local(new_params, deformation.vector().get_local())
-            #dJf = self.rfn.derivative(forget=False, project = False)
-            #dJf = self.Mesh_.vec_to_Vn(dJf)
+                j, dJf = reduced_objectives[self.application].eval(self.mesh, self.domains, self.boundaries, self.params,
+                                                self.param, flag=True, control=deformation, fallback_strategy=True)
+            else: # compute gradient
+                j, dJf = reduced_objectives[self.application].eval(self.mesh, self.domains, self.boundaries, self.params,
+                                                self.param, flag=True, control=deformation)
+                #new_params = [self.__copy_data(p.data()) for p in self.rfn.controls]
+                #self.rfn.set_local(new_params, deformation.vector().get_local())
+                #dJf = self.rfn.derivative(forget=False, project = False)
+                #dJf = self.Mesh_.vec_to_Vn(dJf)
 
-            # ufile = File("./Output/Forward/dJf2.pvd")
-            # ufile << dJf
+                # ufile = File("./Output/Forward/dJf2.pvd")
+                # ufile << dJf
 
             dJ1 = Extension(self.Mesh_, self.param, self.bo, self.eo).dof_to_deformation_precond_chainrule(dJf.vector(), 2)
             dJ = dJ1 + self.param["reg"] * x  # derivative of the regularization
