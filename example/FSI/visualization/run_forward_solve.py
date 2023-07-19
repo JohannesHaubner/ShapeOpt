@@ -26,52 +26,58 @@ stop_annotating()
 # initial or optimized geometry
 initial = True
 
-if initial:
-    load_mesh = False
-    folder_name = str("/Init")
-else:
-    load_mesh = True
-    folder_name = str("/Opt")
+def run_forward(initial : bool, T : float):
+    if initial:
+        load_mesh = False
+        folder_name = str("/Init")
+    else:
+        load_mesh = True
+        folder_name = str("/Opt")
 
-# set and load parameters
-param["T"] = 0.10
+    # set and load parameters
+    param["T"] = T
 
 
-#load mesh
-init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh, load_mesh=load_mesh)
-mesh = init_mfs.get_mesh()
-dmesh = init_mfs.get_design_boundary_mesh()
-boundaries = init_mfs.get_boundaries()
-domains = init_mfs.get_domains()
-params = init_mfs.get_params()
-dnormal = init_mfs.get_dnormalf()
+    #load mesh
+    init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh, load_mesh=load_mesh)
+    mesh = init_mfs.get_mesh()
+    dmesh = init_mfs.get_design_boundary_mesh()
+    boundaries = init_mfs.get_boundaries()
+    domains = init_mfs.get_domains()
+    params = init_mfs.get_params()
+    dnormal = init_mfs.get_dnormalf()
 
-#function space in which the control lives
-Vd = init_mfs.get_Vd()
-Vn = init_mfs.get_Vn()
-V = init_mfs.get_V()
-v = interpolate(Constant(1.0),V)
+    #function space in which the control lives
+    Vd = init_mfs.get_Vd()
+    Vn = init_mfs.get_Vn()
+    V = init_mfs.get_V()
+    v = interpolate(Constant(1.0),V)
 
-x0 = interpolate(Constant(0.0), Vd)
-d0 = interpolate(Constant((0.0, 0.0)), Vn)
+    x0 = interpolate(Constant(0.0), Vd)
+    d0 = interpolate(Constant((0.0, 0.0)), Vn)
 
-mesh = init_mfs.get_mesh()
-dmesh = init_mfs.get_design_boundary_mesh()
-boundaries = init_mfs.get_boundaries()
-domains = init_mfs.get_domains()
-params = init_mfs.get_params()
-dnormal = init_mfs.get_dnormalf()
+    mesh = init_mfs.get_mesh()
+    dmesh = init_mfs.get_design_boundary_mesh()
+    boundaries = init_mfs.get_boundaries()
+    domains = init_mfs.get_domains()
+    params = init_mfs.get_params()
+    dnormal = init_mfs.get_dnormalf()
 
-Vd = init_mfs.get_Vd()
-Vn = init_mfs.get_Vn()
-V = init_mfs.get_V()
-v = interpolate(Constant("1.0"), V)
+    Vd = init_mfs.get_Vd()
+    Vn = init_mfs.get_Vn()
+    V = init_mfs.get_V()
+    v = interpolate(Constant("1.0"), V)
 
-x0 = interpolate(Constant("0.0"), Vd).vector().get_local()
+    x0 = interpolate(Constant("0.0"), Vd).vector().get_local()
 
-stop_annotating()
-set_working_tape(Tape())
-#param["reg"] = reg
-Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True, visualize=True, vis_folder=folder_name)
+    stop_annotating()
+    set_working_tape(Tape())
+    #param["reg"] = reg
+    Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True, visualize=True, vis_folder=folder_name)
 
-print('simulation finished')
+    print('simulation finished')
+    pass
+
+if __name__ == "__main__":
+    T = 0.1
+    run_forward(initial=True, T=0.1)

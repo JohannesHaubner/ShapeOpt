@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     counter = 1
 
-    for lb_off in [1e-3]: 
+    for lb_off in [1e-2]: 
         mesh = init_mfs.get_mesh()
         dmesh = init_mfs.get_design_boundary_mesh()
         boundaries = init_mfs.get_boundaries()
