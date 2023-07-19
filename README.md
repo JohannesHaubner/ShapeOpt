@@ -31,6 +31,11 @@ For runs in parallel, IPOPT needs to be installed with HSL. To do so, the Coin-H
 If not ran from Docker image:
 Requires a recent master version of dolfin with MeshView support. Requires the changes propsed in https://bitbucket.org/fenics-project/dolfin/issues/1123/assemble-on-mixed-meshview-forms-returns.
 
+To create the mesh use
+```
+python3 /example/FSI/create_mesh_FSI.py
+```
+
 To obtain the results presented in the paper we used an IPOPT installation with HSL and ran 
 ```
 mpiexec -n 4 python3 /example/FSI/main.py >> example/FSI/mesh/Output/terminal.txt
