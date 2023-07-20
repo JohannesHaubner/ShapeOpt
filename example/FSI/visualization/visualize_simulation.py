@@ -2,10 +2,10 @@ import pyvista
 import numpy as np
 from colormaps import cmap_1, cmap_2
 
-def make_movie(foldername : str, outname : str)
+def make_movie(foldername : str, outname : str):
     # specify filename and read mesh    
-    filename = "../Output/Forward/" + foldername "/velocity2.pvd"
-    filename2 = "../Output/Forward/" + foldername "/char_sol.pvd"
+    filename = "../Output/Forward/" + foldername + "/velocity2.pvd"
+    filename2 = "../Output/Forward/" + foldername + "/char_sol.pvd"
     print(filename)
 
     reader = pyvista.get_reader(filename)
@@ -17,7 +17,7 @@ def make_movie(foldername : str, outname : str)
     # plotter
     pl = pyvista.Plotter()
     # open a movie file
-    pl.open_movie(mp4_fn)
+    pl.open_movie(mp4_fn, framerate=25)
 
     # test
     reader.set_active_time_point(2)
