@@ -250,3 +250,10 @@ RUN /bin/bash -l -c "pip3 install Cython"
 RUN /bin/bash -l -c "pip3 install six"
 
 RUN /bin/bash -l -c "pip3 install git+https://github.com/mechmotum/cyipopt.git"
+
+RUN /bin/bash -l -c "pip3 install ogs5py"
+RUN /bin/bash -l -c "pip3 install matplotlib"
+RUN /bin/bash -l -c "pip3 install pyvista"
+RUN apt-get update && apt-get install ffmpeq libsm6 libxext6  -y
+RUN /bin/bash -l -c "pip3 install imageio[ffmpeg]"
+RUN /bin/bash -l -c "pip3 install imageio[pyav]"
