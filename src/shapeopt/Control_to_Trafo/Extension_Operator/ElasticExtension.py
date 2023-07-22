@@ -74,10 +74,10 @@ class ElasticExtension(ExtensionOperator):
       v = TestFunction(self.Vn)
 
       # Define boundary conditions
-      bc1 = DirichletBC(self.Vn, Constant(("0.0","0.0")), self.boundaries, self.params["inflow"])
-      bc2 = DirichletBC(self.Vn, Constant(("0.0","0.0")), self.boundaries, self.params["outflow"])
-      bc3 = DirichletBC(self.Vn, Constant(("0.0","0.0")), self.boundaries, self.params["noslip"])
-      bc = [bc1, bc2, bc3]
+      bc = []
+      for i in self.params.keys():
+          if i != "design" and not isinstance(self.params[i], bool) and self.params[i] in self.params["boundary_labels"]:
+              bc.append(DirichletBC(self.Vn, Constant(("0.0", "0.0")), self.boundaries, self.params[i]))
 
       # Define bilinear form
       a = self.mu*inner(grad(u) + np.transpose(grad(u)), grad(v))*dx
@@ -89,17 +89,15 @@ class ElasticExtension(ExtensionOperator):
         solve(a==L, u, bc)
       elif option2 == 2:
         A = assemble(a)
-        bc1.apply(A)
-        bc2.apply(A)
-        bc3.apply(A)
+        for bci in bc:
+           bci.apply(A)
         u = Function(self.Vn)
         dj = Function(self.Vn)
         dj.vector().set_local(djy)
         dj.vector().apply("")
         djy = dj.vector()
-        bc1.apply(djy)
-        bc2.apply(djy)
-        bc3.apply(djy)
+        for bci in bc:
+           bci.apply(djy)
         solve(A, u.vector(), djy)
       if option == 1:
         return u
