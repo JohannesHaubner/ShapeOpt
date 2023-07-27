@@ -9,7 +9,7 @@ here = Path(__file__).parent.parent.resolve()
 import sys, os
 sys.path.insert(0, str(here) + '/mesh')
 
-def visualize_shape(fname : str, save_filename : str)
+def visualize_shape(fname : str, save_filename : str):
 
     # specify filename and read mesh    
     filename = str(here) + "/mesh/" + fname

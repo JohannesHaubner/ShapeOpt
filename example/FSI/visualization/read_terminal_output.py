@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 here = Path(__file__).parent.parent.resolve()
 
-def generate_table(txtname : str, txtout : str):
+def generate_table(txtname : str, txtout : str, txtout_all : str):
 
     text_file = open(str(here) + '/mesh/Output/' + txtname,'r')
 
@@ -24,6 +24,7 @@ def generate_table(txtname : str, txtout : str):
     data = []
     header_ipopt = []
     ob_val = []
+    all = []
     for line in file_lines:
 
         flag = False
@@ -46,12 +47,16 @@ def generate_table(txtname : str, txtout : str):
 
         if flag:
             important_lines.append(line)
+            all.append(line)
         if flag_num:
             data.append(line)
+            all.append(line)
         if flag_header:
             header_ipopt.append(line)
+            all.append(line)
         if flag_obval:
             ob_val.append(line)
+            all.append(line)
 
     def reduce_list(ell):
         ell = list(dict.fromkeys(ell))
@@ -97,6 +102,12 @@ def generate_table(txtname : str, txtout : str):
     import os.path
     file_txt = os.path.join(str(here) + '/visualization/', txtout)
 
+    file_all_txt = os.path.join(str(here) + '/visualization/', txtout_all)
+
+    with open(file_all_txt, 'w') as file:
+        for i in range(len(all)):
+            file.write(all[i])
+
     # write into txt.file which contains latex table code
     with open(file_txt, 'w') as file:
         file.write("\\begin{table}[ht!]\n")
@@ -117,6 +128,7 @@ def generate_table(txtname : str, txtout : str):
 
 
 if __name__ == "__main__":
-    txtname = "terminal_1707.txt"
+    txtname = "terminal_2207.txt"
     txtout = 'table.txt'
-    generate_table(txtname)
+    txtout_all = 'to_shortened.txt'
+    generate_table(txtname, txtout, txtout_all)
