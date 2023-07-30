@@ -1,528 +1,93 @@
 Objective value without penalization is  160.38359427674078
-Objective value without penalization is  160.38359427674078
-Objective value without penalization is  160.38359427674078
-Objective value without penalization is  160.38359427674078
-Objective value without penalization is  160.38359427674078
-Objective value without penalization is  160.38359427674078
-Objective value without penalization is  160.38359427674078
-Objective value without penalization is  160.38359427674078
-Number of nonzeros in equality constraint Jacobian...:      183
-Number of nonzeros in inequality constraint Jacobian.:        0
-Number of nonzeros in Lagrangian Hessian.............:        0
-Number of nonzeros in equality constraint Jacobian...:      183
-Number of nonzeros in inequality constraint Jacobian.:        0
-Number of nonzeros in Lagrangian Hessian.............:        0
-Number of nonzeros in equality constraint Jacobian...:      183
-Number of nonzeros in inequality constraint Jacobian.:        0
-Number of nonzeros in Lagrangian Hessian.............:        0
 Number of nonzeros in equality constraint Jacobian...:      183
 Number of nonzeros in inequality constraint Jacobian.:        0
 Number of nonzeros in Lagrangian Hessian.............:        0
 Objective value without penalization is  160.38359427673802
-Objective value without penalization is  160.38359427673802
-Objective value without penalization is  160.38359427673802
-Objective value without penalization is  160.38359427673802
-Objective value without penalization is  160.38359427673802
-Objective value without penalization is  160.38359427673802
-Objective value without penalization is  160.38359427673802
-Objective value without penalization is  160.38359427673802
-Total number of variables............................:       61
-Total number of equality constraints.................:        3
-Total number of inequality constraints...............:        0
-Total number of variables............................:       61
-Total number of equality constraints.................:        3
-Total number of inequality constraints...............:        0
-Total number of variables............................:       61
-Total number of equality constraints.................:        3
-Total number of inequality constraints...............:        0
 Total number of variables............................:       61
 Total number of equality constraints.................:        3
 Total number of inequality constraints...............:        0
 Objective value without penalization is  160.383594276739
-Objective value without penalization is  160.383594276739
-Objective value without penalization is  160.383594276739
-Objective value without penalization is  160.383594276739
-Objective value without penalization is  160.383594276739
-Objective value without penalization is  160.383594276739
-Objective value without penalization is  160.383594276739
-Objective value without penalization is  160.383594276739
-Objective value without penalization is  160.38359427673998
-Objective value without penalization is  160.38359427673998
-Objective value at iteration  0  is  160.3842300006928
-Objective value without penalization is  160.38359427673998
-Objective value without penalization is  160.38359427673998
-Objective value at iteration  0  is  160.3842300006928
-Objective value without penalization is  160.38359427673998
-Objective value without penalization is  160.38359427673998
-Objective value at iteration  0  is  160.3842300006928
-Objective value without penalization is  160.38359427673998
 Objective value without penalization is  160.38359427673998
 Objective value at iteration  0  is  160.3842300006928
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
    0  1.6038423e+02 0.00e+00 2.28e+01   0.0 0.00e+00    -  0.00e+00 0.00e+00   0
-iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-   0  1.6038423e+02 0.00e+00 2.28e+01   0.0 0.00e+00    -  0.00e+00 0.00e+00   0
-iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-   0  1.6038423e+02 0.00e+00 2.28e+01   0.0 0.00e+00    -  0.00e+00 0.00e+00   0
-iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-   0  1.6038423e+02 0.00e+00 2.28e+01   0.0 0.00e+00    -  0.00e+00 0.00e+00   0
-Objective value without penalization is  115.61444775868343
-Objective value without penalization is  115.61444775868343
-Objective value without penalization is  115.61444775868343
-Objective value without penalization is  115.61444775868343
-Objective value without penalization is  115.61444775868343
-Objective value without penalization is  115.61444775868343
-Objective value without penalization is  115.61444775868343
 Objective value without penalization is  115.61444775868343
  8.37369097e-06 9.19707828e-07]
   0.00000000e+00  0.00000000e+00]
   9.66535599e-08 -7.30857745e-08]
- 8.37369097e-06 9.19707828e-07]
-  0.00000000e+00  0.00000000e+00]
-  9.66535599e-08 -7.30857745e-08]
-Objective value without penalization is  115.61444775868212
-Objective value without penalization is  115.61444775868212
-Objective value at iteration  1  is  118.48115539880374
-Objective value without penalization is  115.61444775868212
-Objective value without penalization is  115.61444775868212
-Objective value at iteration  1  is  118.48115539880374
-Objective value without penalization is  115.61444775868212
-Objective value without penalization is  115.61444775868212
-Objective value at iteration  1  is  118.48115539880374
-Objective value without penalization is  115.61444775868212
 Objective value without penalization is  115.61444775868212
 Objective value at iteration  1  is  118.48115539880374
    1  1.1848116e+02 1.72e-02 9.77e+00 -11.0 3.16e+00    -  1.00e+00 5.00e-01f  2
-   1  1.1848116e+02 1.72e-02 9.77e+00 -11.0 3.16e+00    -  1.00e+00 5.00e-01f  2
-   1  1.1848116e+02 1.72e-02 9.77e+00 -11.0 3.16e+00    -  1.00e+00 5.00e-01f  2
-   1  1.1848116e+02 1.72e-02 9.77e+00 -11.0 3.16e+00    -  1.00e+00 5.00e-01f  2
-Objective value without penalization is  110.61916986207801
-Objective value without penalization is  110.61916986207801
-Objective value without penalization is  110.61916986207801
-Objective value without penalization is  110.61916986207801
-Objective value without penalization is  110.61916986207801
-Objective value without penalization is  110.61916986207801
-Objective value without penalization is  110.61916986207801
 Objective value without penalization is  110.61916986207801
  4.14849699e-06 2.34349833e-06]
-  0.00000000e+00  0.00000000e+00]
   1.74090108e-07 -1.95243233e-08]
-  0.00000000e+00  0.00000000e+00]
-  1.74090108e-07 -1.95243233e-08]
- 4.14849699e-06 2.34349833e-06]
-Objective value without penalization is  110.61916986207584
-Objective value without penalization is  110.61916986207584
-Objective value at iteration  2  is  114.40935971632167
-Objective value without penalization is  110.61916986207584
-Objective value without penalization is  110.61916986207584
-Objective value at iteration  2  is  114.40935971632167
-Objective value without penalization is  110.61916986207584
-Objective value without penalization is  110.61916986207584
-Objective value at iteration  2  is  114.40935971632167
-Objective value without penalization is  110.61916986207584
 Objective value without penalization is  110.61916986207584
 Objective value at iteration  2  is  114.40935971632167
    2  1.1440936e+02 5.67e-03 4.48e+00 -11.0 8.33e-01    -  1.00e+00 1.00e+00f  1
-   2  1.1440936e+02 5.67e-03 4.48e+00 -11.0 8.33e-01    -  1.00e+00 1.00e+00f  1
-   2  1.1440936e+02 5.67e-03 4.48e+00 -11.0 8.33e-01    -  1.00e+00 1.00e+00f  1
-   2  1.1440936e+02 5.67e-03 4.48e+00 -11.0 8.33e-01    -  1.00e+00 1.00e+00f  1
-Objective value without penalization is  109.70977367447956
-Objective value without penalization is  109.70977367447956
-Objective value without penalization is  109.70977367447956
-Objective value without penalization is  109.70977367447956
-Objective value without penalization is  109.70977367447956
-Objective value without penalization is  109.70977367447956
-Objective value without penalization is  109.70977367447956
 Objective value without penalization is  109.70977367447956
  5.15997772e-06 1.63637090e-06]
-  0.00000000e+00  0.00000000e+00]
   1.45940560e-07 -2.62993712e-08]
-  0.00000000e+00  0.00000000e+00]
-  1.45940560e-07 -2.62993712e-08]
- 5.15997772e-06 1.63637090e-06]
-Objective value without penalization is  109.70977367448256
 Objective value without penalization is  109.70977367448256
 Objective value at iteration  3  is  113.02587357469905
    3  1.1302587e+02 4.34e-04 2.52e+00 -11.0 3.35e-01    -  1.00e+00 1.00e+00f  1
-Objective value without penalization is  109.70977367448256
-Objective value without penalization is  109.70977367448256
-Objective value at iteration  3  is  113.02587357469905
-   3  1.1302587e+02 4.34e-04 2.52e+00 -11.0 3.35e-01    -  1.00e+00 1.00e+00f  1
-Objective value without penalization is  109.70977367448256
-Objective value without penalization is  109.70977367448256
-Objective value at iteration  3  is  113.02587357469905
-   3  1.1302587e+02 4.34e-04 2.52e+00 -11.0 3.35e-01    -  1.00e+00 1.00e+00f  1
-Objective value without penalization is  109.70977367448256
-Objective value without penalization is  109.70977367448256
-Objective value at iteration  3  is  113.02587357469905
-   3  1.1302587e+02 4.34e-04 2.52e+00 -11.0 3.35e-01    -  1.00e+00 1.00e+00f  1
-Objective value without penalization is  106.88702921074189
-Objective value without penalization is  106.88702921074189
-Objective value without penalization is  106.88702921074189
-Objective value without penalization is  106.88702921074189
-Objective value without penalization is  106.88702921074189
-Objective value without penalization is  106.88702921074189
-Objective value without penalization is  106.88702921074189
 Objective value without penalization is  106.88702921074189
  8.40588282e-06 9.96654258e-07]
-  0.00000000e+00  0.00000000e+00]
   1.02586920e-07 -4.79637266e-08]
-  1.02586920e-07 -4.79637266e-08]
- 8.40588282e-06 9.96654258e-07]
-  0.00000000e+00  0.00000000e+00]
-Objective value without penalization is  106.88702921074069
 Objective value without penalization is  106.88702921074069
 Objective value at iteration  4  is  110.23220856763616
    4  1.1023221e+02 1.58e-03 1.27e+01 -11.0 3.48e+00    -  1.00e+00 2.50e-01f  3
-Objective value without penalization is  106.88702921074069
-Objective value without penalization is  106.88702921074069
-Objective value at iteration  4  is  110.23220856763616
-   4  1.1023221e+02 1.58e-03 1.27e+01 -11.0 3.48e+00    -  1.00e+00 2.50e-01f  3
-Objective value without penalization is  106.88702921074069
-Objective value without penalization is  106.88702921074069
-Objective value at iteration  4  is  110.23220856763616
-   4  1.1023221e+02 1.58e-03 1.27e+01 -11.0 3.48e+00    -  1.00e+00 2.50e-01f  3
-Objective value without penalization is  106.88702921074069
-Objective value without penalization is  106.88702921074069
-Objective value at iteration  4  is  110.23220856763616
-   4  1.1023221e+02 1.58e-03 1.27e+01 -11.0 3.48e+00    -  1.00e+00 2.50e-01f  3
-Objective value without penalization is  104.06898192993721
-Objective value without penalization is  104.06898192993721
-Objective value without penalization is  104.06898192993721
-Objective value without penalization is  104.06898192993721
-Objective value without penalization is  104.06898192993721
-Objective value without penalization is  104.06898192993721
-Objective value without penalization is  104.06898192993721
 Objective value without penalization is  104.06898192993721
  6.85366919e-06 1.48560910e-06]
   0.        ]
   1.35470718e-07 -3.59807987e-08]
-  0.        ]
-  1.35470718e-07 -3.59807987e-08]
- 6.85366919e-06 1.48560910e-06]
-Objective value without penalization is  104.0689819299392
 Objective value without penalization is  104.0689819299392
 Objective value at iteration  5  is  107.78820674740393
    5  1.0778821e+02 4.62e-04 3.79e+00 -11.0 5.37e-01    -  1.00e+00 1.00e+00f  1
-Objective value without penalization is  104.0689819299392
-Objective value without penalization is  104.0689819299392
-Objective value at iteration  5  is  107.78820674740393
-   5  1.0778821e+02 4.62e-04 3.79e+00 -11.0 5.37e-01    -  1.00e+00 1.00e+00f  1
-Objective value without penalization is  104.0689819299392
-Objective value without penalization is  104.0689819299392
-Objective value at iteration  5  is  107.78820674740393
-   5  1.0778821e+02 4.62e-04 3.79e+00 -11.0 5.37e-01    -  1.00e+00 1.00e+00f  1
-Objective value without penalization is  104.0689819299392
-Objective value without penalization is  104.0689819299392
-Objective value at iteration  5  is  107.78820674740393
-   5  1.0778821e+02 4.62e-04 3.79e+00 -11.0 5.37e-01    -  1.00e+00 1.00e+00f  1
-Objective value without penalization is  103.54592184600611
-Objective value without penalization is  103.54592184600611
-Objective value without penalization is  103.54592184600611
-Objective value without penalization is  103.54592184600611
-Objective value without penalization is  103.54592184600611
-Objective value without penalization is  103.54592184600611
-Objective value without penalization is  103.54592184600611
 Objective value without penalization is  103.54592184600611
  7.56624179e-06 1.27053768e-06]
-  0.        ]
-  1.33007271e-07 -4.09532944e-08]
- 7.56624179e-06 1.27053768e-06]
-  0.        ]
   1.33007271e-07 -4.09532944e-08]
 Objective value without penalization is  103.54592184600679
-Objective value without penalization is  103.54592184600679
-Objective value at iteration  6  is  107.49426185289722
-   6  1.0749426e+02 6.33e-05 4.52e+00 -11.0 1.20e-01    -  1.00e+00 1.00e+00f  1
-Objective value without penalization is  103.54592184600679
-Objective value without penalization is  103.54592184600679
-Objective value at iteration  6  is  107.49426185289722
-   6  1.0749426e+02 6.33e-05 4.52e+00 -11.0 1.20e-01    -  1.00e+00 1.00e+00f  1
-Objective value without penalization is  103.54592184600679
-Objective value without penalization is  103.54592184600679
-Objective value at iteration  6  is  107.49426185289722
-   6  1.0749426e+02 6.33e-05 4.52e+00 -11.0 1.20e-01    -  1.00e+00 1.00e+00f  1
-Objective value without penalization is  103.54592184600679
-Objective value without penalization is  103.54592184600679
 Objective value at iteration  6  is  107.49426185289722
    6  1.0749426e+02 6.33e-05 4.52e+00 -11.0 1.20e-01    -  1.00e+00 1.00e+00f  1
 Objective value without penalization is  103.47853945077658
-Objective value without penalization is  103.47853945077658
-Objective value without penalization is  103.47853945077658
-Objective value without penalization is  103.47853945077658
-Objective value without penalization is  103.47853945077658
-Objective value without penalization is  103.47853945077658
-Objective value without penalization is  103.47853945077658
-Objective value without penalization is  103.47853945077658
-  0.        ]
  7.80143358e-06 1.23903363e-06]
   1.31783315e-07 -4.17832229e-08]
-  1.31783315e-07 -4.17832229e-08]
- 7.80143358e-06 1.23903363e-06]
-  0.        ]
-Objective value without penalization is  103.47853945077678
 Objective value without penalization is  103.47853945077678
 Objective value at iteration  7  is  107.47733191862436
    7  1.0747733e+02 3.08e-06 1.73e+00 -11.0 7.28e-02    -  1.00e+00 1.00e+00f  1
-Objective value without penalization is  103.47853945077678
-Objective value without penalization is  103.47853945077678
-Objective value at iteration  7  is  107.47733191862436
-   7  1.0747733e+02 3.08e-06 1.73e+00 -11.0 7.28e-02    -  1.00e+00 1.00e+00f  1
-Objective value without penalization is  103.47853945077678
-Objective value without penalization is  103.47853945077678
-Objective value at iteration  7  is  107.47733191862436
-   7  1.0747733e+02 3.08e-06 1.73e+00 -11.0 7.28e-02    -  1.00e+00 1.00e+00f  1
-Objective value without penalization is  103.47853945077678
-Objective value without penalization is  103.47853945077678
-Objective value at iteration  7  is  107.47733191862436
-   7  1.0747733e+02 3.08e-06 1.73e+00 -11.0 7.28e-02    -  1.00e+00 1.00e+00f  1
-Objective value without penalization is  103.4227107634769
-Objective value without penalization is  103.4227107634769
-Objective value without penalization is  103.4227107634769
-Objective value without penalization is  103.4227107634769
-Objective value without penalization is  103.4227107634769
-Objective value without penalization is  103.4227107634769
-Objective value without penalization is  103.4227107634769
 Objective value without penalization is  103.4227107634769
  7.79287336e-06 1.23807477e-06]
-  0.        ]
-  1.33041901e-07 -4.17402110e-08]
- 7.79287336e-06 1.23807477e-06]
-  0.        ]
   1.33041901e-07 -4.17402110e-08]
 Objective value without penalization is  103.42271076347664
-Objective value without penalization is  103.42271076347664
-Objective value at iteration  8  is  107.4378901739394
-Objective value without penalization is  103.42271076347664
-Objective value without penalization is  103.42271076347664
-Objective value at iteration  8  is  107.4378901739394
-Objective value without penalization is  103.42271076347664
-Objective value without penalization is  103.42271076347664
-Objective value at iteration  8  is  107.4378901739394
-Objective value without penalization is  103.42271076347664
-Objective value without penalization is  103.42271076347664
 Objective value at iteration  8  is  107.4378901739394
    8  1.0743789e+02 1.53e-06 2.61e-01 -11.0 2.60e-02    -  1.00e+00 1.00e+00f  1
-   8  1.0743789e+02 1.53e-06 2.61e-01 -11.0 2.60e-02    -  1.00e+00 1.00e+00f  1
-   8  1.0743789e+02 1.53e-06 2.61e-01 -11.0 2.60e-02    -  1.00e+00 1.00e+00f  1
-   8  1.0743789e+02 1.53e-06 2.61e-01 -11.0 2.60e-02    -  1.00e+00 1.00e+00f  1
-Objective value without penalization is  103.29055280657414
-Objective value without penalization is  103.29055280657414
-Objective value without penalization is  103.29055280657414
-Objective value without penalization is  103.29055280657414
-Objective value without penalization is  103.29055280657414
-Objective value without penalization is  103.29055280657414
-Objective value without penalization is  103.29055280657414
 Objective value without penalization is  103.29055280657414
  7.84559835e-06 1.24218305e-06]
-  0.        ]
-  1.36278008e-07 -4.14894090e-08]
- 7.84559835e-06 1.24218305e-06]
-  0.        ]
   1.36278008e-07 -4.14894090e-08]
 Objective value without penalization is  103.29055280657597
-Objective value without penalization is  103.29055280657597
-Objective value at iteration  9  is  107.36268110373736
-Objective value without penalization is  103.29055280657597
-Objective value without penalization is  103.29055280657597
-Objective value at iteration  9  is  107.36268110373736
-Objective value without penalization is  103.29055280657597
-Objective value without penalization is  103.29055280657597
-Objective value at iteration  9  is  107.36268110373736
-Objective value without penalization is  103.29055280657597
-Objective value without penalization is  103.29055280657597
 Objective value at iteration  9  is  107.36268110373736
    9  1.0736268e+02 1.44e-05 1.16e+00 -11.0 9.00e-02    -  1.00e+00 1.00e+00f  1
-   9  1.0736268e+02 1.44e-05 1.16e+00 -11.0 9.00e-02    -  1.00e+00 1.00e+00f  1
-   9  1.0736268e+02 1.44e-05 1.16e+00 -11.0 9.00e-02    -  1.00e+00 1.00e+00f  1
-   9  1.0736268e+02 1.44e-05 1.16e+00 -11.0 9.00e-02    -  1.00e+00 1.00e+00f  1
-Objective value without penalization is  103.09991856491678
-Objective value without penalization is  103.09991856491678
-Objective value without penalization is  103.09991856491678
-Objective value without penalization is  103.09991856491678
-Objective value without penalization is  103.09991856491678
-Objective value without penalization is  103.09991856491678
-Objective value without penalization is  103.09991856491678
 Objective value without penalization is  103.09991856491678
  8.04409421e-06 1.22256898e-06]
-  0.        ]
-  1.39617535e-07 -4.15925322e-08]
- 8.04409421e-06 1.22256898e-06]
-  0.        ]
   1.39617535e-07 -4.15925322e-08]
 Objective value without penalization is  103.09991856491712
-Objective value without penalization is  103.09991856491712
 Objective value at iteration  10  is  107.26876394832698
-Objective value without penalization is  103.09991856491712
-Objective value without penalization is  103.09991856491712
-Objective value at iteration  10  is  107.26876394832698
-Objective value without penalization is  103.09991856491712
-Objective value without penalization is  103.09991856491712
-Objective value at iteration  10  is  107.26876394832698
-Objective value without penalization is  103.09991856491712
-Objective value without penalization is  103.09991856491712
-Objective value at iteration  10  is  107.26876394832698
-iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  10  1.0726876e+02 3.75e-05 1.69e+00 -11.0 1.88e-01    -  1.00e+00 1.00e+00f  1
-  10  1.0726876e+02 3.75e-05 1.69e+00 -11.0 1.88e-01    -  1.00e+00 1.00e+00f  1
-iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  10  1.0726876e+02 3.75e-05 1.69e+00 -11.0 1.88e-01    -  1.00e+00 1.00e+00f  1
-iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   10  1.0726876e+02 3.75e-05 1.69e+00 -11.0 1.88e-01    -  1.00e+00 1.00e+00f  1
 Objective value without penalization is  104.03642559912082
-Objective value without penalization is  104.03642559912082
-Objective value without penalization is  104.03642559912082
-Objective value without penalization is  104.03642559912082
-Objective value without penalization is  104.03642559912082
-Objective value without penalization is  104.03642559912082
-Objective value without penalization is  104.03642559912082
-Objective value without penalization is  104.03642559912082
-Objective value without penalization is  104.07206000197111
-Objective value without penalization is  104.07206000197111
-Objective value without penalization is  104.07206000197111
-Objective value without penalization is  104.07206000197111
-Objective value without penalization is  104.07206000197111
-Objective value without penalization is  104.07206000197111
-Objective value without penalization is  104.07206000197111
 Objective value without penalization is  104.07206000197111
 Objective value without penalization is  104.07218321542035
-Objective value without penalization is  104.07218321542035
-Objective value without penalization is  104.07218321542035
-Objective value without penalization is  104.07218321542035
-Objective value without penalization is  104.07218321542035
-Objective value without penalization is  104.07218321542035
-Objective value without penalization is  104.07218321542035
-Objective value without penalization is  104.07218321542035
-Objective value without penalization is  104.07219456159686
-Objective value without penalization is  104.07219456159686
-Objective value without penalization is  104.07219456159686
-Objective value without penalization is  104.07219456159686
-Objective value without penalization is  104.07219456159686
-Objective value without penalization is  104.07219456159686
-Objective value without penalization is  104.07219456159686
 Objective value without penalization is  104.07219456159686
 Objective value without penalization is  104.07219456914142
-Objective value without penalization is  104.07219456914142
-Objective value without penalization is  104.07219456914142
-Objective value without penalization is  104.07219456914142
-Objective value without penalization is  104.07219456914142
-Objective value without penalization is  104.07219456914142
-Objective value without penalization is  104.07219456914142
-Objective value without penalization is  104.07219456914142
 Objective value without penalization is  103.2153879653864
-Objective value without penalization is  103.2153879653864
-Objective value without penalization is  103.2153879653864
-Objective value without penalization is  103.2153879653864
-Objective value without penalization is  103.2153879653864
-Objective value without penalization is  103.2153879653864
-Objective value without penalization is  103.2153879653864
-Objective value without penalization is  103.2153879653864
-Objective value without penalization is  103.07979263933173
-Objective value without penalization is  103.07979263933173
-Objective value without penalization is  103.07979263933173
-Objective value without penalization is  103.07979263933173
-Objective value without penalization is  103.07979263933173
-Objective value without penalization is  103.07979263933173
-Objective value without penalization is  103.07979263933173
 Objective value without penalization is  103.07979263933173
  7.92686528e-06 1.27790789e-06]
-  0.        ]
-  1.41886713e-07 -4.01986143e-08]
- 7.92686528e-06 1.27790789e-06]
-  0.        ]
   1.41886713e-07 -4.01986143e-08]
 Objective value without penalization is  103.07979263933179
-Objective value without penalization is  103.07979263933179
-Objective value at iteration  11  is  107.2649641363398
-  11  1.0726496e+02 3.98e-05 1.12e+00 -11.0 5.00e-01    -  1.00e+00 2.50e-01f  3
-Objective value without penalization is  103.07979263933179
-Objective value without penalization is  103.07979263933179
-Objective value at iteration  11  is  107.2649641363398
-  11  1.0726496e+02 3.98e-05 1.12e+00 -11.0 5.00e-01    -  1.00e+00 2.50e-01f  3
-Objective value without penalization is  103.07979263933179
-Objective value without penalization is  103.07979263933179
-Objective value at iteration  11  is  107.2649641363398
-  11  1.0726496e+02 3.98e-05 1.12e+00 -11.0 5.00e-01    -  1.00e+00 2.50e-01f  3
-Objective value without penalization is  103.07979263933179
-Objective value without penalization is  103.07979263933179
 Objective value at iteration  11  is  107.2649641363398
   11  1.0726496e+02 3.98e-05 1.12e+00 -11.0 5.00e-01    -  1.00e+00 2.50e-01f  3
 Objective value without penalization is  103.1251604866722
-Objective value without penalization is  103.1251604866722
-Objective value without penalization is  103.1251604866722
-Objective value without penalization is  103.1251604866722
-Objective value without penalization is  103.1251604866722
-Objective value without penalization is  103.1251604866722
-Objective value without penalization is  103.1251604866722
-Objective value without penalization is  103.1251604866722
-  0.        ]
  7.98224241e-06 1.22679648e-06]
   1.39219775e-07 -4.09605914e-08]
- 7.98224241e-06 1.22679648e-06]
-  0.        ]
-  1.39219775e-07 -4.09605914e-08]
-Objective value without penalization is  103.12516048667347
-Objective value without penalization is  103.12516048667347
-Objective value at iteration  12  is  107.2359452797648
-  12  1.0723595e+02 2.42e-06 4.79e-02 -11.0 3.78e-02    -  1.00e+00 1.00e+00f  1
-Number of Iterations....: 12
-Objective...............:   1.0723594527976481e+02    1.0723594527976481e+02
-Dual infeasibility......:   4.7869372618148720e-02    4.7869372618148720e-02
-Constraint violation....:   2.4160188677735395e-06    2.4160188677735395e-06
-Variable bound violation:   0.0000000000000000e+00    0.0000000000000000e+00
-Complementarity.........:   0.0000000000000000e+00    0.0000000000000000e+00
-Overall NLP error.......:   5.5284671916844004e-04    4.7869372618148720e-02
-Number of objective function evaluations             = 30
-Number of objective gradient evaluations             = 13
-Number of equality constraint evaluations            = 30
-Number of inequality constraint evaluations          = 0
-Number of equality constraint Jacobian evaluations   = 13
-Number of inequality constraint Jacobian evaluations = 0
-Number of Lagrangian Hessian evaluations             = 0
-Total seconds in IPOPT                               = 144727.007
-EXIT: Optimal Solution Found.
-Objective value without penalization is  103.12516048667347
-Objective value without penalization is  103.12516048667347
-Objective value at iteration  12  is  107.2359452797648
-  12  1.0723595e+02 2.42e-06 4.79e-02 -11.0 3.78e-02    -  1.00e+00 1.00e+00f  1
-Number of Iterations....: 12
-Objective...............:   1.0723594527976481e+02    1.0723594527976481e+02
-Dual infeasibility......:   4.7869372618148720e-02    4.7869372618148720e-02
-Constraint violation....:   2.4160188677735395e-06    2.4160188677735395e-06
-Variable bound violation:   0.0000000000000000e+00    0.0000000000000000e+00
-Complementarity.........:   0.0000000000000000e+00    0.0000000000000000e+00
-Overall NLP error.......:   5.5284671916844004e-04    4.7869372618148720e-02
-Number of objective function evaluations             = 30
-Number of objective gradient evaluations             = 13
-Number of equality constraint evaluations            = 30
-Number of inequality constraint evaluations          = 0
-Number of equality constraint Jacobian evaluations   = 13
-Number of inequality constraint Jacobian evaluations = 0
-Number of Lagrangian Hessian evaluations             = 0
-Total seconds in IPOPT                               = 144727.007
-EXIT: Optimal Solution Found.
-Objective value without penalization is  103.12516048667347
-Objective value without penalization is  103.12516048667347
-Objective value at iteration  12  is  107.2359452797648
-  12  1.0723595e+02 2.42e-06 4.79e-02 -11.0 3.78e-02    -  1.00e+00 1.00e+00f  1
-Number of Iterations....: 12
-Objective...............:   1.0723594527976481e+02    1.0723594527976481e+02
-Dual infeasibility......:   4.7869372618148720e-02    4.7869372618148720e-02
-Constraint violation....:   2.4160188677735395e-06    2.4160188677735395e-06
-Variable bound violation:   0.0000000000000000e+00    0.0000000000000000e+00
-Complementarity.........:   0.0000000000000000e+00    0.0000000000000000e+00
-Overall NLP error.......:   5.5284671916844004e-04    4.7869372618148720e-02
-Number of objective function evaluations             = 30
-Number of objective gradient evaluations             = 13
-Number of equality constraint evaluations            = 30
-Number of inequality constraint evaluations          = 0
-Number of equality constraint Jacobian evaluations   = 13
-Number of inequality constraint Jacobian evaluations = 0
-Number of Lagrangian Hessian evaluations             = 0
-Total seconds in IPOPT                               = 144727.007
-EXIT: Optimal Solution Found.
-Objective value without penalization is  103.12516048667347
 Objective value without penalization is  103.12516048667347
 Objective value at iteration  12  is  107.2359452797648
   12  1.0723595e+02 2.42e-06 4.79e-02 -11.0 3.78e-02    -  1.00e+00 1.00e+00f  1
