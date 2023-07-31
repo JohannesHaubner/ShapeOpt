@@ -1,6 +1,6 @@
-plot_shapes = False
+plot_shapes = True
 generate_table = False
-run_forward = False
+run_forward_opt = False
 generate_dp = False
 generate_mp4 = False
 
@@ -11,23 +11,25 @@ import visualization.colormaps
 from visualization.visualize_shapes import visualize_shape
 
 if plot_shapes:
-    fnames = ["mesh_triangles.xdmf", "mesh_triangles_final.xdmf"] # these files are in folder /example/FSI/mesh
-    outname = ["init_plot.eps", "final_plot.eps"]
-    for i in fnames:
+    fnames = ["mesh_triangles.xdmf", "domains_final.xdmf"] # these files are in folder /example/FSI/mesh
+    outname = ["init_plot.png", "final_plot.png"]
+    for i in range(len(fnames)):
+        print('visualize ', fnames[i])
         visualize_shape(fnames[i], outname[i])
 
 # generate latex table
 from visualization.read_terminal_output import generate_table
 if generate_table:
-    txtname = "terminal_1707.txt"   # terminal output of simulation needs to be saved to /example/FSI/mesh/Output/txtname
+    txtname = "terminal_2207.txt"   # terminal output of simulation needs to be saved to /example/FSI/mesh/Output/txtname
     txtout = 'table.txt'
-    generate_table(txtname, txtout)
+    txtout_all = 'to_shortened.txt'
+    generate_table(txtname, txtout, txtout_all)
 
 # run forward simulation on initial and optimized geometry
 from visualization.run_forward_solve import run_forward
 initial = [True, False]
 
-if run_forward:
+if run_forward_opt:
     T = 30.0 #time horizon 
     for i in initial:
         run_forward(i, T)

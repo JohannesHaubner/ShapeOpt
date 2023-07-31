@@ -1,6 +1,6 @@
 import pyvista
 import numpy as np
-from colormaps import cmap_1, cmap_2
+from .colormaps import cmap_1, cmap_2
 
 def make_movie(foldername : str, outname : str):
     # specify filename and read mesh    

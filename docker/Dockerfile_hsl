@@ -271,9 +271,11 @@ RUN /bin/bash -l -c "pip3 install six"
 
 RUN /bin/bash -l -c "pip3 install git+https://github.com/mechmotum/cyipopt.git"
 
+
+FROM fenics-plus as visualization
+LABEL description="Visualization image"
 RUN /bin/bash -l -c "pip3 install ogs5py"
 RUN /bin/bash -l -c "pip3 install matplotlib"
 RUN /bin/bash -l -c "pip3 install pyvista"
-RUN apt-get update && apt-get install ffmpeq libsm6 libxext6  -y
-RUN /bin/bash -l -c "pip3 install imageio[ffmpeg]"
+RUN apt-get update && apt-get install libsm6 libxext6 libgl1-mesa-glx xvfb  -y
 RUN /bin/bash -l -c "pip3 install imageio[pyav]"
