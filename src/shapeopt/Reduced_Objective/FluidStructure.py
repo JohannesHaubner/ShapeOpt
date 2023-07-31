@@ -83,11 +83,12 @@ class FluidStructure(ReducedObjective):
         phiv = self.meanflow_function(mesh, boundaries, params)
         
         # charFunc
-        CE = FiniteElement("DG", mesh.ufl_cell(), 0)
-        C = FunctionSpace(mesh, CE)
-        charfunc = Function(C)
-        charfunc.vector().set_local(domains.array())
-        charfunc.vector().apply("")
+        if visualize:
+            solid_mesh = MeshView.create(domains, params["solid"])
+            CE = FiniteElement("DG", solid_mesh.ufl_cell(), 0)
+            C = FunctionSpace(solid_mesh, CE)
+            charfunc = Function(C, name="charfunc")
+
 
         stop_annotating()
         set_working_tape(Tape())
@@ -109,7 +110,7 @@ class FluidStructure(ReducedObjective):
 
         t = 0.0
         T = param["T"]
-        deltat = 0.01
+        deltat = param["deltat"]
         k = Constant(deltat)
         theta = Constant(0.5 + 0.5 * deltat)
 
@@ -279,12 +280,6 @@ class FluidStructure(ReducedObjective):
             atzhat = Constant(1.0)
             azhat = Constant(-1.0)
             aphat = Constant(1e-9)
-
-            t = 0.0
-            T = param["T"]
-            deltat = 0.01
-            k = Constant(deltat)
-            theta = Constant(0.5 + 0.5 * deltat)
 
             INH = False
 
