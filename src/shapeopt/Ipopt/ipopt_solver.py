@@ -152,6 +152,7 @@ class IPOPTSolver(OptimizationSolver):
                 # add regularization (note that due to preconditioning no matrix is needed)
                 j = j1 + 0.5 * self.param["reg"] * np.dot(x, x)  # regularization
             else:
+                print('Objective evaluation: Mesh quality check failed, fallback option used: objective function value set to 1e16.')
                 # heuristic 
                 j = 1e16
             return j
