@@ -460,7 +460,8 @@ class FluidStructure(ReducedObjective):
 
                 # plot transformed mesh
                 if abs(counter / 4.0 - int(counter / 4.0)) == 0:
-                    u_p_inv = projectorU1.project(-1.0 * u)
+                    u_p_inv = Function(U1)
+                    u_p_inv.vector().axpy(-1.0, u_p.vector())
                     ALE.move(mesh, u_p)
                     vp = projectorU.project(v)
                     pp = projectorP.project(p)
@@ -524,7 +525,8 @@ class FluidStructure(ReducedObjective):
 
                     # plot transformed mesh
                     if abs(counter / 4.0 - int(counter / 4.0)) == 0:
-                        u_p_inv = projectorU1.project(-1.0 * u)
+                        u_p_inv = Function(U1)
+                        u_p_inv.vector().axpy(-1.0, u_p.vector())
                         ALE.move(mesh, u_p)
                         up = projectorU.project(u)
                         vp = projectorU.project(v)
