@@ -1,4 +1,4 @@
-plot_shapes = True
+plot_shapes = False
 generate_table = False
 run_forward_opt = False
 generate_dp = False
@@ -27,7 +27,12 @@ if generate_table:
 
 # run forward simulation on initial and optimized geometry
 from visualization.run_forward_solve import run_forward
-initial = [True, False]
+
+only_optimized = True # set to False if initial domain was not optimized
+if only_optimized:
+    initial = [False]
+else:
+    initial = [True, False]
 
 if run_forward_opt:
     T = 30.0 #time horizon 
