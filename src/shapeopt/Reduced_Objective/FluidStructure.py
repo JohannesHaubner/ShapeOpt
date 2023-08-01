@@ -91,9 +91,6 @@ class FluidStructure(ReducedObjective):
             L = Constant(1.0)*psi*dx(mesh)(params["solid"]) + Constant(0.0)*psi*dx(mesh)(params["fluid"]) 
             a = u * psi *dx
             solve(a == L, chfun, [])
-            print(chfun.vector().max(), chfun.vector().min())
-            file = File('test.pvd')
-            file << chfun
 
         stop_annotating()
         set_working_tape(Tape())

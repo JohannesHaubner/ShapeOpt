@@ -1,6 +1,6 @@
 plot_shapes = False         # generate the two left figures in Fig. 3
 generate_table_opt = False      # generate Table 1
-run_forward_opt = True     # output needed for the next two options
+run_forward_opt = False     # output needed for the next two options
 generate_dp = False         # generate the right plot of Fig. 3
 generate_mp4 = False        # generate mp4 of the time dependent results
 
@@ -28,7 +28,7 @@ if generate_table_opt:
 # run forward simulation on initial and optimized geometry
 from visualization.run_forward_solve import run_forward
 
-only_optimized = False # set to False if initial domain was not optimized
+only_optimized = True # set to False if initial domain was not optimized
 only_initial = False
 if only_optimized:
     import sys, os
