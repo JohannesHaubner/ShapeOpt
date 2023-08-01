@@ -1,6 +1,6 @@
 plot_shapes = False         # generate the two left figures in Fig. 3
-generate_table = False      # generate Table 1
-run_forward_opt = True     # output needed for the next two options
+generate_table = True      # generate Table 1
+run_forward_opt = False     # output needed for the next two options
 generate_dp = False         # generate the right plot of Fig. 3
 generate_mp4 = False        # generate mp4 of the time dependent results
 
@@ -28,13 +28,24 @@ if generate_table:
 # run forward simulation on initial and optimized geometry
 from visualization.run_forward_solve import run_forward
 
-only_optimized = False # set to False if initial domain was not optimized
+only_optimized = True # set to False if initial domain was not optimized
+only_initial = False
 if only_optimized:
+    import sys, os
+    from pathlib import Path
+    here = Path(__file__).parent.resolve()
+    folder = str(here) + "/mesh"
+    os.chdir(folder)
+    os.system("cp domains_final.h5 domains_new.h5 && cp domains_final.xdmf domains_new.xdmf")
+    os.system("cp facet_mesh_final.h5 facet_mesh_new.h5 && cp facet_mesh_final.xdmf facet_mesh_new.xdmf")
+    os.system("cp mesh_triangles_final.h5 mesh_triangles_new.h5 && cp mesh_triangles_final.xdmf mesh_triangles_new.xdmf")
     initial = [False]
+elif only_initial:
+    initial = [True]
 else:
     initial = [True, False]
 
-if run_forward_opt: # not implemented in parallel yet
+if run_forward_opt: # charfunc visualization not implemented in parallel yet
     T = 50.0 #time horizon 
     deltat = 0.005 # needed, otherwise trouble for large time horizons
     for i in initial:
@@ -56,12 +67,12 @@ if generate_dp:
     displacement_list = []
 
     for i in foldernames:
-        str_ = str(here) + "/Output/Forward/" + i
+        str_ = str(here) + "/FSI/Output/Forward/" + i
         times_list.append(np.loadtxt(str_ + "/times.txt"))
         displacement_list.append(np.loadtxt(str_ + "/displacementy.txt"))
 
     plot_displacement(displacement_list, times_list,
-                        str(here)+"/Output/displacement_plot.pdf", colors, names)
+                        str(here)+"/FSI/Output/displacement_plot.pdf", colors, names)
 
 # generate clips
 from visualization.visualize_simulation import make_movie

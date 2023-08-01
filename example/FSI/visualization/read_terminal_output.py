@@ -131,9 +131,9 @@ def generate_table(txtname : str, txtout : str, txtout_all : str):
         file.write("    \\textcolor{white}{iteration} & \\textcolor{white}{objective}& \\textcolor{white}{objective \mbox{ \small w/o reg. \& pen.}}& \\textcolor{white}{dual infeasibility} & \\textcolor{white}{linesearch-steps} &\\\\[0.5ex]\n")
         for i in range(len(data_array)):
             if i > 1:
-                file.write("%s & $%s$ & $%s$ & $%s$ & $%s$ & \\\\[0.5ex]\n" % (data_array[i][0], data_array[i][1], data_array[i][-1], data_array[i][3], data_array[i][-2]))
+                file.write("%s & $%s$ & $%s$ & $%s$ & $%s$ & \\\\[0.5ex]\n" % (data_array[i][0], format("%10.4e"% (float(data_array[i][1]))), format("%10.4e"% (float(data_array[i][-1]))), data_array[i][3], data_array[i][-2]))
             else:
-                file.write("%s & $%s$ & $%s$ & $%s$ & $%s$ & \\\\[0.5ex]\n" % (data_array[i][0], data_array[i][1], data_array[i][-1], data_array[i][3], data_array[i][-2]))
+                file.write("%s & $%s$ & $%s$ & $%s$ & $%s$ & \\\\[0.5ex]\n" % (data_array[i][0], format("%10.4e"% (float(data_array[i][1]))), format("%10.4e"% (float(data_array[i][-1]))), data_array[i][3], data_array[i][-2]))
             if i%2 == 0:
                 file.write("    \\rowcolor{tumg}\n")
         file.write("  \\end{tabularx}\n")
