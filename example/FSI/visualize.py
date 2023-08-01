@@ -31,6 +31,13 @@ from visualization.run_forward_solve import run_forward
 only_optimized = True # set to False if initial domain was not optimized
 only_initial = False
 if only_optimized:
+    initial = [False]
+elif only_initial:
+    initial = [True]
+else:
+    initial = [True, False]
+
+if True in initial:
     import sys, os
     from pathlib import Path
     here = Path(__file__).parent.resolve()
@@ -39,11 +46,6 @@ if only_optimized:
     os.system("cp domains_final.h5 domains_new.h5 && cp domains_final.xdmf domains_new.xdmf")
     os.system("cp facet_mesh_final.h5 facet_mesh_new.h5 && cp facet_mesh_final.xdmf facet_mesh_new.xdmf")
     os.system("cp mesh_triangles_final.h5 mesh_triangles_new.h5 && cp mesh_triangles_final.xdmf mesh_triangles_new.xdmf")
-    initial = [False]
-elif only_initial:
-    initial = [True]
-else:
-    initial = [True, False]
 
 if run_forward_opt: 
     T = 30.0 #time horizon 
