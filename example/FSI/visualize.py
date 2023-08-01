@@ -37,7 +37,7 @@ elif only_initial:
 else:
     initial = [True, False]
 
-if True in initial:
+if False in initial:
     import sys, os
     from pathlib import Path
     here = Path(__file__).parent.resolve()
