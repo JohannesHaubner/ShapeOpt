@@ -137,7 +137,7 @@ def generate_table(txtname : str, txtout : str, txtout_all : str):
             if i%2 == 0:
                 file.write("    \\rowcolor{tumg}\n")
         file.write("  \\end{tabularx}\n")
-        file.write("  \\caption{Optimization results when IPOPT converges up to an overall NLP tolerance of $10^{-3}$}\n")
+        file.write("  \\caption{Optimization results when IPOPT converges up to an overall NLP tolerance of $10^{-3}$. The table shows the objective function value, the objective function value without the regularization and penalization term, the dual infeasibility and the number of linesearch-steps per iteration.}\n")
         file.write("  \\label{tab::or2}\n")
         file.write("\\end{table}")
 

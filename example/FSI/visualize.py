@@ -1,7 +1,7 @@
 plot_shapes = False         # generate the two left figures in Fig. 3
-generate_table = True      # generate Table 1
+generate_table = False      # generate Table 1
 run_forward_opt = False     # output needed for the next two options
-generate_dp = False         # generate the right plot of Fig. 3
+generate_dp = True         # generate the right plot of Fig. 3
 generate_mp4 = False        # generate mp4 of the time dependent results
 
 

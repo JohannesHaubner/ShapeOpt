@@ -24,6 +24,6 @@
 12 & $1.0724e+02$ & $1.0313e+02$ & $4.79e-02$ & $1$ & \\[0.5ex]
     \rowcolor{tumg}
   \end{tabularx}
-  \caption{Optimization results when IPOPT converges up to an overall NLP tolerance of $10^{-3}$}
+  \caption{Optimization results when IPOPT converges up to an overall NLP tolerance of $10^{-3}$. The table shows the objective function value, the objective function value without the regularization and penalization term, the dual infeasibility and the number of linesearch-steps per iteration.}
   \label{tab::or2}
 \end{table}
