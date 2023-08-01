@@ -84,11 +84,16 @@ class FluidStructure(ReducedObjective):
         
         # charFunc
         if visualize:
-            solid_mesh = MeshView.create(domains, params["solid"])
-            CE = FiniteElement("DG", solid_mesh.ufl_cell(), 0)
-            C = FunctionSpace(solid_mesh, CE)
-            charfunc = Function(C, name="charfunc")
-
+            C = FunctionSpace(mesh, "DG", 0)
+            chfun = Function(C, name="charfunc")
+            psi = TestFunction(C)
+            u = TrialFunction(C)
+            L = Constant(1.0)*psi*dx(mesh)(params["solid"]) + Constant(0.0)*psi*dx(mesh)(params["fluid"]) 
+            a = u * psi *dx
+            solve(a == L, chfun, [])
+            print(chfun.vector().max(), chfun.vector().min())
+            file = File('test.pvd')
+            file << chfun
 
         stop_annotating()
         set_working_tape(Tape())
@@ -465,7 +470,7 @@ class FluidStructure(ReducedObjective):
                     pfile << pp
                     vfile << vp
                     v2file << vp
-                    charfile << charfunc
+                    charfile << chfun
                     u_p = ALE.move(mesh, u_p_inv)
 
             # boundary conditions
@@ -533,7 +538,7 @@ class FluidStructure(ReducedObjective):
                         pfile << pp
                         vfile << vp
                         v2file << vp
-                        charfile << charfunc
+                        charfile << chfun
                         ALE.move(mesh, u_p_inv)
 
                     ##########################

@@ -1,7 +1,7 @@
 plot_shapes = False         # generate the two left figures in Fig. 3
-generate_table = False      # generate Table 1
-run_forward_opt = False     # output needed for the next two options
-generate_dp = True         # generate the right plot of Fig. 3
+generate_table_opt = False      # generate Table 1
+run_forward_opt = True     # output needed for the next two options
+generate_dp = False         # generate the right plot of Fig. 3
 generate_mp4 = False        # generate mp4 of the time dependent results
 
 
@@ -19,7 +19,7 @@ if plot_shapes:
 
 # generate latex table
 from visualization.read_terminal_output import generate_table
-if generate_table:
+if generate_table_opt:
     txtname = "terminal_2207.txt"   # terminal output of simulation needs to be saved to /example/FSI/mesh/Output/txtname
     txtout = 'table.txt'
     txtout_all = 'to_shortened.txt'
@@ -28,7 +28,7 @@ if generate_table:
 # run forward simulation on initial and optimized geometry
 from visualization.run_forward_solve import run_forward
 
-only_optimized = True # set to False if initial domain was not optimized
+only_optimized = False # set to False if initial domain was not optimized
 only_initial = False
 if only_optimized:
     import sys, os
@@ -45,8 +45,8 @@ elif only_initial:
 else:
     initial = [True, False]
 
-if run_forward_opt: # charfunc visualization not implemented in parallel yet
-    T = 50.0 #time horizon 
+if run_forward_opt: 
+    T = 30.0 #time horizon 
     deltat = 0.005 # needed, otherwise trouble for large time horizons
     for i in initial:
         run_forward(i, T, deltat)

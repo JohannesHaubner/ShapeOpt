@@ -422,6 +422,7 @@ class Initialize_Mesh_and_FunctionSpaces():
         imin, imax = dof.ownership_range()
         p.vector().set_local(values[imin:imax])
         p.vector().apply("")
+        as_backend_type(p.vector()).vec().ghostUpdate()
 
         bdfile = File(MPI.comm_self, "./Output/Tests/SettingsMesh/Vb_to_V.pvd")
         bdfile << p
