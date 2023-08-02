@@ -3,6 +3,13 @@
 
 # ShapeOpt
 
+<p align="center">
+    <img src="example/FSI/mesh/init_fsi.gif"/>
+</p>
+<p align="center">
+    <img src="example/FSI/mesh/opt_fsi.gif"/>
+</p>
+
 ShapeOpt is based on FEniCS, dolfin-adjoint, IPOPT, cyipopt, pygmsh.
 
 Code repository for the manuscript
