@@ -2,7 +2,16 @@ import pyvista
 import numpy as np
 from .colormaps import cmap_1, cmap_2
 
-def make_movie(foldername : str, outname : str):
+import os
+try:
+    print("Install ffmpeg - needed to render movies with this code")
+    os.system("apt-get install ffmpeg -y")
+    os.system("pip3 uninstall imageio") #version 2.31.1
+    os.system("pip3 install imageio[ffmpeg]")
+except:
+    pass
+
+def make_movie(foldername : str, outname : str, gifname : str):
     # specify filename and read mesh    
     filename = "../Output/Forward/" + foldername + "/velocity2.pvd"
     filename2 = "../Output/Forward/" + foldername + "/char_sol.pvd"
@@ -13,44 +22,52 @@ def make_movie(foldername : str, outname : str):
 
     # filename for mp4
     mp4_fn = outname
+    gif_fn = gifname
 
-    # plotter
-    pl = pyvista.Plotter()
-    # open a movie file
-    pl.open_movie(mp4_fn, framerate=25)
+    for i in range(2):
+        # plotter
+        pyvista.start_xvfb()
+        pl = pyvista.Plotter(off_screen=True)
+        # open a movie file
 
-    # test
-    reader.set_active_time_point(2)
-    print('active time value:', reader.active_time_value)
-    mesh = reader.read()[0]
-    mag = np.sum(np.abs(mesh["velocity"])**2, axis=-1)**(1./2)
-    mesh.point_data.set_scalars(mag, name="magnitude")
-    mesh.point_data.remove("velocity")
-    print(mesh.active_scalars)
-    print(mesh.array_names)
-    print(reader.active_datasets)
+        if i == 0:
+            pl.open_movie(mp4_fn, framerate=50)
+        else:
+            pl.open_gif(gif_fn, fps=50)
 
-    for i in range(len(reader.time_values)):
-        reader.set_active_time_point(i)
-        reader2.set_active_time_point(i)
+        # test
+        reader.set_active_time_point(2)
         print('active time value:', reader.active_time_value)
         mesh = reader.read()[0]
-        mesh2 = reader2.read()[0]
         mag = np.sum(np.abs(mesh["velocity"])**2, axis=-1)**(1./2)
         mesh.point_data.set_scalars(mag, name="magnitude")
         mesh.point_data.remove("velocity")
+        print(mesh.active_scalars)
+        print(mesh.array_names)
         print(reader.active_datasets)
-        pl.view_xy()
-        pl.add_mesh(mesh, cmap=cmap_1, clim=[0., 2.5])
-        pl.add_mesh(mesh2, cmap=cmap_2, clim=[7., 8.], opacity="linear")
-        pl.enable_image_style()
-        pl.reset_camera_clipping_range()
-        pl.remove_scalar_bar("magnitude")
-        pl.remove_scalar_bar()
-        pl.camera.tight()
-        pl.write_frame()
-        
-    pl.close()
+
+        for i in range(len(reader.time_values)):
+            reader.set_active_time_point(i)
+            reader2.set_active_time_point(i)
+            print('active time value:', reader.active_time_value)
+            mesh = reader.read()[0]
+            mesh2 = reader2.read()[0]
+            mag = np.sum(np.abs(mesh["velocity"])**2, axis=-1)**(1./2)
+            mesh.point_data.set_scalars(mag, name="magnitude")
+            mesh.point_data.remove("velocity")
+            print(reader.active_datasets)
+            pl.view_xy()
+            pl.add_mesh(mesh, cmap=cmap_1, clim=[0., 2.5])
+            pl.add_mesh(mesh2, cmap=cmap_2, clim=[7., 8.], opacity="linear")
+            pl.enable_image_style()
+            pl.reset_camera_clipping_range()
+            pl.remove_scalar_bar("magnitude")
+            pl.remove_scalar_bar()
+            pl.camera.tight()
+            print('setting set')
+            pl.write_frame()
+            
+        pl.close()
     pass
 
 if __name__ == "__main__":

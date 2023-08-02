@@ -9,7 +9,7 @@ ARG DIJITSO_BRANCH="master"
 ARG FIAT_BRANCH="master"
 
 # disable cache 
-ARG CACHEBUST=0123
+ARG CACHEBUST=10072023
 
 # Flags to pass to ninja build system.
 ARG MAKEFLAGS
@@ -88,8 +88,10 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN /bin/bash -l -c "pip3 install --upgrade numpy"
+RUN /bin/bash -l -c "pip3 install numpy==1.24.1"
+RUN /bin/bash -l -c "pip3 install setuptools==65.6.3"
 RUN /bin/bash -l -c "pip3 install h5py --no-binary=h5py"
+RUN /bin/bash -l -c "pip3 install Cython==0.29.33"
 
 
 # Install Python packages (via pip)
@@ -138,7 +140,7 @@ RUN apt-get -qq update && \
     make ${MAKEFLAGS} all && \
     # Install petsc4py
     cd src/binding/petsc4py && \
-    python3 -m pip install --no-cache-dir . && \
+    python3 -m pip install  --no-build-isolation --no-cache-dir . && \
     # Cleanup
     apt-get -y purge bison flex && \
     apt-get -y autoremove && \
@@ -173,7 +175,7 @@ FROM fenics-base as fenics-end-user
 LABEL description="End user image"
 
 ARG FIAT_BRANCH
-ARG FFC_BRANCH
+ARG FFC_BRANCH=cecile/fix_ufl_setup
 ARG UFL_BRANCH
 ARG DOLFIN_BRANCH
 ARG DIJITSO_BRANCH
@@ -229,10 +231,6 @@ RUN python3 -m pip install pygmsh
 RUN apt-get update
 RUN apt-get -y install libglu1 libxcursor-dev libxft2 libxinerama1 libfltk1.3-dev libfreetype6-dev libgl1-mesa-dev libocct-foundation-dev libocct-data-exchange-dev
 
-
-# disable cache 
-ARG CACHEBUST=01236
-
 ## Install Ipopt
 WORKDIR /usr/local
 RUN git clone https://github.com/coin-or/Ipopt.git
@@ -246,7 +244,6 @@ ENV PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
 
 
 # Install cyipopt
-RUN /bin/bash -l -c "pip3 install Cython"
 RUN /bin/bash -l -c "pip3 install six"
 
 RUN /bin/bash -l -c "pip3 install git+https://github.com/mechmotum/cyipopt.git"
