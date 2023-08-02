@@ -2,7 +2,7 @@ plot_shapes = False         # generate the two left figures in Fig. 3
 generate_table_opt = False      # generate Table 1
 run_forward_opt = False     # output needed for the next two options
 generate_dp = False        # generate the right plot of Fig. 3
-generate_mp4 = True        # generate mp4 of the time dependent results
+generate_mp4 = False        # generate mp4 of the time dependent results
 
 
 import visualization.colormaps 
@@ -81,21 +81,17 @@ from visualization.visualize_simulation import make_movie
 
 only_init = False
 only_opt = False
-outnames = ["init_fsi.mp4", "opt_fsi.mp4"]
-gifnames = ["init_fsi.gif", "init_fsi.gif"]
+gifnames = ["init_fsi.gif", "opt_fsi.gif"]
 if only_init: 
     f_names = [foldernames[0]]
-    o_names = [outnames[0]]
     g_names = [gifnames[0]]
 elif only_opt:
     f_names = [foldernames[1]]
-    o_names = [outnames[1]]
     g_names = [gifnames[1]]
 else:
     f_names = foldernames
-    o_names = outnames
     g_names = gifnames
 
-if generate_mp4:            
+if generate_mp4:   
     for i in range(len(f_names)):
-        make_movie(foldername=f_names[i], outname=o_names[i], gifname=g_names[i])
+        make_movie(foldername=f_names[i], gifname=g_names[i])
