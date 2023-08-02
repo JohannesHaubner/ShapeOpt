@@ -24,7 +24,7 @@ docker run -it shapeopt
 or
 ```
 docker pull ghcr.io/johanneshaubner/shapeopt:latest
-docker run -it ghcr.io/johanneshaubner/shapeopt:latest
+docker run -ti -v ${PWD}:/root/shared -w /root/shared --entrypoint=/bin/bash --rm shapeopt
 ```
 
 ### IPOPT with HSL
