@@ -50,6 +50,7 @@ To obtain the results presented in the paper we used an IPOPT installation with 
 ```
 mpiexec -n 4 python3 /example/FSI/main.py >> example/FSI/mesh/Output/terminal.txt
 ```
+(FFC Compiler seems to get stuck in the beginning, cancelling when this happens and restarting the simulation seems to fix this.)
 
 To obtain the tables and figures we ran (in current version of repository at a preliminary and yet non-tested stage)
 ```
