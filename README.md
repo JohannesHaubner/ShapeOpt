@@ -48,13 +48,13 @@ python3 /example/FSI/create_mesh_FSI.py
 
 To obtain the results presented in the paper we used an IPOPT installation with HSL and ran 
 ```
-mpiexec -n 4 python3 /example/FSI/main.py >> example/FSI/mesh/Output/terminal.txt
+mpiexec -n 4 python3 example/FSI/main.py >> example/FSI/mesh/Output/terminal.txt
 ```
 (FFC Compiler seems to get stuck in the beginning, cancelling when this happens and restarting the simulation seems to fix this.)
 
 To obtain the tables and figures we ran (with setting the corresponding options to True in the script)
 ```
-mpiexec -n 4 python3 /example/FSI/visualize.py
+mpiexec -n 4 python3 example/FSI/visualize.py
 ```
 
 ### HPC Clusters
