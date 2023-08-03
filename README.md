@@ -43,7 +43,7 @@ Requires a recent master version of dolfin with MeshView support. Requires the c
 ### Running Example from Paper
 To create the mesh use
 ```
-python3 /example/FSI/create_mesh_FSI.py
+python3 example/FSI/create_mesh_FSI.py
 ```
 
 To obtain the results presented in the paper we used an IPOPT installation with HSL and ran 
