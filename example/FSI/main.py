@@ -21,7 +21,7 @@ stop_annotating()
 # specify path of directory that contains the files 'mesh_triangles.xdmf' and 'facet_mesh.xdmf'
 path_mesh = str(here) + "/mesh"
 # specify boundary and extension operator (use Extension.print_options())
-boundary_option = 'laplace_beltrami_withbc'
+boundary_option = 'laplace_beltrami_withbc2'
 extension_option = 'linear_elasticity'
 # governing equations
 application = 'fluid_structure'
