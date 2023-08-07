@@ -16,7 +16,7 @@ def plot_displacement(list, times, str, colors, foldernames):
     for i in range(len(list)):
         #pl.plot(times[i], list[i], linewidth=0.6, label=foldernames[i])
         pl.plot(times[i], list[i], color = colors[i], linewidth=0.6, label=foldernames[i])
-    pl.axis([0, 20, -0.1, 0.1])
+    pl.axis([0, 30, -0.1, 0.1])
     pl.legend(loc='lower left')
     pl.xlabel("time")
     pl.ylabel("y-displacement of tip of the flap")
