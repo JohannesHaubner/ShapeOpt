@@ -16,8 +16,8 @@ class LaplaceBeltrami_withbc(BoundaryOperator):
                 return near(x[0], (0.15)) and near(x[1], (0.2))
 
         tip = Tip()
-        self.bc_param = [DirichletBC(self.Vd, Constant("1.0"), 'on_boundary'), 
-                         DirichletBC(self.Vd, Constant("0.00000001"), tip, method='pointwise')]
+        self.bc_param = [DirichletBC(self.Vd, Constant("1.0"), 'on_boundary')] 
+        self.bc_param_post = [DirichletBC(self.Vd, Constant("0.00000001"), tip, method='pointwise')]
 
         # Define bilinear form
         a = lb_off*inner(grad(u), grad(v)) * dx(self.dmesh) + inner(u, v) * dx(self.dmesh)
@@ -58,6 +58,9 @@ class LaplaceBeltrami_withbc(BoundaryOperator):
         # solve variational problem
         u = Function(self.Vd)
         self.solver_param.solve(u.vector(), b)
+
+        for bc in self.bc_param_post:
+            bc.apply(u.vector())
 
         return u
 
