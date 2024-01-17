@@ -30,6 +30,6 @@ class Volume(Constraint):
         deformation = self.dof_to_trafo.dof_to_deformation_precond(x)
         form = det(Identity(self.dim)+grad(deformation))*dx
         dform = assemble(derivative(form, deformation))
-        dvolx = self.scalingfactor*ctt.Extension(self.Mesh_, self.param, self.boundary_option, self.extension_option).dof_to_deformation_precond_chainrule(dform, 2)
+        dvolx = self.scalingfactor*self.dof_to_trafo.dof_to_deformation_precond_chainrule(dform, 2)
         return dvolx
 
