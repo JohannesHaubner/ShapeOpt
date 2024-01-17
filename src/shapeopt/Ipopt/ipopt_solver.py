@@ -19,7 +19,7 @@ import cyipopt
 
 
 class IPOPTSolver(OptimizationSolver):
-    def __init__(self, problem, Mesh_, param, application, constraint_ids : list, dof_to_trafo, parameters=None, opt_inner_bdry=False):
+    def __init__(self, problem, Mesh_, param, application, constraint_ids : list, dof_to_trafo, parameters=None):
         try:
             import cyipopt
         except ImportError:
@@ -41,8 +41,7 @@ class IPOPTSolver(OptimizationSolver):
         self.application = application
         self.constraint_ids = constraint_ids
         self.problem_obj = self.create_problem_obj(self)
-        self.opt_inner_bdry = opt_inner_bdry
-        
+               
         #self.param.reg contains regularization parameter
         print('Initialization of IPOPTSolver finished', flush=True)
 
@@ -296,7 +295,7 @@ class IPOPTSolver(OptimizationSolver):
         cl = [] #[0.0, -cr, -cr] #, min_float]
         cu = [] #[0.0, cr, cr] #, 0.0]
         for c in self.constraint_ids:
-            dim = constraints_[c](self.Mesh_, self.param, self.boundary_option, self.extension_option, opt_inner_bdry=self.opt_inner_bdry).output_dim()
+            dim = constraints_[c](self.Mesh_, self.param, self.dof_to_trafo).output_dim()
             cl += [-cr] * dim
             cu += [ cr] * dim
 
