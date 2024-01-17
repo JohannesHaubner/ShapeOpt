@@ -127,6 +127,14 @@ class Initialize_Mesh_and_FunctionSpaces():
       }
 
       #  call SubMeshCollection
+      meshes_local = SubMeshCollection(domains, boundaries, subdomain_labels, boundary_labels, subdomain_boundaries)
+
+      markers_fluid_local = meshes_local.subdomains["fluid"].boundaries
+      markers_solid_local = meshes_local.subdomains["solid"].boundaries
+
+      fluid_mesh_local = markers_fluid_local.mesh().mesh
+
+      #  call SubMeshCollection
       meshes = SubMeshCollection(domains_global, boundaries_global, subdomain_labels, boundary_labels, subdomain_boundaries)
 
       markers_fluid = meshes.subdomains["fluid"].boundaries
@@ -226,8 +234,8 @@ class Initialize_Mesh_and_FunctionSpaces():
 
       # normal on design boundary
       v = TestFunction(self.Vn)
-      n_mesh = assemble(inner(n, v)*ds(mesh))
-      n_norm = assemble(inner(Constant(("1.0","1.0")), v) * ds(mesh)) # to norm n_mesh
+      n_mesh = assemble(inner(n, v)*ds(fluid_mesh_local))
+      n_norm = assemble(inner(Constant(("1.0","1.0")), v) * ds(fluid_mesh_local)) # to norm n_mesh
       normal = Function(self.Vn)
       normal.vector().set_local(n_mesh.get_local())
       normal.vector().apply("")
