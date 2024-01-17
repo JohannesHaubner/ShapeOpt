@@ -19,7 +19,7 @@ import cyipopt
 
 
 class IPOPTSolver(OptimizationSolver):
-    def __init__(self, problem, Mesh_, param, application, constraint_ids : list, boundary_option, extension_option, parameters=None):
+    def __init__(self, problem, Mesh_, param, application, constraint_ids : list, boundary_option, extension_option, parameters=None, opt_inner_bdry=False):
         try:
             import cyipopt
         except ImportError:
@@ -42,6 +42,7 @@ class IPOPTSolver(OptimizationSolver):
         self.application = application
         self.constraint_ids = constraint_ids
         self.problem_obj = self.create_problem_obj(self)
+        self.opt_inner_bdry = opt_inner_bdry
         
         #self.param.reg contains regularization parameter
         print('Initialization of IPOPTSolver finished', flush=True)
@@ -139,7 +140,7 @@ class IPOPTSolver(OptimizationSolver):
             #
             # x to deformation
             print('evaluate objective', flush=True)
-            deformation = Extension(self.Mesh_, self.param, self.bo, self.eo).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
+            deformation = Extension(self.Mesh_, self.param, self.bo, self.eo, opt_inner_bdry=self.opt_inner_bdry).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             if self.save_opt:
                 self.save_output(deformation, grad=False)
             mesh_quality = self.check_mesh_quality(deformation)
@@ -162,7 +163,7 @@ class IPOPTSolver(OptimizationSolver):
             # The callback for calculating the gradient
             #
             print('evaluate derivative of objective function', flush=True)
-            deformation = Extension(self.Mesh_, self.param, self.bo, self.eo).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
+            deformation = Extension(self.Mesh_, self.param, self.bo, self.eo, opt_inner_bdry=self.opt_inner_bdry).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             if self.save_opt:
                 self.save_output(deformation)
             mesh_quality = self.check_mesh_quality(deformation)
@@ -181,7 +182,7 @@ class IPOPTSolver(OptimizationSolver):
                 # ufile = File("./Output/Forward/dJf2.pvd")
                 # ufile << dJf
 
-            dJ1 = Extension(self.Mesh_, self.param, self.bo, self.eo).dof_to_deformation_precond_chainrule(dJf.vector(), 2)
+            dJ1 = Extension(self.Mesh_, self.param, self.bo, self.eo, opt_inner_bdry=self.opt_inner_bdry).dof_to_deformation_precond_chainrule(dJf.vector(), 2)
             dJ = dJ1 + self.param["reg"] * x  # derivative of the regularization
 
             return dJ
@@ -297,7 +298,7 @@ class IPOPTSolver(OptimizationSolver):
         cl = [] #[0.0, -cr, -cr] #, min_float]
         cu = [] #[0.0, cr, cr] #, 0.0]
         for c in self.constraint_ids:
-            dim = constraints_[c](self.Mesh_, self.param, self.boundary_option, self.extension_option).output_dim()
+            dim = constraints_[c](self.Mesh_, self.param, self.boundary_option, self.extension_option, opt_inner_bdry=self.opt_inner_bdry).output_dim()
             cl += [-cr] * dim
             cu += [ cr] * dim
 

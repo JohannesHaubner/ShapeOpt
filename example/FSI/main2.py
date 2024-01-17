@@ -133,13 +133,13 @@ if __name__ == "__main__":
         param["lb_off_p"] = Constant(lb_off)
         Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
         problem = MinimizationProblem(Jred)
-        IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, boundary_option, extension_option)
+        IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, boundary_option, extension_option, opt_inner_bdry=True)
         x, info = IPOPT.solve(x0)
         x0 = x
 
         print("FSI_main completed", flush=True)
 
-    deformation = Extension(init_mfs, param, boundary_option=boundary_option, extension_option=extension_option).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
+    deformation = Extension(init_mfs, param, boundary_option=boundary_option, extension_option=extension_option, opt_inner_bdry=True).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
     defo = deformation # project(deformation, Vn)
 
     # move mesh and save moved mesh
