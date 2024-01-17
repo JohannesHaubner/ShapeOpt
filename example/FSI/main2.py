@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
     def test_extension_operator(eo_id):
         print('test extension operator \t', eo_id)
-        order, diff = extension_operators[eo_id](mesh, boundaries, params).test()
+        order, diff = extension_operators[eo_id](mesh, boundaries, params, opt_inner_bdry=True).test()
         assert order > 1.8 or diff < 1e-12
 
     test_extension_operator("linear_elasticity")
