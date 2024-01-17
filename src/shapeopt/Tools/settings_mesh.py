@@ -1,7 +1,9 @@
 from dolfin import *
+import dolfin as df
 from dolfin_adjoint import *
 import numpy as np
 from pyadjoint.overloaded_type import create_overloaded_object
+from shapeopt.Tools.subdomains import SubMeshCollection, transfer_to_subfunc
 #import mpi4py as MPI
 #from dolfin_adjoint import *
 import matplotlib.pyplot as plt
@@ -63,11 +65,21 @@ class Initialize_Mesh_and_FunctionSpaces():
 
 
 
-
-      # load global mesh on each process in order to have the design boundary mesh on each process
       mesh_global = Mesh(MPI.comm_self)
       with XDMFFile(MPI.comm_self, stri) as infile:
         infile.read(mesh_global)
+
+      if load_mesh and domains:
+          mvc = MeshValueCollection("size_t", mesh_global, 1)
+          with XDMFFile(MPI.comm_self, stri3) as infile:
+              infile.read(mvc)
+      else:
+          mvc = MeshValueCollection("size_t", mesh_global, 2)
+          with XDMFFile(MPI.comm_self, stri) as infile:
+            infile.read(mvc, "name_to_read")
+      domains_global = cpp.mesh.MeshFunctionSizet(mesh_global, mvc)
+      dfile = File("./Output/Tests/ForwardEquation/domains_global.pvd")
+      dfile << domains_global
 
       # full boundary information on each process
       mvc2 = MeshValueCollection("size_t", mesh_global, 1)
@@ -88,10 +100,38 @@ class Initialize_Mesh_and_FunctionSpaces():
 
       # define design boundary mesh on each process
 
-      # boundary mesh and submesh
-      bmesh = BoundaryMesh(mesh_global, "exterior")
+      # first go to fluid mesh in order to allow the interface to be a design boundary
+      boundary_labels = {
+          "inflow" : params["inflow"],
+          "outflow": params["outflow"],
+          "noslip": params["noslip"],
+          "noslip_obstacle": params["noslip_obstacle"],
+          "obstacle": params["obstacle"],
+          "interface": params["interface"], 
+      }
 
-      # get entity map of facets, dof of facet of boundary mesh to dof of facet of mesh
+      # dictionary of tags for the subdomains
+      subdomain_labels = {
+          "fluid": params["fluid"],
+          "solid": params["solid"],
+      }
+
+      # Dictionary with facet-labels from the boundary of each subdomain
+      subdomain_boundaries = {
+          "fluid": ("inflow", "outflow", "noslip", "obstacle", "interface"),
+          "solid": ("interface", "obstacle_solid"),
+      }
+
+      #  call SubMeshCollection
+      meshes = SubMeshCollection(domains_global, boundaries_global, subdomain_labels, boundary_labels, subdomain_boundaries)
+
+      markers_fluid = meshes.subdomains["fluid"].boundaries
+      markers_solid = meshes.subdomains["solid"].boundaries
+
+      fluid_mesh = markers_fluid.mesh().mesh
+      fluid_markers = markers_fluid.mesh().boundaries
+
+      bmesh = BoundaryMesh(fluid_mesh, "exterior")
       dofs = bmesh.entity_map(1)
 
       # create MeshFunctionSizet on boundary
@@ -103,7 +143,24 @@ class Initialize_Mesh_and_FunctionSpaces():
       bsize = bboundaries.size()
 
       for i in range(bnum):
-        bboundaries.set_value(i, boundaries_global[dofs[i]])
+          bboundaries.set_value(i, fluid_markers[dofs[i]])
+
+      # boundary mesh and submesh
+      #bmesh = BoundaryMesh(mesh_global, "exterior")
+
+      # get entity map of facets, dof of facet of boundary mesh to dof of facet of mesh
+      #dofs = bmesh.entity_map(1)
+
+      # create MeshFunctionSizet on boundary
+      #bmvc = MeshValueCollection("size_t", bmesh, 1)
+      #bboundaries = cpp.mesh.MeshFunctionSizet(bmesh, bmvc)
+
+      # write boundaries[dof of facet in mesh] into bboundaries[dof of facet in bmesh]
+      #bnum = bmesh.num_vertices()
+      #bsize = bboundaries.size()
+
+      #for i in range(bnum):
+      #  bboundaries.set_value(i, boundaries_global[dofs[i]])
 
       # write to pvd-file for testing
       bdfile = File(MPI.comm_self, "./Output/Tests/ForwardEquation/bboundary.pvd")
@@ -112,6 +169,7 @@ class Initialize_Mesh_and_FunctionSpaces():
       # create design-boundary mesh
       dmesh = MeshView.create(bboundaries, params["design"])
       print('design boundary mesh created.........................................')
+
 
       # normal vector on mesh
       n = FacetNormal(mesh)
@@ -122,11 +180,16 @@ class Initialize_Mesh_and_FunctionSpaces():
       #Vbl = FunctionSpace(bmesh_local, "CG", 1)
       #Vbln = VectorFunctionSpace(bmesh_local, "CG", 1)
       Vg = FunctionSpace(mesh_global, "CG",1)
+      Vfg = FunctionSpace(fluid_mesh, "CG", 1)
+      Vgn = VectorFunctionSpace(mesh_global, "CG", 1)
+      Vfgn = VectorFunctionSpace(fluid_mesh, "CG", 1)
       Vb = FunctionSpace(bmesh, "CG", 1)
       self.Vd = FunctionSpace(dmesh, "CG", 1)
       self.Vn = VectorFunctionSpace(mesh, "CG", 1)
       Vbn = VectorFunctionSpace(bmesh, "CG", 1)
       self.Vdn = VectorFunctionSpace(dmesh, "CG", 1)
+
+      dof_map_fluid_full = self.__dof_maps_fluid_full(Vfg, Vg)
       
       self.mesh = mesh
       self.dmesh = dmesh
@@ -140,8 +203,9 @@ class Initialize_Mesh_and_FunctionSpaces():
       global_to_glocal_map, glocal_to_global_map = self.__meshglobal_to_mesh__(mesh_global)
 
       # dof-maps between V and Vb
-      Vb_to_V_map = self.__Vb_to_V(Vg, Vb, global_to_glocal_map)
-      #self.__test_Vb_to_V(Vg, Vb, global_to_glocal_map)
+      Vb_to_V_map = self.__Vb_to_V(Vfg, Vb, global_to_glocal_map, dof_map_fluid_full)
+
+      self.__test_Vb_to_V(Vfg, Vb, global_to_glocal_map, dof_map_fluid_full)
 
       # dof-maps between V and Vd
       self.Vd_to_V_map = self.__Vd_to_V(Vb, Vb_to_V_map)
@@ -378,12 +442,12 @@ class Initialize_Mesh_and_FunctionSpaces():
 
       return LocValues
   
-    def __Vb_to_V(self, Vg, Vb, global_to_glocal_map):
+    def __Vb_to_V(self, Vfg, Vb, global_to_glocal_map, fluid_full_map):
       """ Take a CG1 function f defined on bmesh and return a volume vector with same 
       values on the boundary but zero in volume
       """
       SpaceV = self.V
-      SpaceVg = Vg
+      SpaceVg = Vfg
       SpaceB = Vb
 
       f = Function(SpaceB)
@@ -395,24 +459,26 @@ class Initialize_Mesh_and_FunctionSpaces():
       v2d = vertex_to_dof_map(SpaceVg)
 
 
-      Vb_to_Vg_map = np.zeros(np.size(f.vector().get_local()))
+      Vb_to_Vfg_map = np.zeros(np.size(f.vector().get_local()))
       for i in range(np.size(f.vector().get_local())):
           GVertID = Vertex(bmesh, d2v[i]).index()  # Local Vertex ID for given dof on boundary mesh
           PVertID = mapb[GVertID]  # Local Vertex ID of parent mesh
           PDof = v2d[PVertID]
-          Vb_to_Vg_map[i] = int(PDof)
-      Vb_to_V_map_new = [global_to_glocal_map[int(c)] for c in Vb_to_Vg_map]
+          Vb_to_Vfg_map[i] = int(PDof)
+      
+      Vb_to_V_map_new = [global_to_glocal_map[fluid_full_map[int(c)]] for c in Vb_to_Vfg_map]
+      Vb_to_V_map_new = [fluid_full_map[int(c)] for c in Vb_to_Vfg_map]
 
       return Vb_to_V_map_new
 
 
-    def __test_Vb_to_V(self, Vg, Vb, global_to_glocal_map):
+    def __test_Vb_to_V(self, Vfg, Vb, global_to_glocal_map, fluid_full_map):
         print(Vb)
         f = Function(Vb)
         n = np.size(f.vector().get_local())
         f.vector().set_local(np.ones(n))
         f.vector().apply("")
-        Vb_to_V_map = self.__Vb_to_V(Vg, Vb, global_to_glocal_map)
+        Vb_to_V_map = self.__Vb_to_V(Vfg, Vb, global_to_glocal_map, fluid_full_map)
 
         p = Function(self.V)
         values = np.zeros(p.vector().size())
@@ -427,6 +493,17 @@ class Initialize_Mesh_and_FunctionSpaces():
         bdfile = File(MPI.comm_self, "./Output/Tests/SettingsMesh/Vb_to_V.pvd")
         bdfile << p
         pass
+    
+    def __dof_maps_fluid_full(self, V, V_full):
+        # fluid mesh to global mesh
+        v_full = Function(V_full)
+        ndof_full = len(v_full.vector()[:])
+        v_full.vector()[:] = range(ndof_full)
+
+        v = transfer_to_subfunc(v_full, V)
+
+        array = v.vector()[:].astype(int)
+        return array
 
     def __Vd_to_V(self, Vb, Vb_to_V_map):
         """ Transfers a function from a MeshView submesh to its parent mesh """
@@ -496,7 +573,7 @@ class Initialize_Mesh_and_FunctionSpaces():
         pass
 
     def __test_Vdn_to_Vn(self):
-        f = project(Expression(("x[0]", "pow(x[1]-x[0],2)"), element= self.Vdn.ufl_element()),self.Vdn)
+        f = df.project(Expression(("x[0]", "pow(x[1]-x[0],2)"), element= self.Vdn.ufl_element()),self.Vdn)
 
         p = self.Vdn_to_Vn(f)
 
