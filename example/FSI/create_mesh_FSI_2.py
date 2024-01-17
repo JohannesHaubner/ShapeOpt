@@ -18,7 +18,7 @@ alp = 0.2
 L = 2.5 #2.5 #20            # length of channel
 H = 0.41 #0.4 #6           # heigth of channel
 c = [0.5, 0.2, 0]  #[0.2, 0.2, 0] #[10, 3, 0]  # position of object
-r = 0.05 #0.05 #0.5 # radius of object
+r = 0.05 #0.5 # radius of object
 
 # labels
 boundary_labels = [1, 2, 3, 4, 5] # has to contain all labels for boundary parts
@@ -34,7 +34,7 @@ noslipobstacle = 6
 params = {"inflow" : inflow,
           "outflow": outflow,
           "noslip": walls,
-          "noslip_obstacle": noslipobstacle,
+          "noslip_obstacle": obstacle,
           "design": interface,
           "interface": interface,
           "mesh_parts": True,
@@ -61,12 +61,8 @@ geometry = pygmsh.geo.Geometry()
 # Fetch model we would like to add data to
 model = geometry.__enter__()
 # Add circle
-pc = model.add_point(c)
-sin = 0.5 # sin(30°)
-cos = np.sqrt(3)/2 # cos(30°)
-pc0 = model.add_point(c)
-obstacle = model.add_circle(c, r, mesh_size=alp*resolution)
-interface = model.add_circle(c, 2*r, mesh_size=alp*resolution)
+circle1 = model.add_circle(c, r, mesh_size=alp*resolution)
+circle2 = model.add_circle(c, 2*r, mesh_size=alp*resolution)
 
 # Add outer points 
 points = [model.add_point((0, 0, 0), mesh_size=resolution),
@@ -81,9 +77,9 @@ channel_lines = [model.add_line(points[i], points[i+1])
 # Create a line loop and plane surface for meshing
 channel_loop = model.add_curve_loop(channel_lines)
 plane_surface = model.add_plane_surface(
-    channel_loop, holes=[interface.curve_loop])
+    channel_loop, holes=[circle1.curve_loop])
 plane_surface2 = model.add_plane_surface(
-    interface.curve_loop, holes=[obstacle.curve_loop])
+    circle2.curve_loop, holes=[circle1.curve_loop])
 
 # Call gmsh kernel before add physical entities
 model.synchronize()
@@ -92,8 +88,8 @@ volume_marker = 6
 model.add_physical([channel_lines[0]], "inflow") # mark inflow boundary with 1
 model.add_physical([channel_lines[2]], "outflow") # mark outflow boundary with 2
 model.add_physical([channel_lines[1], channel_lines[3]], "walls") # mark walls with 3
-model.add_physical([obstacle.curve_loop], "obstacle") # mark obstacle 
-model.add_physical([interface.curve_loop], "interface") # mark interface 
+model.add_physical(circle1.curve_loop.curves, "obstacle") # mark obstacle 
+model.add_physical(circle2.curve_loop.curves, "interface") # mark interface 
 model.add_physical([plane_surface], "fluid") # mark solid domain 
 model.add_physical([plane_surface2], "solid") # mark solid domain 
 
