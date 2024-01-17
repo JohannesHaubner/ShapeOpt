@@ -15,18 +15,20 @@ import shapeopt.Ipopt.ipopt_solver as ipopt_solver
 from shapeopt.Constraints import constraints
 from shapeopt.Control_to_Trafo import Extension
 from shapeopt.Reduced_Objective import reduced_objectives
+from shapeopt.Control_to_Trafo.Extension_Operator import extension_operators
+from shapeopt.Control_to_Trafo.Boundary_Operator import boundary_operators
 
 stop_annotating()
 
 # specify path of directory that contains the files 'mesh_triangles.xdmf' and 'facet_mesh.xdmf'
 path_mesh = str(here) + "/mesh2"
 # specify boundary and extension operator (use Extension.print_options())
-boundary_option = 'laplace_beltrami_withbc2'
+boundary_option = 'laplace_beltrami'
 extension_option = 'linear_elasticity'
 # governing equations
 application = 'fluid_structure'
 # constraints
-constraint_ids = ['volume', 'barycenter'] #needs to be a list
+constraint_ids = ['volume'] #needs to be a list
 
 # set and load parameters
 geom_prop = np.load(path_mesh + '/geom_prop.npy', allow_pickle='TRUE').item()
@@ -60,6 +62,20 @@ if __name__ == "__main__":
     domains = init_mfs.get_domains()
     params = init_mfs.get_params()
     dnormal = init_mfs.get_dnormalf()
+
+    def test_boundary_operator(bo_id):
+        print('test boundary operator \t', bo_id)
+        order, diff = boundary_operators[bo_id](dmesh, dnormal, Constant(0.0)).test()
+        assert order > 1.8 or diff < 1e-12
+    test_boundary_operator('laplace_beltrami')
+
+    def test_extension_operator(eo_id):
+        print('test extension operator \t', eo_id)
+        order, diff = extension_operators[eo_id](mesh, boundaries, params).test()
+        assert order > 1.8 or diff < 1e-12
+
+    test_extension_operator("linear_elasticity")
+
 
     #function space in which the control lives
     Vd = init_mfs.get_Vd()

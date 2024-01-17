@@ -100,8 +100,8 @@ circle3 = model.add_circle_arc(pc2, pc0, pc4)
 circle4 = model.add_circle_arc(pc4, pc0, pc3)
 
 # Add elastic flag
-pf1 = model.add_point((c[0]+r, c[1]+r, 0), mesh_size=alp*resolution)
-pf2 = model.add_point((c[0]+r, c[1]-r, 0), mesh_size=alp*resolution)
+pf1 = model.add_point((c[0]+r, c[1]+2*r, 0), mesh_size=alp*resolution)
+pf2 = model.add_point((c[0]+r, c[1]-2*r, 0), mesh_size=alp*resolution)
 fl1 = model.add_line(pc3, pf2)
 fl2 = model.add_line(pf2, pf1)
 fl3 = model.add_line(pf1, pc2)
