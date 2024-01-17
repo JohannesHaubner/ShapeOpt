@@ -8,6 +8,10 @@ from shapeopt.Tools.subdomains import SubMeshCollection, transfer_to_subfunc
 #from dolfin_adjoint import *
 import matplotlib.pyplot as plt
 
+import mpi4py as MPI4py
+comm = MPI4py.MPI.COMM_WORLD
+id = comm.Get_rank()
+
 
 class Initialize_Mesh_and_FunctionSpaces():
     def __init__(self, path_mesh, load_mesh=False, domains=True):
@@ -190,6 +194,14 @@ class Initialize_Mesh_and_FunctionSpaces():
       self.Vdn = VectorFunctionSpace(dmesh, "CG", 1)
 
       dof_map_fluid_full = self.__dof_maps_fluid_full(Vfg, Vg)
+
+      #a = interpolate(Expression("x[0]*x[1]", degree =2), Vfg)
+      #b = Function(Vg)
+      #b.vector()[dof_map_fluid_full] = a.vector()[:]
+      #b.vector().apply("")
+      ##from IPython import embed; embed()
+      #xdmffile = XDMFFile(MPI.comm_self, "./Output/Tests/SettingsMesh/TEST.xdmf")
+      #xdmffile.write_checkpoint(b, 'p', XDMFFile.Encoding.HDF5)
       
       self.mesh = mesh
       self.dmesh = dmesh
@@ -209,8 +221,9 @@ class Initialize_Mesh_and_FunctionSpaces():
 
       # dof-maps between V and Vd
       self.Vd_to_V_map = self.__Vd_to_V(Vb, Vb_to_V_map)
-      #self.__test_Vdn_to_Vn()
-      #self.__test_Vd_to_V()
+      self.__test_Vn_to_Vdn()
+      self.__test_V_to_Vd()
+      exit(0)
 
       # normal on design boundary
       v = TestFunction(self.Vn)
@@ -406,7 +419,7 @@ class Initialize_Mesh_and_FunctionSpaces():
          out += NormalsAllProcs[len(vec)*j:len(vec)*(j+1)]
      return out
       
-    def __V_to_Vb_map(self, Vg, Vb, glocal_to_global_map):
+    def __V_to_Vb_map(self, Vg, Vb, glocal_to_global_map, fluid_full_map):
 
       bmesh = Vb.mesh()
       mesh_global = Vg.mesh()
@@ -416,7 +429,8 @@ class Initialize_Mesh_and_FunctionSpaces():
       rnd = np.array(range(ndofv))
 
       # map from mesh_global to bmesh
-      ggm = glocal_to_global_map[rnd]
+      ggm = glocal_to_global_map[rnd] # local to global
+      ggm = ggm[fluid_full_map] # global to fluid
 
       # We use a dof->Vertex mapping to create a global array with all DOF values ordered by mesh vertices
       DofToVert = dof_to_vertex_map(v.function_space())
@@ -467,7 +481,6 @@ class Initialize_Mesh_and_FunctionSpaces():
           Vb_to_Vfg_map[i] = int(PDof)
       
       Vb_to_V_map_new = [global_to_glocal_map[fluid_full_map[int(c)]] for c in Vb_to_Vfg_map]
-      Vb_to_V_map_new = [fluid_full_map[int(c)] for c in Vb_to_Vfg_map]
 
       return Vb_to_V_map_new
 
@@ -538,8 +551,8 @@ class Initialize_Mesh_and_FunctionSpaces():
 
         p = self.Vd_to_V(f)
 
-        bdfile = File(MPI.comm_self, "./Output/Tests/SettingsMesh/Vd_to_V.pvd")
-        bdfile << p
+        xdmffile = XDMFFile("./Output/Tests/SettingsMesh/Vd_to_V.xdmf")
+        xdmffile.write_checkpoint(p, 'p', XDMFFile.Encoding.HDF5)
         pass
 
     def __test_V_to_Vd(self):
@@ -547,8 +560,8 @@ class Initialize_Mesh_and_FunctionSpaces():
 
         p = self.V_to_Vd(f)
 
-        bdfile = File(MPI.comm_self, "./Output/Tests/SettingsMesh/V_to_Vd.pvd")
-        bdfile << p
+        xdmffile = XDMFFile(MPI.comm_world, "./Output/Tests/SettingsMesh/V_to_Vd.xdmf")
+        xdmffile.write_checkpoint(p, 'p', XDMFFile.Encoding.HDF5)
         pass
 
     def __test_Vd_to_V_to_Vd(self):
@@ -568,8 +581,8 @@ class Initialize_Mesh_and_FunctionSpaces():
 
         p = self.Vn_to_Vdn(f)
 
-        bdfile = File(MPI.comm_self, "./Output/Tests/SettingsMesh/Vn_to_Vdn.pvd")
-        bdfile << p
+        xdmffile = XDMFFile(MPI.comm_world, "./Output/Tests/SettingsMesh/Vn_to_Vdn.xdmf")
+        xdmffile.write_checkpoint(p, 'p', XDMFFile.Encoding.HDF5)
         pass
 
     def __test_Vdn_to_Vn(self):
@@ -577,8 +590,8 @@ class Initialize_Mesh_and_FunctionSpaces():
 
         p = self.Vdn_to_Vn(f)
 
-        bdfile = File(MPI.comm_self, "./Output/Tests/SettingsMesh/Vdn_to_Vn.pvd")
-        bdfile << p
+        xdmffile = XDMFFile("./Output/Tests/SettingsMesh/Vdn_to_Vn.xdmf")
+        xdmffile.write_checkpoint(p, 'p', XDMFFile.Encoding.HDF5)
         pass
 
 

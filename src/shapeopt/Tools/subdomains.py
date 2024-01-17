@@ -29,8 +29,6 @@ def transfer_to_subfunc(f, Vbf):
 
     d_full = []
     d = []
-    imin, imax = dofmap_full.ownership_range()
-    iminl, imaxl = dofmap.ownership_range()
 
     # Transfer dofs
     for c in cells(submesh):
@@ -53,7 +51,7 @@ def transfer_to_subfunc(f, Vbf):
     f_f_vec[data[:,1]] = f_vec[data[:,0]]
 
 
-    f_f.vector().set_local(f_f_vec[iminl:imaxl])
+    f_f.vector()[:] = f_f_vec
     f_f.vector().apply("")
     return f_f
 
