@@ -113,7 +113,6 @@ class Initialize_Mesh_and_FunctionSpaces():
       meshes_local = SubMeshCollection(domains, boundaries, subdomain_labels, boundary_labels, subdomain_boundaries)
 
       markers_fluid_local = meshes_local.subdomains["fluid"].boundaries
-      markers_solid_local = meshes_local.subdomains["solid"].boundaries
 
       fluid_mesh_local = markers_fluid_local.mesh().mesh
 
@@ -121,7 +120,6 @@ class Initialize_Mesh_and_FunctionSpaces():
       meshes = SubMeshCollection(domains_global, boundaries_global, subdomain_labels, boundary_labels, subdomain_boundaries)
 
       markers_fluid = meshes.subdomains["fluid"].boundaries
-      markers_solid = meshes.subdomains["solid"].boundaries
 
       fluid_mesh = markers_fluid.mesh().mesh
       fluid_markers = markers_fluid.mesh().boundaries
