@@ -17,6 +17,9 @@ from shapeopt.Control_to_Trafo import Extension
 from shapeopt.Reduced_Objective import reduced_objectives
 from shapeopt.Control_to_Trafo.Extension_Operator import extension_operators
 from shapeopt.Control_to_Trafo.Boundary_Operator import boundary_operators
+import shapeopt.Control_to_Trafo.dof_to_trafo as ctt
+
+parameters["ghost_mode"] = "shared_facet"
 
 stop_annotating()
 
@@ -73,8 +76,13 @@ if __name__ == "__main__":
         print('test extension operator \t', eo_id)
         order, diff = extension_operators[eo_id](mesh, boundaries, params, opt_inner_bdry=True).test()
         assert order > 1.8 or diff < 1e-12
-
     test_extension_operator("linear_elasticity")
+
+    boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(0.0))
+    extension_operator = extension_operators[extension_option](mesh, boundaries, params, opt_inner_bdry=True)
+    param_dof_to_trafo = {}
+    param_dof_to_trafo["lb_off_p"] = Constant(1.0)
+    dof_to_trafo = ctt.Extension(init_mfs, param, boundary_operator, extension_operator)
 
 
     #function space in which the control lives
@@ -90,7 +98,7 @@ if __name__ == "__main__":
     param["Vol_DmO"] = assemble(v*dx)
     param["Vol_O"] = param["Vol_D"] - param["Vol_DmO"]
     bo = param["Bary_O"]
-    bc = constraints['barycenter'](init_mfs, param, boundary_option, extension_option).eval(x0)
+    bc = constraints['barycenter'](init_mfs, param, dof_to_trafo).eval(x0)
     param["Bary_O"] = np.add(bc, bo)
 
     # solve optimization problem
@@ -107,8 +115,6 @@ if __name__ == "__main__":
     x0 = interpolate(Constant("0.0"), Vd).vector().get_local()
 
     remesh_flag = True
-
-    param["lb_off_p"] = Constant(1.0)
 
     counter = 1
 
@@ -130,16 +136,20 @@ if __name__ == "__main__":
         stop_annotating()
         set_working_tape(Tape())
         #param["reg"] = reg
+        boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(0.0))
+        extension_operator = extension_operators[extension_option](mesh, boundaries, params, opt_inner_bdry=True)
         param["lb_off_p"] = Constant(lb_off)
+        param_dof_to_trafo["lb_off_p"] = Constant(lb_off)
+        dof_to_trafo = ctt.Extension(init_mfs, param, boundary_operator, extension_operator)
         Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
         problem = MinimizationProblem(Jred)
-        IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, boundary_option, extension_option, opt_inner_bdry=True)
+        IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, dof_to_trafo, opt_inner_bdry=True)
         x, info = IPOPT.solve(x0)
         x0 = x
 
         print("FSI_main completed", flush=True)
 
-    deformation = Extension(init_mfs, param, boundary_option=boundary_option, extension_option=extension_option, opt_inner_bdry=True).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
+    deformation = dof_to_trafo.dof_to_deformation_precond(init_mfs.vec_to_Vd(x0)) 
     defo = deformation # project(deformation, Vn)
 
     # move mesh and save moved mesh

@@ -19,7 +19,7 @@ import cyipopt
 
 
 class IPOPTSolver(OptimizationSolver):
-    def __init__(self, problem, Mesh_, param, application, constraint_ids : list, boundary_option, extension_option, parameters=None, opt_inner_bdry=False):
+    def __init__(self, problem, Mesh_, param, application, constraint_ids : list, dof_to_trafo, parameters=None, opt_inner_bdry=False):
         try:
             import cyipopt
         except ImportError:
@@ -37,8 +37,7 @@ class IPOPTSolver(OptimizationSolver):
         self.ncontrols = len(self.rfn.get_controls())
         self.rf = self.problem.reduced_functional
         self.dmesh = self.Mesh_.get_design_boundary_mesh()
-        self.boundary_option = boundary_option
-        self.extension_option = extension_option
+        self.dof_to_trafo = dof_to_trafo
         self.application = application
         self.constraint_ids = constraint_ids
         self.problem_obj = self.create_problem_obj(self)
@@ -95,8 +94,7 @@ class IPOPTSolver(OptimizationSolver):
             self.param = outer.param
             self.Vd = outer.Vd
             self.scale = outer.scalingfactor
-            self.bo = outer.boundary_option
-            self.eo = outer.extension_option
+            self.dof_to_trafo = outer.dof_to_trafo
             self.application = outer.application
             self.constraint_ids = outer.constraint_ids
             self.mesh = self.Mesh_.get_mesh()
@@ -140,7 +138,7 @@ class IPOPTSolver(OptimizationSolver):
             #
             # x to deformation
             print('evaluate objective', flush=True)
-            deformation = Extension(self.Mesh_, self.param, self.bo, self.eo, opt_inner_bdry=self.opt_inner_bdry).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
+            deformation = self.dof_to_trafo.dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             if self.save_opt:
                 self.save_output(deformation, grad=False)
             mesh_quality = self.check_mesh_quality(deformation)
@@ -163,7 +161,7 @@ class IPOPTSolver(OptimizationSolver):
             # The callback for calculating the gradient
             #
             print('evaluate derivative of objective function', flush=True)
-            deformation = Extension(self.Mesh_, self.param, self.bo, self.eo, opt_inner_bdry=self.opt_inner_bdry).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
+            deformation = self.dof_to_trafo.dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             if self.save_opt:
                 self.save_output(deformation)
             mesh_quality = self.check_mesh_quality(deformation)
@@ -182,7 +180,7 @@ class IPOPTSolver(OptimizationSolver):
                 # ufile = File("./Output/Forward/dJf2.pvd")
                 # ufile << dJf
 
-            dJ1 = Extension(self.Mesh_, self.param, self.bo, self.eo, opt_inner_bdry=self.opt_inner_bdry).dof_to_deformation_precond_chainrule(dJf.vector(), 2)
+            dJ1 = Extension(self.Mesh_, self.param, self.dof_to_trafo).dof_to_deformation_precond_chainrule(dJf.vector(), 2)
             dJ = dJ1 + self.param["reg"] * x  # derivative of the regularization
 
             return dJ
@@ -193,7 +191,7 @@ class IPOPTSolver(OptimizationSolver):
             # print('evaluate constraint')
             cs = []
             for c in self.constraint_ids:
-                cs_ = constraints_[c](self.Mesh_, self.param, self.bo, self.eo).eval(self.Mesh_.vec_to_Vd(x))
+                cs_ = constraints_[c](self.Mesh_, self.param, self.dof_to_trafo).eval(self.Mesh_.vec_to_Vd(x))
                 if isinstance(cs_, float):
                     cs.append([cs_])
                 else:
@@ -211,7 +209,7 @@ class IPOPTSolver(OptimizationSolver):
             #jaccon1 = self.scale * np.concatenate((v_ct_d, b_ct_d[0], b_ct_d[1]))  # , d_ct_d))
             cs = []
             for c in self.constraint_ids:
-                cs_ = constraints_[c](self.Mesh_, self.param, self.bo, self.eo).grad(self.Mesh_.vec_to_Vd(x))
+                cs_ = constraints_[c](self.Mesh_, self.param, self.dof_to_trafo).grad(self.Mesh_.vec_to_Vd(x))
                 if isinstance(cs_, list):
                     for i in range(len(cs_)):
                         cs.append(cs_[i])

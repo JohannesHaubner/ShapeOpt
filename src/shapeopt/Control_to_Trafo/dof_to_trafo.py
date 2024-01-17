@@ -11,12 +11,12 @@ sys.path.insert(0, str(here.parent))
 from Tools.first_order_check import perform_first_order_check
 
 class Extension():
-    def __init__(self, Mesh_, param, boundary_option : str, extension_option : str):
+    def __init__(self, Mesh_, param, boundary_operator, extension_operator):
       """
       # mesh: reference mesh
       # params: params.design, params.inflow, params.outflow, params.noslip
-      # boundary_option: boundary operator (to see options run Extension.print_options())
-      # extension_option: extension operator (to see options run Extension.print_options())
+      # boundary_option: boundary operator 
+      # extension_option: extension operator 
       """
       mesh = Mesh_.get_mesh()
       dmesh = Mesh_.get_design_boundary_mesh()
@@ -69,18 +69,8 @@ class Extension():
       #print((self.M_lumped_m05 * func.vector()).get_local())
       #exit(0)
 
-      self.boundary_option = boundary_option
-      self.extension_option = extension_option
-      try:
-        self.extension_operator = extension_operators[self.extension_option]
-      except:
-        print('Extension operator specified in extension_option not implemented. \
-               Run Extension.print_options() to see options for extension operator')
-      try:
-        self.boundary_operator = boundary_operators[self.boundary_option]
-      except:
-        print('Boundary operator specified in boundary_option not implemented. \
-               Run Extension.print_options() to see options for extension operator')
+      self.boundary_operator = boundary_operator
+      self.extension_operator = extension_operator
 
     @staticmethod
     def print_options():
@@ -99,9 +89,9 @@ class Extension():
       #deformation = extension.Extension(self.mesh, self.boundaries, self.params).eval(xd)
 
       ## strategy 3
-      xd = self.boundary_operator(self.dmesh, self.dnormalf, self.lb_off).eval(x) #self.lb_off).eval(x)
+      xd = self.boundary_operator.eval(x) #self.lb_off).eval(x)
       xd = self.Mesh_.Vdn_to_Vn(xd)
-      deformation = self.extension_operator(self.mesh, self.boundaries, self.params).eval(xd)
+      deformation = self.extension_operator.eval(xd)
       ###
       return deformation
 
@@ -114,9 +104,9 @@ class Extension():
       #djy = boundary.Boundary_Operator(self.dmesh, self.dnormalf, self.lb_off).chainrule(djxdf)
 
       ### strategy 3
-      djxd = self.extension_operator(self.mesh, self.boundaries, self.params).chainrule(djy, 1, option2)
+      djxd = self.extension_operator.chainrule(djy, 1, option2)
       djxdf = self.Mesh_.Vn_to_Vdn(djxd)
-      djy = self.boundary_operator(self.dmesh, self.dnormalf, self.lb_off).chainrule(djxdf)
+      djy = self.boundary_operator.chainrule(djxdf)
       ###
       return djy
 
