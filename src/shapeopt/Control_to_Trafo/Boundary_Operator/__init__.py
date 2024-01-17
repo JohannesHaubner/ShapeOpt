@@ -1,6 +1,6 @@
 from .LaplaceBeltrami import LaplaceBeltrami
 from .LaplaceBeltrami_withbc import LaplaceBeltrami_withbc
-from .LaplaceBeltrami_withbc2 import LaplaceBeltrami_withbc as LaplaceBeltrami_withbc2
+from .LaplaceBeltrami_withbc2 import LaplaceBeltrami_withbc2 
 from .NoBCOperator import NoBCO
 
 boundary_operators = {'laplace_beltrami': LaplaceBeltrami,

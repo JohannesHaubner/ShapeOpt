@@ -1,7 +1,7 @@
 from dolfin import *
 from .BoundaryOperator import BoundaryOperator
 
-class LaplaceBeltrami_withbc(BoundaryOperator):
+class LaplaceBeltrami_withbc2(BoundaryOperator):
     def __init__(self, dmesh, dnormal, lb_off):
         super().__init__(dmesh, dnormal, lb_off)
 
