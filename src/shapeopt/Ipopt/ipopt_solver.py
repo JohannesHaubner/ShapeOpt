@@ -52,7 +52,7 @@ class IPOPTSolver(OptimizationSolver):
         # check dof_to_deformation with first order derivative check
         print('Extension.test_objective started.......................', flush=True)
         xl = self.dmesh.num_vertices()
-        x0 = 0.5*np.ones(xl)
+        x0 = 0.005*np.ones(xl)
         ds = 1.0*np.ones(xl)
         #ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
         j0 = self.problem_obj.objective(x0) 
@@ -137,6 +137,7 @@ class IPOPTSolver(OptimizationSolver):
             #
             # x to deformation
             print('evaluate objective', flush=True)
+            print(x)
             deformation = self.dof_to_trafo.dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             if self.save_opt:
                 self.save_output(deformation, grad=False)

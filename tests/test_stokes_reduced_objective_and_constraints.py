@@ -8,6 +8,8 @@ import shapeopt.Tools.settings_mesh as tsm
 from shapeopt.Constraints import constraints
 from shapeopt.Control_to_Trafo import Extension
 from shapeopt.Reduced_Objective import reduced_objectives
+from shapeopt.Control_to_Trafo.Boundary_Operator import boundary_operators
+from shapeopt.Control_to_Trafo.Extension_Operator import extension_operators
 
 from pathlib import Path
 here = Path(__file__).parent
@@ -42,6 +44,9 @@ param = {"reg": 1e-2, # regularization parameter
 # specify boundary and extension operator (use Extension.print_options())
 boundary_option = 'laplace_beltrami'
 extension_option = 'linear_elasticity'
+boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(0.0))
+extension_operator = extension_operators[extension_option](mesh, boundaries, params)
+dof_to_trafo = Extension(init_mfs, param, boundary_operator, extension_operator)
 # governing equations
 application = 'stokes' #'fluid structure' needs to be tested: if no fluid domain assigned --> error since no fluid part of domain
 
@@ -55,7 +60,7 @@ for key, value in constraints.items():
 )
 def test_constraints(id):
     print('test constraint \t', id)
-    order, diff = constraints[id](init_mfs, param, boundary_option, extension_option).test()
+    order, diff = constraints[id](init_mfs, param, dof_to_trafo).test()
     assert order > 1.8 or diff < 1e-12
 
 

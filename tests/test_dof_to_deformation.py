@@ -5,6 +5,8 @@ import pytest
 
 import shapeopt.Tools.settings_mesh as tsm
 from shapeopt.Control_to_Trafo import Extension
+from shapeopt.Control_to_Trafo.Boundary_Operator import boundary_operators
+from shapeopt.Control_to_Trafo.Extension_Operator import extension_operators
 
 from pathlib import Path
 here = Path(__file__).parent
@@ -38,5 +40,7 @@ param = {"reg": 1e-2, # regularization parameter
 
 def test_dof_to_deformation():
     print('test dof to deformation')
-    order, diff = Extension(init_mfs, param, boundary_option='laplace_beltrami', extension_option='linear_elasticity').test_dof_to_deformation_precond()
+    boundary_operator = boundary_operators['laplace_beltrami'](dmesh, dnormal, Constant(0.0))
+    extension_operator = extension_operators['linear_elasticity'](mesh, boundaries, params)
+    order, diff = Extension(init_mfs, param, boundary_operator, extension_operator).test_dof_to_deformation_precond()
     assert order > 1.8 or diff < 1e-12
