@@ -179,7 +179,7 @@ class IPOPTSolver(OptimizationSolver):
                 # ufile = File("./Output/Forward/dJf2.pvd")
                 # ufile << dJf
 
-            dJ1 = Extension(self.Mesh_, self.param, self.dof_to_trafo).dof_to_deformation_precond_chainrule(dJf.vector(), 2)
+            dJ1 = self.dof_to_trafo.dof_to_deformation_precond_chainrule(dJf.vector(), 2)
             dJ = dJ1 + self.param["reg"] * x  # derivative of the regularization
 
             return dJ
