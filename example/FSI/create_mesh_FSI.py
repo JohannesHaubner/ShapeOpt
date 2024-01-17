@@ -4,8 +4,11 @@ import pygmsh, meshio
 import h5py
 import os
 
-if not os.path.exists("./mesh"):
-    os.makedirs("./mesh")
+from pathlib import Path
+here = Path(__file__).parent.resolve()
+
+if not os.path.exists(str(here) + "/mesh"):
+    os.makedirs(str(here) + "/mesh")
 
 # resolution
 resolution = 0.025  #0.05 #1 # 0.005 #0.1
@@ -32,6 +35,7 @@ params = {"inflow" : inflow,
           "outflow": outflow,
           "noslip": walls,
           "noslip_obstacle": noslipobstacle,
+          "obstacle": obstacle,
           "design": obstacle,
           "interface": interface,
           "mesh_parts": True,
@@ -50,8 +54,8 @@ geom_prop = {"barycenter_hold_all_domain": [0.5*L, 0.5*H],
              "heigth_pipe": H,
              "barycenter_obstacle": [ c[0], c[1]],
              }
-np.save('./mesh/params.npy', params)
-np.save('./mesh/geom_prop.npy', geom_prop)
+np.save(str(here) + '/mesh/params.npy', params)
+np.save(str(here) + '/mesh/geom_prop.npy', geom_prop)
 
 # Initialize empty geometry using the build in kernel in GMSH
 geometry = pygmsh.geo.Geometry()
@@ -112,12 +116,12 @@ model.add_physical([plane_surface2], "solid") # mark solid domain with 7
 
 geometry.generate_mesh(dim=2)
 import gmsh
-gmsh.write("./mesh/mesh.msh")
+gmsh.write(str(here) + "/mesh/mesh.msh")
 gmsh.clear()
 geometry.__exit__()
 
 import meshio
-mesh_from_file = meshio.read("./mesh/mesh.msh")
+mesh_from_file = meshio.read(str(here) + "/mesh/mesh.msh")
 
 import numpy
 def create_mesh(mesh: meshio.Mesh, cell_type: str, data_name: str = "name_to_read",
@@ -130,10 +134,10 @@ def create_mesh(mesh: meshio.Mesh, cell_type: str, data_name: str = "name_to_rea
     return out_mesh #https://fenicsproject.discourse.group/t/what-is-wrong-with-my-mesh/7504/8
 
 line_mesh = create_mesh(mesh_from_file, "line", prune_z=True)
-meshio.write("./mesh/facet_mesh.xdmf", line_mesh)
+meshio.write(str(here) + "/mesh/facet_mesh.xdmf", line_mesh)
 
 triangle_mesh = create_mesh(mesh_from_file, "triangle", prune_z=True)
-meshio.write("./mesh/mesh_triangles.xdmf", triangle_mesh)
+meshio.write(str(here) + "/mesh/mesh_triangles.xdmf", triangle_mesh)
 
 #mesh = line_mesh
 #mesh_boundary = meshio.Mesh(points=mesh.points,
