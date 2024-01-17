@@ -18,12 +18,33 @@ inflow = 1
 outflow = 2
 walls = 3
 obstacle = 4
+fluid = 5
+
+bdry_labels = {
+          "inflow" : inflow,
+          "outflow": outflow,
+          "walls": walls,
+          "obstacle": obstacle,
+      }
+
+# dictionary of tags for the subdomains
+subdom_labels = {
+    "fluid": fluid
+}
+
+# Dictionary with facet-labels from the boundary of each subdomain
+subdomain_boundaries = {
+    "fluid": ("inflow", "outflow", "walls", "obstacle"),
+}
 
 params = {"inflow" : inflow, 
           "outflow": outflow,
           "noslip": walls,
           "design": obstacle,
-          "boundary_labels": boundary_labels
+          "boundary_labels": boundary_labels,
+          "bdry_labels": bdry_labels,
+          "subdom_labels": subdom_labels,
+          "subdomain_boundaries": subdomain_boundaries
           }
 vol = L*H
 vol_D_minus_obs = vol - np.pi*r*r

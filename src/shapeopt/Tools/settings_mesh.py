@@ -105,26 +105,9 @@ class Initialize_Mesh_and_FunctionSpaces():
       # define design boundary mesh on each process
 
       # first go to fluid mesh in order to allow the interface to be a design boundary
-      boundary_labels = {
-          "inflow" : params["inflow"],
-          "outflow": params["outflow"],
-          "noslip": params["noslip"],
-          "noslip_obstacle": params["noslip_obstacle"],
-          "obstacle": params["obstacle"],
-          "interface": params["interface"], 
-      }
-
-      # dictionary of tags for the subdomains
-      subdomain_labels = {
-          "fluid": params["fluid"],
-          "solid": params["solid"],
-      }
-
-      # Dictionary with facet-labels from the boundary of each subdomain
-      subdomain_boundaries = {
-          "fluid": ("inflow", "outflow", "noslip", "obstacle", "interface"),
-          "solid": ("interface", "obstacle_solid"),
-      }
+      subdomain_boundaries = params["subdomain_boundaries"]
+      subdomain_labels = params["subdom_labels"]
+      boundary_labels = params["bdry_labels"]
 
       #  call SubMeshCollection
       meshes_local = SubMeshCollection(domains, boundaries, subdomain_labels, boundary_labels, subdomain_boundaries)

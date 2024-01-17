@@ -31,17 +31,41 @@ interface = 6
 fluid = 7
 solid = 8
 
+bdry_labels = {
+          "inflow" : inflow,
+          "outflow": outflow,
+          "noslip": walls,
+          "noslip_obstacle": noslipobstacle,
+          "obstacle": obstacle,
+          "interface": interface, 
+      }
+
+# dictionary of tags for the subdomains
+subdom_labels = {
+    "fluid": fluid,
+    "solid": solid,
+}
+
+# Dictionary with facet-labels from the boundary of each subdomain
+subdomain_boundaries = {
+    "fluid": ("inflow", "outflow", "noslip", "obstacle", "interface"),
+    "solid": ("interface", "obstacle_solid"),
+}
+
 params = {"inflow" : inflow,
           "outflow": outflow,
           "noslip": walls,
           "noslip_obstacle": noslipobstacle,
           "obstacle": obstacle,
-          "design": interface,
+          "design": obstacle,
           "interface": interface,
           "mesh_parts": True,
           "fluid": fluid,
           "solid": solid,
-          "boundary_labels": boundary_labels
+          "boundary_labels": boundary_labels,
+          "bdry_labels": bdry_labels,
+          "subdom_labels": subdom_labels,
+          "subdomain_boundaries": subdomain_boundaries
           }
 
 vol = L*H
