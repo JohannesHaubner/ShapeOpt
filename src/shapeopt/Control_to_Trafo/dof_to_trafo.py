@@ -11,10 +11,9 @@ sys.path.insert(0, str(here.parent))
 from Tools.first_order_check import perform_first_order_check
 
 class Extension():
-    def __init__(self, Mesh_, param, boundary_operator, extension_operator):
+    def __init__(self, Mesh_, boundary_operator, extension_operator):
       """
       # mesh: reference mesh
-      # params: params.design, params.inflow, params.outflow, params.noslip
       # boundary_option: boundary operator 
       # extension_option: extension operator 
       """
@@ -32,10 +31,6 @@ class Extension():
       
       self.dmesh = dmesh
 
-      # Laplace Beltrami off
-      lb_off_p = param["lb_off_p"]
-      self.lb_off = Expression(("lb_off"), degree = 0, lb_off = lb_off_p) #Constant("0.1") #Constant('0.0') # 0.0 = multiply with n, 1.0 = Laplace Beltrami
-      
       # define function spaces
       self.V = Mesh_.get_V()
       self.Vd = Mesh_.get_Vd()

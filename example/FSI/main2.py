@@ -80,9 +80,7 @@ if __name__ == "__main__":
 
     boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(0.0))
     extension_operator = extension_operators[extension_option](mesh, boundaries, params, opt_inner_bdry=True)
-    param_dof_to_trafo = {}
-    param_dof_to_trafo["lb_off_p"] = Constant(1.0)
-    dof_to_trafo = ctt.Extension(init_mfs, param, boundary_operator, extension_operator)
+    dof_to_trafo = ctt.Extension(init_mfs, boundary_operator, extension_operator)
 
 
     #function space in which the control lives
@@ -136,11 +134,9 @@ if __name__ == "__main__":
         stop_annotating()
         set_working_tape(Tape())
         #param["reg"] = reg
-        boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(0.0))
+        boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(lb_off))
         extension_operator = extension_operators[extension_option](mesh, boundaries, params, opt_inner_bdry=True)
-        param["lb_off_p"] = Constant(lb_off)
-        param_dof_to_trafo["lb_off_p"] = Constant(lb_off)
-        dof_to_trafo = ctt.Extension(init_mfs, param, boundary_operator, extension_operator)
+        dof_to_trafo = ctt.Extension(init_mfs, boundary_operator, extension_operator)
         Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
         problem = MinimizationProblem(Jred)
         IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, dof_to_trafo)
