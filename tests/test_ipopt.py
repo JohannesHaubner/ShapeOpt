@@ -46,9 +46,9 @@ param = {"reg": 1e-2, # regularization parameter
 # specify boundary and extension operator (use Extension.print_options())
 boundary_option = 'laplace_beltrami'
 extension_option = 'linear_elasticity'
-boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(0.0))
+boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(0.5))
 extension_operator = extension_operators[extension_option](mesh, boundaries, params)
-dof_to_trafo = Extension(init_mfs, param, boundary_operator, extension_operator)
+dof_to_trafo = Extension(init_mfs, boundary_operator, extension_operator)
 # governing equations
 application = 'stokes' #'fluid structure' needs to be tested: if no fluid domain assigned --> error since no fluid part of domain
 # constraints

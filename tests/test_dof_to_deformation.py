@@ -40,7 +40,7 @@ param = {"reg": 1e-2, # regularization parameter
 
 def test_dof_to_deformation():
     print('test dof to deformation')
-    boundary_operator = boundary_operators['laplace_beltrami'](dmesh, dnormal, Constant(0.0))
+    boundary_operator = boundary_operators['laplace_beltrami'](dmesh, dnormal, Constant(0.5))
     extension_operator = extension_operators['linear_elasticity'](mesh, boundaries, params)
     order, diff = Extension(init_mfs, boundary_operator, extension_operator).test_dof_to_deformation_precond()
     assert order > 1.8 or diff < 1e-12
