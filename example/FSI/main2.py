@@ -48,7 +48,7 @@ param = {"reg": 1e-1, # regularization parameter
          #"Bary_eps": 0.0, # slack for barycenter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient
          "maxiter_IPOPT": 50,
-         "T": 0.2, #15.0, # simulation horizon for Fluid-Structure interaction simulation
+         "T": 15.0, # simulation horizon for Fluid-Structure interaction simulation
          "deltat": 0.01, # time step size
          "gammaP": 1e-3, # penalty parameter for determinant constraint violation
          "etaP": 0.2, # smoothing parameter for max term in determinant const. violation
@@ -146,7 +146,7 @@ if __name__ == "__main__":
         print("FSI_main completed", flush=True)
 
     deformation = dof_to_trafo.dof_to_deformation_precond(init_mfs.vec_to_Vd(x0)) 
-    defo = deformation # project(deformation, Vn)
+    defo = project(deformation, Vn)
 
     # move mesh and save moved mesh
     ALE.move(mesh, defo, annotate=False)
@@ -160,9 +160,9 @@ if __name__ == "__main__":
     new_boundaries = cpp.mesh.MeshFunctionSizet(new_mesh, mvc)
     new_boundaries.set_values(boundaries.array())
 
-    xdmf = XDMFFile(path_mesh + "/mesh_triangles_final.xdmf")
-    xdmf2 = XDMFFile(path_mesh + "/facet_mesh_final.xdmf")
-    xdmf3 = XDMFFile(path_mesh + "/domains_final.xdmf")
+    xdmf = XDMFFile(path_mesh + "/mesh_triangles_final2.xdmf")
+    xdmf2 = XDMFFile(path_mesh + "/facet_mesh_final2.xdmf")
+    xdmf3 = XDMFFile(path_mesh + "/domains_final2.xdmf")
     xdmf.write(new_mesh)
     xdmf2.write(new_boundaries)
     xdmf3.write(new_domains)
