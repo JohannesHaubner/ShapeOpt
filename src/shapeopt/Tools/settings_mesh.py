@@ -14,7 +14,7 @@ id = comm.Get_rank()
 
 
 class Initialize_Mesh_and_FunctionSpaces():
-    def __init__(self, path_mesh, load_mesh=False, domains=True):
+    def __init__(self, path_mesh, load_mesh=False):
       if load_mesh:
         stri = path_mesh + "/mesh_triangles_new.xdmf"
         stri2 = path_mesh + "/facet_mesh_new.xdmf"
@@ -24,11 +24,11 @@ class Initialize_Mesh_and_FunctionSpaces():
         stri2 = path_mesh + "/facet_mesh.xdmf"
 
       # load mesh
-      mesh = Mesh()
+      mesh = Mesh(MPI.comm_world)
       with XDMFFile(stri) as infile:
         infile.read(mesh)
 
-      if load_mesh and domains:
+      if load_mesh:
           mvc = MeshValueCollection("size_t", mesh, 1)
           with XDMFFile(stri3) as infile:
               infile.read(mvc)
@@ -36,7 +36,7 @@ class Initialize_Mesh_and_FunctionSpaces():
           mvc = MeshValueCollection("size_t", mesh, 2)
           with XDMFFile(stri) as infile:
             infile.read(mvc, "name_to_read")
-      domains = cpp.mesh.MeshFunctionSizet(mesh,mvc)
+      domains = cpp.mesh.MeshFunctionSizet(mesh, mvc)
       dfile = File("./Output/Tests/ForwardEquation/domains.pvd")
       dfile << domains
 
@@ -60,6 +60,9 @@ class Initialize_Mesh_and_FunctionSpaces():
       #boundaries = MeshFunction('size_t', mesh, mvc)
       #exit(0)
 
+      self.boundaries = boundaries
+      self.domains = domains
+
       # create pyadjoint mesh
       mesh = create_overloaded_object(mesh)
       mvc = MeshValueCollection("size_t", mesh, 1)
@@ -74,14 +77,14 @@ class Initialize_Mesh_and_FunctionSpaces():
         infile.read(mesh_global)
 
       if load_mesh and domains:
-          mvc = MeshValueCollection("size_t", mesh_global, 1)
+          mvc_glob = MeshValueCollection("size_t", mesh_global, 1)
           with XDMFFile(MPI.comm_self, stri3) as infile:
-              infile.read(mvc)
+              infile.read(mvc_glob)
       else:
-          mvc = MeshValueCollection("size_t", mesh_global, 2)
+          mvc_glob = MeshValueCollection("size_t", mesh_global, 2)
           with XDMFFile(MPI.comm_self, stri) as infile:
-            infile.read(mvc, "name_to_read")
-      domains_global = cpp.mesh.MeshFunctionSizet(mesh_global, mvc)
+            infile.read(mvc_glob, "name_to_read")
+      domains_global = cpp.mesh.MeshFunctionSizet(mesh_global, mvc_glob)
       dfile = File("./Output/Tests/ForwardEquation/domains_global.pvd")
       dfile << domains_global
 
@@ -195,8 +198,6 @@ class Initialize_Mesh_and_FunctionSpaces():
       self.mesh = mesh
       self.dmesh = dmesh
       self.params = params
-      self.boundaries = boundaries
-      self.domains = domains
 
       self.ds = ds
 
@@ -206,12 +207,16 @@ class Initialize_Mesh_and_FunctionSpaces():
       # dof-maps between V and Vb
       Vb_to_V_map = self.__Vb_to_V(Vfg, Vb, global_to_glocal_map, dof_map_fluid_full)
 
-      self.__test_Vb_to_V(Vfg, Vb, global_to_glocal_map, dof_map_fluid_full)
-
       # dof-maps between V and Vd
       self.Vd_to_V_map = self.__Vd_to_V(Vb, Vb_to_V_map)
+
+      #self.__test_Vb_to_V(Vfg, Vb, global_to_glocal_map, dof_map_fluid_full)
       #self.__test_Vdn_to_Vn()
       #self.__test_Vd_to_V()
+      #self.__test_V_to_Vd()
+      #self.__test_Vd_to_V_to_Vd()
+      #self.__test_Vn_to_Vdn()
+      #exit(0)
 
       # normal on design boundary
       v = TestFunction(self.Vn)
@@ -539,7 +544,7 @@ class Initialize_Mesh_and_FunctionSpaces():
 
         p = self.Vd_to_V(f)
 
-        xdmffile = XDMFFile("./Output/Tests/SettingsMesh/Vd_to_V.xdmf")
+        xdmffile = XDMFFile(MPI.comm_world, "./Output/Tests/SettingsMesh/Vd_to_V.xdmf")
         xdmffile.write_checkpoint(p, 'p', XDMFFile.Encoding.HDF5)
         pass
 
@@ -560,8 +565,8 @@ class Initialize_Mesh_and_FunctionSpaces():
         f = self.V_to_Vd(p)
         p = self.Vd_to_V(f)
 
-        bdfile = File(MPI.comm_self, "./Output/Tests/SettingsMesh/Vd_to_V_to_Vd.pvd")
-        bdfile << p
+        bdfile = XDMFFile(MPI.comm_world, "./Output/Tests/SettingsMesh/Vd_to_V_to_Vd.xdmf")
+        bdfile.write_checkpoint(p, 'p', XDMFFile.Encoding.HDF5)
         pass
 
     def __test_Vn_to_Vdn(self):

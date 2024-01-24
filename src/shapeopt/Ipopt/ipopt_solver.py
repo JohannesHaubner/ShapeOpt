@@ -100,19 +100,21 @@ class IPOPTSolver(OptimizationSolver):
             self.domains = self.Mesh_.get_domains()
             self.boundaries = self.Mesh_.get_boundaries()
             self.params = self.Mesh_.get_params()
-            self.file_objective = File(self.param["output_path"] + "/objective_eval_meshes.pvd") #TODO: fix!
-            self.file_gradient = File(self.param["output_path"] + "/gradient_eval_meshes.pvd")
             self.save_opt = True
+            self.counter = 0
 
-        def save_output(self, deformation, grad=True):
+        def save_output(self, deformation, grad=True, constraint=False):
             print('save output')
-            deformation_inv = project(-1.0*deformation, deformation.function_space(), annotate=False)
-            ALE.move(deformation.function_space().mesh(), deformation, annotate=False)
-            if grad:
-                self.file_gradient << deformation.function_space().mesh()
-            else:
-                self.file_objective << deformation.function_space().mesh()
-            ALE.move(deformation.function_space().mesh(), deformation_inv, annotate=False)
+            if grad == True and constraint == False:
+                file = XDMFFile(MPI.comm_world, self.param["output_path"] + "/gradient_eval_meshes_" + str(self.counter) + ".xdmf")
+                file.write_checkpoint(deformation, 'deformation', XDMFFile.Encoding.HDF5)
+            elif grad == False and constraint == False:
+                file = XDMFFile(MPI.comm_world, self.param["output_path"] + "/objective_eval_meshes_" + str(self.counter) + ".xdmf")
+                file.write_checkpoint(deformation, 'deformation', XDMFFile.Encoding.HDF5)
+            elif grad == False and constraint == True:
+                file = XDMFFile(MPI.comm_world, self.param["output_path"] + "/constraint_eval_meshes_" + str(self.counter) + ".xdmf")
+                file.write_checkpoint(deformation, 'deformation', XDMFFile.Encoding.HDF5)
+            self.counter += 1
             pass
 
         def check_mesh_quality(self, deformation):
@@ -200,8 +202,9 @@ class IPOPTSolver(OptimizationSolver):
             # check
             deformation = self.dof_to_trafo.dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             if self.save_opt:
-                self.save_output(deformation)
+                self.save_output(deformation, constraint=True, grad=False)
             mesh_quality = self.check_mesh_quality(deformation)
+            print(mesh_quality)
             if not mesh_quality:
                 con = 1e9*np.ones(con.shape)
             return con

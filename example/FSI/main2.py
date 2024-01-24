@@ -150,23 +150,8 @@ if __name__ == "__main__":
 
     # move mesh and save moved mesh
     ALE.move(mesh, defo, annotate=False)
-    new_mesh = Mesh(mesh)
+    new_mesh_local = Mesh(mesh)
 
-    mvc2 = MeshValueCollection("size_t", new_mesh, 2)
-    new_domains = cpp.mesh.MeshFunctionSizet(new_mesh, mvc2)
-    new_domains.set_values(domains.array())
+    xdmf = XDMFFile(MPI.comm_world, path_mesh + "/final_mesh.xdmf")
+    xdmf.write(defo)
 
-    mvc = MeshValueCollection("size_t", new_mesh, 1)
-    new_boundaries = cpp.mesh.MeshFunctionSizet(new_mesh, mvc)
-    new_boundaries.set_values(boundaries.array())
-
-    xdmf = XDMFFile(path_mesh + "/mesh_triangles_final2.xdmf")
-    xdmf2 = XDMFFile(path_mesh + "/facet_mesh_final2.xdmf")
-    xdmf3 = XDMFFile(path_mesh + "/domains_final2.xdmf")
-    xdmf.write(new_mesh)
-    xdmf2.write(new_boundaries)
-    xdmf3.write(new_domains)
-
-
-    defo = project(deformation, Vn)
-    bdfile << defo
