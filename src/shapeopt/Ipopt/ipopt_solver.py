@@ -197,6 +197,13 @@ class IPOPTSolver(OptimizationSolver):
                 else:
                     cs.append(cs_)
             con = self.scale * np.concatenate(cs, axis=0, out=None)
+            # check
+            deformation = self.dof_to_trafo.dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
+            if self.save_opt:
+                self.save_output(deformation)
+            mesh_quality = self.check_mesh_quality(deformation)
+            if not mesh_quality:
+                con = 1e9*np.ones(con.shape)
             return con
 
         def jacobian(self, x):
