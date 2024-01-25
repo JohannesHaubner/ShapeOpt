@@ -31,7 +31,7 @@ extension_option = 'linear_elasticity'
 # governing equations
 application = 'fluid_structure'
 # constraints
-constraint_ids = ['volume'] #needs to be a list
+constraint_ids = ['volume_solid'] #needs to be a list
 
 # set and load parameters
 geom_prop = np.load(path_mesh + '/geom_prop.npy', allow_pickle='TRUE').item()
@@ -93,8 +93,11 @@ if __name__ == "__main__":
     d0 = interpolate(Constant((0.0, 0.0)), Vn)
 
     # update discretized params
-    param["Vol_DmO"] = assemble(v*dx)
-    param["Vol_O"] = param["Vol_D"] - param["Vol_DmO"]
+    dx = Measure('dx', subdomain_data=domains)
+    param["Vol_solid"] = assemble(v*dx(params["solid"]))
+    param["Vol_fluid"] = assemble(v *dx(params["fluid"]))
+    param["Vol_O"] = param["Vol_D"] - param["Vol_fluid"] - param["Vol_solid"]
+    print(param["Vol_D"], param["Vol_fluid"], param["Vol_solid"])
     bo = param["Bary_O"]
     bc = constraints['barycenter'](init_mfs, param, dof_to_trafo).eval(x0)
     param["Bary_O"] = np.add(bc, bo)
