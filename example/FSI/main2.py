@@ -101,6 +101,7 @@ if __name__ == "__main__":
     bo = param["Bary_O"]
     bc = constraints['barycenter'](init_mfs, param, dof_to_trafo).eval(x0)
     param["Bary_O"] = np.add(bc, bo)
+    param["solid"] = params["solid"]
 
     # solve optimization problem
     #Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)

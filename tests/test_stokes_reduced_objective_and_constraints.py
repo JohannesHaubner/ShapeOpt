@@ -35,6 +35,8 @@ param = {"reg": 1e-2, # regularization parameter
          "Bary_O": geom_prop["barycenter_obstacle"],
          "L": geom_prop["length_pipe"],
          "H": geom_prop["heigth_pipe"],
+         "Vol_solid": 1., # random value to make volume_solid constraint test work
+         "solid": 5, # for volume_solid constraint test
          "relax_eq": 0.0, #relax barycenter
          #"Bary_eps": 0.0, # slack for barycenter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient
