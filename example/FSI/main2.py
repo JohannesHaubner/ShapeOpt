@@ -52,7 +52,7 @@ param = {"reg": 1e-1, # regularization parameter
          "deltat": 0.01, # time step size
          "gammaP": 1e-3, # penalty parameter for determinant constraint violation
          "etaP": 0.2, # smoothing parameter for max term in determinant const. violation
-         "output_path": path_mesh + "/Output/", # folder where intermediate results are stored
+         "output_path": path_mesh + "/Output2/", # folder where intermediate results are stored
          }
 
 
@@ -110,9 +110,9 @@ if __name__ == "__main__":
     #ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids,
     #                                           boundary_option, extension_option).test_objective()
 
-    if not os.path.exists(path_mesh + "/Output"):
-        os.makedirs(path_mesh + "/Output")
-    bdfile = File(MPI.comm_self, path_mesh + "/Output/mesh_optimize_test.pvd")
+    if not os.path.exists(path_mesh + "/Output2"):
+        os.makedirs(path_mesh + "/Output2")
+    bdfile = File(MPI.comm_self, path_mesh + "/Output2/mesh_optimize_test.pvd")
 
     x0 = interpolate(Constant("0.0"), Vd).vector().get_local()
 
@@ -120,7 +120,7 @@ if __name__ == "__main__":
 
     counter = 1
 
-    for lb_off in [1e-2]: 
+    for lb_off in [1e-4]: 
         mesh = init_mfs.get_mesh()
         dmesh = init_mfs.get_design_boundary_mesh()
         boundaries = init_mfs.get_boundaries()
@@ -152,10 +152,6 @@ if __name__ == "__main__":
     deformation = dof_to_trafo.dof_to_deformation_precond(init_mfs.vec_to_Vd(x0)) 
     defo = project(deformation, Vn)
 
-    # move mesh and save moved mesh
-    ALE.move(mesh, defo, annotate=False)
-    new_mesh_local = Mesh(mesh)
-
-    xdmf = XDMFFile(MPI.comm_world, path_mesh + "/final_mesh.xdmf")
-    xdmf.write(defo)
-
+    with XDMFFile(MPI.comm_world, path_mesh + "/2final_mesh.xdmf") as outfile:
+        outfile.write(mesh)
+        outfile.write_checkpoint(defo, "defo", 0, append=True)
