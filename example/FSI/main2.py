@@ -24,7 +24,8 @@ parameters["ghost_mode"] = "shared_facet"
 stop_annotating()
 
 # specify path of directory that contains the files 'mesh_triangles.xdmf' and 'facet_mesh.xdmf'
-path_mesh = str(here) + "/mesh2"
+path_mesh = str(here) + "/mesh3"
+path_output = str(here) + "/interface_fsiII"
 # specify boundary and extension operator (use Extension.print_options())
 boundary_option = 'laplace_beltrami_withbc2'
 extension_option = 'linear_elasticity'
@@ -52,7 +53,7 @@ param = {"reg": 1e-1, # regularization parameter
          "deltat": 0.01, # time step size
          "gammaP": 1e-3, # penalty parameter for determinant constraint violation
          "etaP": 0.2, # smoothing parameter for max term in determinant const. violation
-         "output_path": path_mesh + "/Output2/", # folder where intermediate results are stored
+         "output_path": path_output + "/Output2/", # folder where intermediate results are stored
          }
 
 
@@ -110,9 +111,9 @@ if __name__ == "__main__":
     #ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids,
     #                                           boundary_option, extension_option).test_objective()
 
-    if not os.path.exists(path_mesh + "/Output2"):
-        os.makedirs(path_mesh + "/Output2")
-    bdfile = File(MPI.comm_self, path_mesh + "/Output2/mesh_optimize_test.pvd")
+    if not os.path.exists(path_output):
+        os.makedirs(path_output)
+    bdfile = File(MPI.comm_self, path_output + "/mesh_optimize_test.pvd")
 
     x0 = interpolate(Constant("0.0"), Vd).vector().get_local()
 

@@ -52,7 +52,7 @@ if __name__ == "__main__":
     with XDMFFile(path_mesh + "/2final_mesh.xdmf") as infile:
         infile.read_checkpoint(defo, "defo")
 
-    defo = project(100*defo, V)
+    defo = project(defo, V)
     
     # move mesh and save moved mesh
     ALE.move(mesh, defo, annotate=False)
