@@ -18,6 +18,8 @@ from shapeopt.Reduced_Objective import reduced_objectives
 
 stop_annotating()
 
+parameters["ghost_mode"] = "shared_facet"
+
 # specify path of directory that contains the files 'mesh_triangles.xdmf' and 'facet_mesh.xdmf'
 path_mesh = str(here) + "/mesh"
 # specify boundary and extension operator (use Extension.print_options())
