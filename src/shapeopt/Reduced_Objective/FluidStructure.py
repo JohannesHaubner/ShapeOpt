@@ -84,11 +84,6 @@ class FluidStructure(ReducedObjective):
         P = FunctionSpace(mesh, S1)
 
         phiv = self.meanflow_function(mesh, boundaries, params)
-
-        ### TODO delete after testing
-        visualize = True
-        vis_folder = str("test")
-        ###
         
         # charFunc
         if visualize:
