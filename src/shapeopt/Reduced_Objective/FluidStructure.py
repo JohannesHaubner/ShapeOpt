@@ -250,7 +250,7 @@ class FluidStructure(ReducedObjective):
 
             # implicit terms (e.g. incompressibiliy)
             A_I = (
-                    -inner( tJhat * z, psiz) * dx(mesh) + inner(tJhat * tFhati * tFhatti * grad(u).T,
+                    -inner( tJhat * z, psiz) * dxf + inner(tJhat * tFhati * tFhatti * grad(u).T,
                                                                     grad(psiz).T) * dxf
                     + inner(azhat * tJhat * tFhati * tFhatti * grad(z).T,
                                                                     grad(psiz).T) * dxs
