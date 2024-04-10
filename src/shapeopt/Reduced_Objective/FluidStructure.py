@@ -254,7 +254,7 @@ class FluidStructure(ReducedObjective):
                                                                     grad(psiz).T) * dxf
                     + inner(azhat * tJhat * tFhati * tFhatti * grad(z).T,
                                                                     grad(psiz).T) * dxs
-                    - inner(azhat*grad(z)("+").T*n("+"), psiz("+"))*dS(mesh)(params["interface"]) # transform
+                    - inner(azhat * tJhat * grad(z)("+") * tFhati * tFhati * n("+"), psiz("+"))*dS(mesh)(params["interface"]) 
                     + inh_f * inner(Jhat - Constant(1.0), psip) * dxs
                     + inner(tJhat * tr(tFhatti * grad(Jhat * Fhati * v).T), psip) * dxf
                     + inner(aphat * tJhat * tFhati * tFhatti * (grad(p)), (grad(psip))) * dxs
@@ -262,7 +262,7 @@ class FluidStructure(ReducedObjective):
 
             # remaining explicit terms
             A_E = (inner(auhat * tJhat * tFhati * tFhatti * grad(z).T, grad(psiu).T) * dxf
-                   - inner(auhat*grad(z)("-").T*n("-"), psiu("-"))*dS(mesh)(params["interface"]) # transform
+                   - inner(auhat* tJhat * grad(z)("-")* tFhati * tFhatti * n("-"), psiu("-"))*dS(mesh)(params["interface"]) #  grad(u) = Du
                 + inner(rhof * tJhat * Jhat * grad(v) * tFhati * Fhati * v, psiv) * dxf
                 + inner(tJhat * Jhat * tFhati * Fhati * sigmafv(v), grad(psiv).T)
                 * dxf - inner( tJhat * rhos * v, psiu) * dxs
@@ -271,7 +271,7 @@ class FluidStructure(ReducedObjective):
 
             # explicit terms of previous time-step
             A_E_rhs = (inner(auhat * tJhat * tFhati * tFhatti * grad(z_).T, grad(psiu).T) * dxf
-                       - inner(auhat*grad(z_)("-").T*n("-"), psiu("-"))*dS(mesh)(params["interface"]) # transform
+                       - inner(auhat * tJhat * grad(z_)("-") * tFhati * tFhatti * n("-"), psiu("-"))*dS(mesh)(params["interface"]) 
                     + inner(rhof * tJhat * Jhat_ * grad(v_) * tFhati * Fhati_ * v_, psiv)
                     * dxf + inner(tJhat * Jhat_ * tFhati * Fhati_ * sigmafv_(v_),grad(psiv).T) * dxf
                     - inner( tJhat * rhos * v_, psiu) * dxs + inner(tJhat * Jhat_ * tFhati * Fhati_ * sigmasv_(v_)
