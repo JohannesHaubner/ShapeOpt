@@ -84,6 +84,11 @@ class FluidStructure(ReducedObjective):
         P = FunctionSpace(mesh, S1)
 
         phiv = self.meanflow_function(mesh, boundaries, params)
+
+        func = interpolate(Constant(1.0), P)
+        bc_inter = DirichletBC(P, Constant(0.0), boundaries, params["interface"])
+        bc_inter.apply(func.vector())
+
         
         # charFunc
         if visualize:
@@ -248,17 +253,17 @@ class FluidStructure(ReducedObjective):
                     -inner( tJhat * z, psiz) * dxf + inner(tJhat * tFhati * tFhatti * grad(u).T,
                                                                     grad(psiz).T) * dxf
                     + inner(azhat * tJhat * tFhati * tFhatti * grad(z).T,
-                                                                    grad(psiz).T) * dxs
-                    - inner(azhat * tJhat("+") * grad(z)("+") * tFhati("+") * tFhati("+") * n("+"), psiz("+"))*dS(mesh)(params["interface"]) 
+                                                                    grad(func * psiz).T) * dxs
+                    #- inner(azhat * tJhat("+") * grad(z)("+") * tFhati("+") * tFhati("+") * n("+"), psiz("+"))*dS(mesh)(params["interface"]) 
                     + inh_f * inner(Jhat - Constant(1.0), psip) * dxs
                     + inner(tJhat * tr(tFhatti * grad(Jhat * Fhati * v).T), psip) * dxf
-                    #+ inner(aphat * tJhat * tFhati * tFhatti * (grad(p)), (grad(psip))) * dxs
+                    + inner(aphat * tJhat * tFhati * tFhatti * (grad(p)), (grad(psip))) * dxs
                     + inner(aphat * tJhat * p, psip) * dxs
         )
 
             # remaining explicit terms
-            A_E = (inner(auhat * tJhat * tFhati * tFhatti * grad(z).T, grad(psiu).T) * dxf
-                   - inner(auhat* tJhat("-") * grad(z)("-")* tFhati("-") * tFhatti("-") * n("-"), psiu("-"))*dS(mesh)(params["interface"]) #  grad(u) = Du
+            A_E = (inner(auhat * tJhat * tFhati * tFhatti * grad(z).T, grad(func * psiu).T) * dxf
+                   #- inner(auhat* tJhat("-") * grad(z)("-")* tFhati("-") * tFhatti("-") * n("-"), psiu("-"))*dS(mesh)(params["interface"]) #  grad(u) = Du
                 + inner(rhof * tJhat * Jhat * grad(v) * tFhati * Fhati * v, psiv) * dxf
                 + inner(tJhat * Jhat * tFhati * Fhati * sigmafv(v), grad(psiv).T)
                 * dxf - inner( tJhat * rhos * v, psiu) * dxs
@@ -266,8 +271,8 @@ class FluidStructure(ReducedObjective):
                 * dxs)
 
             # explicit terms of previous time-step
-            A_E_rhs = (inner(auhat * tJhat * tFhati * tFhatti * grad(z_).T, grad(psiu).T) * dxf
-                       - inner(auhat * tJhat("-") * grad(z_)("-") * tFhati("-") * tFhatti("-") * n("-"), psiu("-"))*dS(mesh)(params["interface"]) 
+            A_E_rhs = (inner(auhat * tJhat * tFhati * tFhatti * grad(z_).T, grad(func * psiu).T) * dxf
+                       #- inner(auhat * tJhat("-") * grad(z_)("-") * tFhati("-") * tFhatti("-") * n("-"), psiu("-"))*dS(mesh)(params["interface"]) 
                     + inner(rhof * tJhat * Jhat_ * grad(v_) * tFhati * Fhati_ * v_, psiv)
                     * dxf + inner(tJhat * Jhat_ * tFhati * Fhati_ * sigmafv_(v_),grad(psiv).T) * dxf
                     - inner( tJhat * rhos * v_, psiu) * dxs + inner(tJhat * Jhat_ * tFhati * Fhati_ * sigmasv_(v_)
