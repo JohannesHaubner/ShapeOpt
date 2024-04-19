@@ -15,8 +15,6 @@ from shapeopt.Constraints import constraints
 from shapeopt.Control_to_Trafo import Extension
 from shapeopt.Reduced_Objective import reduced_objectives
 
-parameters["ghost_mode"] = "shared_facet"
-
 from pathlib import Path
 here = Path(__file__).parent
 path_mesh =  str(here.parent) + "/example/FSI/mesh"
