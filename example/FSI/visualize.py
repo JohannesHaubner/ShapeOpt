@@ -1,8 +1,8 @@
-plot_shapes = False         # generate the two left figures in Fig. 3
+plot_shapes = True         # generate the two left figures in Fig. 3
 generate_table_opt = True      # generate Table 1
-run_forward_opt = False     # output needed for the next two options
-generate_dp = False        # generate the right plot of Fig. 3
-generate_mp4 = False        # generate mp4 of the time dependent results
+run_forward_opt = True     # output needed for the next two options
+generate_dp = True        # generate the right plot of Fig. 3
+generate_mp4 = True        # generate mp4 of the time dependent results
 
 
 import visualization.colormaps 
@@ -20,7 +20,7 @@ if plot_shapes:
 # generate latex table
 from visualization.read_terminal_output import generate_table
 if generate_table_opt:
-    txtname = "terminal_1604.txt"   # terminal output of simulation needs to be saved to /example/FSI/mesh/Output/txtname
+    txtname = "terminal.txt"   # terminal output of simulation needs to be saved to /example/FSI/mesh/Output/txtname
     txtout = 'table.txt'
     txtout_all = 'to_shortened.txt'
     generate_table(txtname, txtout, txtout_all)
@@ -51,7 +51,7 @@ if generate_dp or generate_mp4 or run_forward_opt:
 
     if run_forward_opt: 
         T = 30.0 #time horizon 
-        deltat = 0.005 # needed, otherwise numerical issues for large time horizons
+        deltat = 0.005 #needed, otherwise numerical issues for large time horizons
         for i in initial:
             run_forward(i, T, deltat)
 
