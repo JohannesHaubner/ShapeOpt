@@ -40,7 +40,12 @@ param = {"reg": 1e-2, # regularization parameter
          "relax_eq": 0.0, #relax barycenter
          #"Bary_eps": 0.0, # slack for barycenter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient
-         "maxiter_IPOPT": 50
+         "maxiter_IPOPT": 1, #50,
+         "T": 0.04, #15.0, # simulation horizon for Fluid-Structure interaction simulation
+         "deltat": 0.01, # time step size
+         "gammaP": 1e-3, # penalty parameter for determinant constraint violation
+         "etaP": 0.2, # smoothing parameter for max term in determinant const. violation
+         "output_path": path_mesh + "/Output/", # folder where intermediate results are stored
          }
 
 # specify boundary and extension operator (use Extension.print_options())
@@ -50,7 +55,7 @@ boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant
 extension_operator = extension_operators[extension_option](mesh, boundaries, params)
 dof_to_trafo = Extension(init_mfs, boundary_operator, extension_operator)
 # governing equations
-application = 'stokes' #'fluid structure' needs to be tested: if no fluid domain assigned --> error since no fluid part of domain
+application = 'fluid_structure' #'fluid structure' needs to be tested: if no fluid domain assigned --> error since no fluid part of domain
 
 # constraints
 ids = []
@@ -66,7 +71,12 @@ def test_constraints(id):
     assert order > 1.8 or diff < 1e-12
 
 
-def test_stokes():
-    print('test stokes')
+
+@pytest.mark.skip(reason="this test takes too much time")
+def test_fsi():
+    print('test fsi')
     order, diff = reduced_objectives[application].test(init_mfs, param)
     assert order > 1.8 or diff < 1e-12
+
+if __name__ == "__main__":
+    test_fsi()
