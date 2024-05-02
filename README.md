@@ -16,14 +16,14 @@ Code repository for the manuscript
 
 >J. Haubner, M. Ulbrich: Advanced Numerical Methods for Shape Optimal Design of Fluid-Structure Interaction Problems. 
 
-based on the implementation for the PhD thesis
+based on the implementation for the PhD thesis 
 
 >J. Haubner: Shape Optimization for Fluid-Structure Interaction, Doctoral Dissertation, Technische Universität München, 2020
 
 ## Usage/Examples
 
 ### Using Docker image
-The Dockerfile (preliminary version) can be used by running:
+The Dockerfile can be used by running:
 ```
 docker build -t shapeopt .
 docker run -it shapeopt
