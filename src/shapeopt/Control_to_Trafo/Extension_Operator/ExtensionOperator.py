@@ -8,16 +8,21 @@ sys.path.insert(0, str(here.parent.parent))
 from Tools.first_order_check import perform_first_order_check
 
 class ExtensionOperator(object):
-    def __init__(self, mesh, boundaries, params):
+    def __init__(self, mesh, boundaries, params, opt_inner_bdry=False):
         # x denotes a scalar valued function on mesh
         self.mesh = mesh
         self.Vn = VectorFunctionSpace(mesh, "CG", 1)
         self.V = FunctionSpace(mesh, "CG",1)
         self.n = FacetNormal(mesh)
-        self.ds = Measure("ds", subdomain_data=boundaries)
         self.params = params
         self.boundaries = boundaries
         self.mu = Constant("1.0") #self.param()
+        self.opt_inner_bdry = opt_inner_bdry
+
+        if opt_inner_bdry:
+            self.ds = Measure('dS', domain=self.mesh, subdomain_data=boundaries)
+        else:
+            self.ds = Measure("ds", subdomain_data=boundaries)
 
     def eval(self, x):
         """

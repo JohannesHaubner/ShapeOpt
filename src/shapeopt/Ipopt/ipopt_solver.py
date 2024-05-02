@@ -19,7 +19,7 @@ import cyipopt
 
 
 class IPOPTSolver(OptimizationSolver):
-    def __init__(self, problem, Mesh_, param, application, constraint_ids : list, boundary_option, extension_option, parameters=None):
+    def __init__(self, problem, Mesh_, param, application, constraint_ids : list, dof_to_trafo, parameters=None):
         try:
             import cyipopt
         except ImportError:
@@ -37,12 +37,11 @@ class IPOPTSolver(OptimizationSolver):
         self.ncontrols = len(self.rfn.get_controls())
         self.rf = self.problem.reduced_functional
         self.dmesh = self.Mesh_.get_design_boundary_mesh()
-        self.boundary_option = boundary_option
-        self.extension_option = extension_option
+        self.dof_to_trafo = dof_to_trafo
         self.application = application
         self.constraint_ids = constraint_ids
         self.problem_obj = self.create_problem_obj(self)
-        
+               
         #self.param.reg contains regularization parameter
         print('Initialization of IPOPTSolver finished', flush=True)
 
@@ -53,7 +52,7 @@ class IPOPTSolver(OptimizationSolver):
         # check dof_to_deformation with first order derivative check
         print('Extension.test_objective started.......................', flush=True)
         xl = self.dmesh.num_vertices()
-        x0 = 0.5*np.ones(xl)
+        x0 = 0.005*np.ones(xl)
         ds = 1.0*np.ones(xl)
         #ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
         j0 = self.problem_obj.objective(x0) 
@@ -94,27 +93,28 @@ class IPOPTSolver(OptimizationSolver):
             self.param = outer.param
             self.Vd = outer.Vd
             self.scale = outer.scalingfactor
-            self.bo = outer.boundary_option
-            self.eo = outer.extension_option
+            self.dof_to_trafo = outer.dof_to_trafo
             self.application = outer.application
             self.constraint_ids = outer.constraint_ids
             self.mesh = self.Mesh_.get_mesh()
             self.domains = self.Mesh_.get_domains()
             self.boundaries = self.Mesh_.get_boundaries()
             self.params = self.Mesh_.get_params()
-            self.file_objective = File(self.param["output_path"] + "/objective_eval_meshes.pvd") #TODO: fix!
-            self.file_gradient = File(self.param["output_path"] + "/gradient_eval_meshes.pvd")
             self.save_opt = True
+            self.counter = 0
 
-        def save_output(self, deformation, grad=True):
+        def save_output(self, deformation, grad=True, constraint=False):
             print('save output')
-            deformation_inv = project(-1.0*deformation, deformation.function_space(), annotate=False)
-            ALE.move(deformation.function_space().mesh(), deformation, annotate=False)
-            if grad:
-                self.file_gradient << deformation.function_space().mesh()
-            else:
-                self.file_objective << deformation.function_space().mesh()
-            ALE.move(deformation.function_space().mesh(), deformation_inv, annotate=False)
+            if grad == True and constraint == False:
+                file = XDMFFile(MPI.comm_world, self.param["output_path"] + "/gradient_eval_meshes_" + str(self.counter) + ".xdmf")
+                file.write_checkpoint(deformation, 'deformation', XDMFFile.Encoding.HDF5)
+            elif grad == False and constraint == False:
+                file = XDMFFile(MPI.comm_world, self.param["output_path"] + "/objective_eval_meshes_" + str(self.counter) + ".xdmf")
+                file.write_checkpoint(deformation, 'deformation', XDMFFile.Encoding.HDF5)
+            elif grad == False and constraint == True:
+                file = XDMFFile(MPI.comm_world, self.param["output_path"] + "/constraint_eval_meshes_" + str(self.counter) + ".xdmf")
+                file.write_checkpoint(deformation, 'deformation', XDMFFile.Encoding.HDF5)
+            self.counter += 1
             pass
 
         def check_mesh_quality(self, deformation):
@@ -139,7 +139,8 @@ class IPOPTSolver(OptimizationSolver):
             #
             # x to deformation
             print('evaluate objective', flush=True)
-            deformation = Extension(self.Mesh_, self.param, self.bo, self.eo).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
+            print(x)
+            deformation = self.dof_to_trafo.dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             if self.save_opt:
                 self.save_output(deformation, grad=False)
             mesh_quality = self.check_mesh_quality(deformation)
@@ -162,7 +163,7 @@ class IPOPTSolver(OptimizationSolver):
             # The callback for calculating the gradient
             #
             print('evaluate derivative of objective function', flush=True)
-            deformation = Extension(self.Mesh_, self.param, self.bo, self.eo).dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
+            deformation = self.dof_to_trafo.dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
             if self.save_opt:
                 self.save_output(deformation)
             mesh_quality = self.check_mesh_quality(deformation)
@@ -181,7 +182,7 @@ class IPOPTSolver(OptimizationSolver):
                 # ufile = File("./Output/Forward/dJf2.pvd")
                 # ufile << dJf
 
-            dJ1 = Extension(self.Mesh_, self.param, self.bo, self.eo).dof_to_deformation_precond_chainrule(dJf.vector(), 2)
+            dJ1 = self.dof_to_trafo.dof_to_deformation_precond_chainrule(dJf.vector(), 2)
             dJ = dJ1 + self.param["reg"] * x  # derivative of the regularization
 
             return dJ
@@ -192,12 +193,20 @@ class IPOPTSolver(OptimizationSolver):
             # print('evaluate constraint')
             cs = []
             for c in self.constraint_ids:
-                cs_ = constraints_[c](self.Mesh_, self.param, self.bo, self.eo).eval(self.Mesh_.vec_to_Vd(x))
+                cs_ = constraints_[c](self.Mesh_, self.param, self.dof_to_trafo).eval(self.Mesh_.vec_to_Vd(x))
                 if isinstance(cs_, float):
                     cs.append([cs_])
                 else:
                     cs.append(cs_)
             con = self.scale * np.concatenate(cs, axis=0, out=None)
+            # check
+            deformation = self.dof_to_trafo.dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x))
+            if self.save_opt:
+                self.save_output(deformation, constraint=True, grad=False)
+            mesh_quality = self.check_mesh_quality(deformation)
+            print(mesh_quality)
+            if not mesh_quality:
+                con = 1e9*np.ones(con.shape)
             return con
 
         def jacobian(self, x):
@@ -210,7 +219,7 @@ class IPOPTSolver(OptimizationSolver):
             #jaccon1 = self.scale * np.concatenate((v_ct_d, b_ct_d[0], b_ct_d[1]))  # , d_ct_d))
             cs = []
             for c in self.constraint_ids:
-                cs_ = constraints_[c](self.Mesh_, self.param, self.bo, self.eo).grad(self.Mesh_.vec_to_Vd(x))
+                cs_ = constraints_[c](self.Mesh_, self.param, self.dof_to_trafo).grad(self.Mesh_.vec_to_Vd(x))
                 if isinstance(cs_, list):
                     for i in range(len(cs_)):
                         cs.append(cs_[i])
@@ -297,7 +306,7 @@ class IPOPTSolver(OptimizationSolver):
         cl = [] #[0.0, -cr, -cr] #, min_float]
         cu = [] #[0.0, cr, cr] #, 0.0]
         for c in self.constraint_ids:
-            dim = constraints_[c](self.Mesh_, self.param, self.boundary_option, self.extension_option).output_dim()
+            dim = constraints_[c](self.Mesh_, self.param, self.dof_to_trafo).output_dim()
             cl += [-cr] * dim
             cu += [ cr] * dim
 

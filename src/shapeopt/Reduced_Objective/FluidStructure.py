@@ -33,7 +33,7 @@ class FluidStructure(ReducedObjective):
         bc3 = DirichletBC(VC, Constant((1.0, 0.0)), boundaries, params["noslip_obstacle"])
         bc4 = DirichletBC(VC, Constant((0.0, 0.0)), boundaries, params["inflow"])
         bc5 = DirichletBC(VC, Constant((0.0, 0.0)), boundaries, params["outflow"])
-        bc6 = DirichletBC(VC, Constant((1.0, 0.0)), boundaries, params["design"])
+        bc6 = DirichletBC(VC, Constant((1.0, 0.0)), boundaries, params["obstacle"])
         bcs = [bc1, bc2, bc3, bc4, bc5, bc6]
 
         a = inner(grad(u), grad(psiu))*dx(mesh)
@@ -55,7 +55,7 @@ class FluidStructure(ReducedObjective):
         # params.inflow
         # params.outflow
         # params.noslip
-        # params.design
+        # params.obstacle
 
         print("Use FluidStructure to compute reduced objective",flush=True)
 
@@ -346,10 +346,10 @@ class FluidStructure(ReducedObjective):
             bc_in_0_1 = DirichletBC(W.sub(0), V_01, boundaries, params["inflow"])  # in   v
             bc_in_0_2 = DirichletBC(W.sub(0), V_02, boundaries, params["inflow"])  # in   v
             bc_ns_0 = DirichletBC(W.sub(0), V_1, boundaries, params["noslip"])  # ns   v
-            bc_d_0 = DirichletBC(W.sub(0), V_1, boundaries, params["design"])  # ns   v
+            bc_d_0 = DirichletBC(W.sub(0), V_1, boundaries, params["obstacle"])  # ns   v
             bc_in_2 = DirichletBC(W.sub(2), V_1, boundaries, params["inflow"])  # in   u
             bc_ns_2 = DirichletBC(W.sub(2), V_1, boundaries, params["noslip"])  # ns   u
-            bc_d_2 = DirichletBC(W.sub(2), V_1, boundaries, params["design"])  # ns   u
+            bc_d_2 = DirichletBC(W.sub(2), V_1, boundaries, params["obstacle"])  # ns   u
             bc_nso_0 = DirichletBC(W.sub(0), V_1, boundaries, params["noslip_obstacle"])  # ns   v
             bc_nso_2 = DirichletBC(W.sub(2), V_1, boundaries, params["noslip_obstacle"])  # ns   v
 
@@ -426,7 +426,7 @@ class FluidStructure(ReducedObjective):
                 J += assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["etaP"]))*dx(mesh))
 
         else:
-            J += assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["etaP"]))*dx(mesh)) # fallback strategy if ipopt wants to evaluate on mesh with bad qualities
+            J += assemble((tu[0] + tu[1]) * 10e9 * dx(mesh)) + assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["etaP"]))*dx(mesh)) # fallback strategy if ipopt wants to evaluate on mesh with bad qualities
 
         if flag:
           dJ = compute_gradient(J,Control(tu))
