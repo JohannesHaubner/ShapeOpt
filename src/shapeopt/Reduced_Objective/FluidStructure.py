@@ -64,6 +64,9 @@ class FluidStructure(ReducedObjective):
         # compute help function for evaluation of objective
 
         dx = Measure('dx', domain=mesh, subdomain_data=domains)
+        dS = Measure('dS', domain=mesh, subdomain_data=boundaries)
+        ds = Measure('ds', domain=mesh, subdomain_data=boundaries)
+        n = FacetNormal(mesh)
         dim = mesh.geometric_dimension()
 
         dxf = dx(mesh)(params['fluid'])
@@ -81,6 +84,11 @@ class FluidStructure(ReducedObjective):
         P = FunctionSpace(mesh, S1)
 
         phiv = self.meanflow_function(mesh, boundaries, params)
+
+        func = interpolate(Constant(1.0), P)
+        bc_inter = DirichletBC(P, Constant(0.0), boundaries, params["interface"])
+        bc_inter.apply(func.vector())
+
         
         # charFunc
         if visualize:
@@ -105,9 +113,7 @@ class FluidStructure(ReducedObjective):
         nyf = Constant(1.0e-3)
 
         auhat = Constant(1e-9)
-        atuhat = Constant(1e-9)
-        atzhat = Constant(1.0)
-        azhat = Constant(-1.0)
+        azhat = Constant(1e-9)
         aphat = Constant(1e-9)
 
         t = 0.0
@@ -125,122 +131,6 @@ class FluidStructure(ReducedObjective):
         V_02 = Expression(("1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ \
                    0.1681", "0.0"), Ubar=Ubar, t=t, degree=2)
         V_1 = Constant([0.0]*dim)
-
-        tu = interpolate(Expression(("0.0","0.0"), name = 'Control', degree =1), VC)
-        if control:
-            tu.vector().set_local(control.vector().get_local())
-            tu.vector().apply("")
-            if flag == True:
-                print(tu.vector().get_local(),flush=True)
-
-        # test and trial functions
-        w = Function(W, name="state")
-        (v, p, u, z) = split(w)
-
-        w_ = Function(W, name="old_state")
-        (v_, p_, u_, z_) = split(w_)
-
-        psi = TestFunction(W)
-        (psiv, psip, psiu, psiz) = split(psi)
-
-        # weak form
-        I = Identity(2)
-        tFhat = I + grad(tu)
-        tFhatt = tFhat.T
-        tFhati = inv(tFhat)
-        tFhatti = tFhati.T
-        tJhat = det(tFhat)
-        Fhat = I + grad(u) * tFhati
-        Fhatt = Fhat.T
-        Fhati = inv(Fhat)
-        Fhatti = Fhati.T
-        Ehat = 0.5 * (Fhatt * Fhat - I)
-        Jhat = det(Fhat)
-
-        # stress tensors
-        def sigmafp(p):
-            return -p * I
-
-        def sigmafv(v):
-            return rhof * nyf * (grad(v) * tFhati * Fhati + Fhatti * tFhatti \
-                                 * grad(v).T)
-
-        def sigmasp(p):
-            if INH:
-                return -p * I  # INH
-            else:
-                return Constant(0.0)  # STVK
-
-        def sigmasv(v):
-            if INH:
-                return mys * (Fhat * Fhatt - I)  # INH
-            else:
-                return inv(Jhat) * Fhat * (lambdas * tr(Ehat) * I \
-                                           + 2.0 * (mys) * Ehat) * Fhatt  # STVK
-
-        # INH or STVK setting for solid material
-        if INH == False:
-            inh_f = Constant(0.0)
-        else:
-            inh_f = Constant(1.0)
-
-        # variables for previous time-step
-        Fhat_ = I + grad(u_) * tFhati
-        Fhatt_ = Fhat_.T
-        Fhati_ = inv(Fhat_)
-        Fhatti_ = Fhati_.T
-        Ehat_ = 0.5 * (Fhatt_ * Fhat_ - I)
-        Jhat_ = det(Fhat_)
-        Jhattheta = theta * Jhat + (1.0 - theta) * Jhat_
-
-        def sigmafv_(v_):
-            return rhof * nyf * (grad(v_) * tFhati * Fhati_ + Fhatti_ * tFhatti \
-                                 * grad(v_).T)
-
-        def sigmasv_(v_):
-            if INH:
-                return mys * (Fhat_ * Fhatt_ - I)  # INH
-            else:
-                return inv(Jhat_) * Fhat_ * (lambdas * tr(Ehat_) * I \
-                                             + 2.0 * (mys) * Ehat_) * Fhatt_  # STVK
-
-        # terms with time derivatives
-        A_T = (1.0 / k * inner(rhof * Jhattheta * tJhat * (v - v_), psiv) * dxf
-               - 1.0 / k * inner(rhof * Jhat * tJhat * grad(v) * tFhati * Fhati * (u - u_), psiv)
-               * dxf + 1.0 / k * inner(tJhat * rhos * (v - v_), psiv) * dxs
-               + 1.0 / k * inner(tJhat * rhos * (u - u_), psiu) * dxs)
-
-        # pressure terms
-        A_P = (inner(tJhat * Jhat * tFhati * Fhati * sigmafp(p),
-                     grad(psiv).T) * dxf + inh_f * inner(tJhat * Jhat * tFhati * Fhati * sigmasp(p)
-                                                                          , grad(psiv)) * dxs)
-
-        # implicit terms (e.g. incompressibiliy)
-        A_I = (
-                inner(azhat * tJhat * z, psiz) * dx(mesh) - inner(azhat * tJhat * tFhati * tFhatti * grad(u).T,
-                                                                  grad(psiz).T) * dx(mesh)
-                + inh_f * inner(Jhat - Constant(1.0), psip) * dxs
-                + inner(tJhat * tr(tFhatti * grad(Jhat * Fhati * v).T), psip) * dxf
-                + inner(aphat * tJhat * tFhati * tFhatti * (grad(p)), (grad(psip))) * dxs
-       )
-
-        # remaining explicit terms
-        A_E = (inner(auhat * tJhat * tFhati * tFhatti * grad(z).T, grad(psiu).T) * dxf
-               + inner(rhof * tJhat * Jhat * grad(v) * tFhati * Fhati * v, psiv) * dxf
-               + inner(tJhat * Jhat * tFhati * Fhati * sigmafv(v), grad(psiv).T)
-               * dxf - inner(tJhat * rhos * v, psiu) * dxs
-               + inner(tJhat * Jhat * tFhati * Fhati * sigmasv(v), grad(psiv).T)
-               * dxs)
-
-        # explicit terms of previous time-step
-        A_E_rhs = (inner(auhat * tJhat * tFhati * tFhatti * grad(z_).T, grad(psiu).T) * dxf
-                   + inner(rhof * tJhat * Jhat_ * grad(v_) * tFhati * Fhati_ * v_, psiv)
-                   * dxf + inner(tJhat * Jhat_ * tFhati * Fhati_ * sigmafv_(v_),grad(psiv).T) * dxf
-                   - inner(tJhat * rhos * v_, psiu) * dxs + inner(tJhat * Jhat_ * tFhati * Fhati_ * sigmasv_(v_)
-                                                                          , grad(psiv).T) * dxs)
-
-        # shifted crank nicolson scheme
-        F = A_T + A_P + A_I + theta * A_E + (Constant(1.0) - theta) * A_E_rhs
 
         # output files
         if visualize:
@@ -268,30 +158,6 @@ class FluidStructure(ReducedObjective):
         J = 0
 
         if not fallback_strategy:
-
-            # parameters
-            Ubar = Constant(1.0)
-            lambdas = Constant(2.0e6)
-            mys = Constant(0.5e6)
-            rhos = Constant(1.0e4)
-            rhof = Constant(1.0e3)
-            nyf = Constant(1.0e-3)
-
-            auhat = Constant(1e-9)
-            atuhat = Constant(1e-9)
-            atzhat = Constant(1.0)
-            azhat = Constant(-1.0)
-            aphat = Constant(1e-9)
-
-            INH = False
-
-            # Expressions
-            (x, y) = SpatialCoordinate(mesh)
-            V_01 = Expression(("1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ 0.1681*0.5*(1-cos(pi/2*t))", "0.0"), Ubar=Ubar, \
-                            t=t, degree=2)
-            V_02 = Expression(("1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ \
-                    0.1681", "0.0"), Ubar=Ubar, t=t, degree=2)
-            V_1 = Constant([0.0]*dim)
 
             tu = interpolate(Expression(("0.0","0.0"), name = 'Control', degree =1), VC)
             if control:
@@ -375,7 +241,7 @@ class FluidStructure(ReducedObjective):
             A_T = (1.0 / k * inner(rhof * Jhattheta * tJhat * (v - v_), psiv) * dxf
                 - 1.0 / k * inner(rhof * Jhat * tJhat * grad(v) * tFhati * Fhati * (u - u_), psiv)
                 * dxf + 1.0 / k * inner(tJhat * rhos * (v - v_), psiv) * dxs
-                + 1.0 / k * inner(tJhat * rhos * (u - u_), psiu) * dxs)
+                + 1.0 / k * inner( tJhat * rhos * (u - u_), psiu) * dxs)
 
             # pressure terms
             A_P = (inner(tJhat * Jhat * tFhati * Fhati * sigmafp(p),
@@ -384,26 +250,32 @@ class FluidStructure(ReducedObjective):
 
             # implicit terms (e.g. incompressibiliy)
             A_I = (
-                    inner(azhat * tJhat * z, psiz) * dx(mesh) - inner(azhat * tJhat * tFhati * tFhatti * grad(u).T,
-                                                                    grad(psiz).T) * dx(mesh)
+                    -inner( tJhat * z, psiz) * dxf + inner(tJhat * tFhati * tFhatti * grad(u).T,
+                                                                    grad(psiz).T) * dxf
+                    + inner(azhat * tJhat * tFhati * tFhatti * grad(z).T,
+                                                                    grad(func * psiz).T) * dxs
+                    #- inner(azhat * tJhat("+") * grad(z)("+") * tFhati("+") * tFhati("+") * n("+"), psiz("+"))*dS(mesh)(params["interface"]) 
                     + inh_f * inner(Jhat - Constant(1.0), psip) * dxs
                     + inner(tJhat * tr(tFhatti * grad(Jhat * Fhati * v).T), psip) * dxf
                     + inner(aphat * tJhat * tFhati * tFhatti * (grad(p)), (grad(psip))) * dxs
+                    + inner(aphat * tJhat * p, psip) * dxs
         )
 
             # remaining explicit terms
-            A_E = (inner(auhat * tJhat * tFhati * tFhatti * grad(z).T, grad(psiu).T) * dxf
+            A_E = (inner(auhat * tJhat * tFhati * tFhatti * grad(z).T, grad(func * psiu).T) * dxf
+                   #- inner(auhat* tJhat("-") * grad(z)("-")* tFhati("-") * tFhatti("-") * n("-"), psiu("-"))*dS(mesh)(params["interface"]) #  grad(u) = Du
                 + inner(rhof * tJhat * Jhat * grad(v) * tFhati * Fhati * v, psiv) * dxf
                 + inner(tJhat * Jhat * tFhati * Fhati * sigmafv(v), grad(psiv).T)
-                * dxf - inner(tJhat * rhos * v, psiu) * dxs
+                * dxf - inner( tJhat * rhos * v, psiu) * dxs
                 + inner(tJhat * Jhat * tFhati * Fhati * sigmasv(v), grad(psiv).T)
                 * dxs)
 
             # explicit terms of previous time-step
-            A_E_rhs = (inner(auhat * tJhat * tFhati * tFhatti * grad(z_).T, grad(psiu).T) * dxf
+            A_E_rhs = (inner(auhat * tJhat * tFhati * tFhatti * grad(z_).T, grad(func * psiu).T) * dxf
+                       #- inner(auhat * tJhat("-") * grad(z_)("-") * tFhati("-") * tFhatti("-") * n("-"), psiu("-"))*dS(mesh)(params["interface"]) 
                     + inner(rhof * tJhat * Jhat_ * grad(v_) * tFhati * Fhati_ * v_, psiv)
                     * dxf + inner(tJhat * Jhat_ * tFhati * Fhati_ * sigmafv_(v_),grad(psiv).T) * dxf
-                    - inner(tJhat * rhos * v_, psiu) * dxs + inner(tJhat * Jhat_ * tFhati * Fhati_ * sigmasv_(v_)
+                    - inner( tJhat * rhos * v_, psiu) * dxs + inner(tJhat * Jhat_ * tFhati * Fhati_ * sigmasv_(v_)
                                                                             , grad(psiv).T) * dxs)
 
             # shifted crank nicolson scheme

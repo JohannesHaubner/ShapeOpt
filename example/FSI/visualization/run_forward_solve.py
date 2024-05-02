@@ -81,5 +81,5 @@ def run_forward(initial : bool, T : float, deltat : float):
     pass
 
 if __name__ == "__main__":
-    T = 0.1
-    run_forward(initial=True, T=0.1)
+    T = 15.0
+    run_forward(initial=True, T=T, deltat=0.01)
