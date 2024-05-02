@@ -69,15 +69,21 @@ class LaplaceBeltrami_withbc(BoundaryOperator):
 
         return u
 
-    def chainrule(self, djy):
+    def chainrule(self, djy, gradient=True):
         # compute derivative of j(vector_laplace_beltrami(x)) under the knowledge of
-        # djy = nabla j(y) (gradient)
+        # djy = nabla j(y) (gradient) if gradient = True
+        # and djy derivative if gradient = False
         # print('Extension.vector_laplace_beltrami_chainrule started.............')
+        if gradient == True:
+            # solve adjoint equation
+            z = TestFunction(self.Vdn)
 
-        # Define linear form
-        z = TestFunction(self.Vdn)
-        L = inner(djy, z) * dx(self.dmesh)
-        b = assemble(L)
+            # Define linear form
+            L = inner(djy, z) * dx(self.dmesh)
+            b = assemble(L)
+        else:
+            b = djy
+
         self.bc.apply(b)
 
         # solve variational problem

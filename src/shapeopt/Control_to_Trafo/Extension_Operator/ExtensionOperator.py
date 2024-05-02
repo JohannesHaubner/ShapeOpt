@@ -20,7 +20,7 @@ class ExtensionOperator(object):
         self.opt_inner_bdry = opt_inner_bdry
 
         if opt_inner_bdry:
-            self.ds = Measure('dS', domain=self.mesh, subdomain_data=boundaries)
+            self.ds = Measure("dS", domain=self.mesh, subdomain_data=boundaries)
         else:
             self.ds = Measure("ds", subdomain_data=boundaries)
 

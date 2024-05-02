@@ -42,8 +42,7 @@ param = {"reg": 1e-2, # regularization parameter
          "L": geom_prop["length_pipe"],
          "H": geom_prop["heigth_pipe"],
          "Vol_solid": 1., # random value to make volume_solid constraint test work
-         "solid": params["solid"], # for volume_solid constraint test
-         "fluid": params["fluid"], # for volume_solid constraint test
+         "solid": params["solid"], # needed for volume_solid constraint
          "relax_eq": 0.0, #relax barycenter
          #"Bary_eps": 0.0, # slack for barycenter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient
@@ -86,4 +85,6 @@ def test_fsi():
     assert order > 1.8 or diff < 1e-12
 
 if __name__ == "__main__":
+    for id in ids:
+        test_constraints(id)
     test_fsi()

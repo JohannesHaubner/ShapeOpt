@@ -99,9 +99,9 @@ class Extension():
       #djy = boundary.Boundary_Operator(self.dmesh, self.dnormalf, self.lb_off).chainrule(djxdf)
 
       ### strategy 3
-      djxd = self.extension_operator.chainrule(djy, 1, option2)
+      djxd = self.extension_operator.chainrule(djy, 2, option2)
       djxdf = self.Mesh_.Vn_to_Vdn(djxd)
-      djy = self.boundary_operator.chainrule(djxdf)
+      djy = self.boundary_operator.chainrule(djxdf.vector(), gradient=False)
       ###
       return djy
 
@@ -162,16 +162,14 @@ class Extension():
       #ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
       y0 = self.dof_to_deformation(x0)
       j0 = assemble(0.5*inner(y0,y0)*dx(self.mesh))
-      print(j0)
-      exit(0)
       djy = y0
       djx = self.dof_to_deformation_chainrule(djy,1).get_local()
       epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
       ylist = [self.dof_to_deformation(x0+eps*ds) for eps in epslist]
       jlist = [assemble(0.5*inner(y, y)*dx) for y in ylist]
       ds_ = ds.vector().get_local()
-      perform_first_order_check(jlist, j0, djx, ds_, epslist)
-      return
+      order, diff = perform_first_order_check(jlist, j0, djx, ds_, epslist)
+      return order, diff
      
         
       
