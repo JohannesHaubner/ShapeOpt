@@ -3,6 +3,12 @@ from pyadjoint import *
 import numpy as np
 import pytest
 
+if __name__ == '__main__':
+    import sys
+    from pathlib import Path
+    here = Path(__file__).parent
+    sys.path.insert(0, str(here.parent) + '/src')
+
 import shapeopt.Tools.settings_mesh as tsm
 
 from shapeopt.Constraints import constraints
@@ -13,7 +19,7 @@ from shapeopt.Control_to_Trafo.Extension_Operator import extension_operators
 
 from pathlib import Path
 here = Path(__file__).parent
-path_mesh =  str(here.parent) + "/example/Stokes/mesh"
+path_mesh =  str(here.parent) + "/example/FSI/mesh"
 
 #load mesh
 init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh)
@@ -36,7 +42,8 @@ param = {"reg": 1e-2, # regularization parameter
          "L": geom_prop["length_pipe"],
          "H": geom_prop["heigth_pipe"],
          "Vol_solid": 1., # random value to make volume_solid constraint test work
-         "solid": 5, # for volume_solid constraint test
+         "solid": params["solid"], # for volume_solid constraint test
+         "fluid": params["fluid"], # for volume_solid constraint test
          "relax_eq": 0.0, #relax barycenter
          #"Bary_eps": 0.0, # slack for barycenter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient
