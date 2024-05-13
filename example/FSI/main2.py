@@ -48,8 +48,8 @@ param = {"reg": 10, # regularization parameter
          "relax_eq": 0.0, #relax barycenter
          #"Bary_eps": 0.0, # slack for barycenter
          "det_lb": 5e-1, # lower bound for determinant of transformation gradient
-         "maxiter_IPOPT": 0, #50,
-         "T": 0.01, #15.0, # simulation horizon for Fluid-Structure interaction simulation
+         "maxiter_IPOPT": 50,
+         "T": 15.0, # simulation horizon for Fluid-Structure interaction simulation
          "deltat": 0.01, # time step size
          "gammaP": 1e-3, # penalty parameter for determinant constraint violation
          "etaP": 0.2, # smoothing parameter for max term in determinant const. violation
