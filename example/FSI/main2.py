@@ -47,12 +47,11 @@ param = {"reg": 10, # regularization parameter
          "H": geom_prop["heigth_pipe"],
          "relax_eq": 0.0, #relax barycenter
          #"Bary_eps": 0.0, # slack for barycenter
-         "det_lb": 5e-1, # lower bound for determinant of transformation gradient
+         "det_lb": 2e-1, #5e-1, # lower bound for determinant of transformation gradient
          "maxiter_IPOPT": 50,
          "T": 15.0, # simulation horizon for Fluid-Structure interaction simulation
          "deltat": 0.01, # time step size
          "gammaP": 1e-3, # penalty parameter for determinant constraint violation
-         "etaP": 0.2, # smoothing parameter for max term in determinant const. violation
          "output_path": path_output + "/Output2/", # folder where intermediate results are stored
          }
 
@@ -154,7 +153,8 @@ if __name__ == "__main__":
     extension_operator = extension_operators[extension_option](mesh, boundaries, params, opt_inner_bdry=True)
     dof_to_trafo = ctt.Extension(init_mfs, boundary_operator, extension_operator)
     deformation = dof_to_trafo.dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
-    defo = deformation # project(deformation, Vn)
+    np.save("x0_result.npy", x0)
+    #defo = project(deformation, Vn)
 
     # move mesh and save moved mesh
     ALE.move(mesh, defo, annotate=False)

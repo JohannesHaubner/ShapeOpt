@@ -423,10 +423,10 @@ class FluidStructure(ReducedObjective):
             #objective function
             if add_penalty:
                 print("Objective value without penalization is ", J)
-                J += assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["etaP"]))*dx(mesh))
+                J += assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["det_lb"]))*dx(mesh))
 
         else:
-            J += assemble((tu[0] + tu[1]) * 10e9 * dx(mesh)) + assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["etaP"]))*dx(mesh)) # fallback strategy if ipopt wants to evaluate on mesh with bad qualities
+            J += assemble((tu[0] + tu[1]) * 10e9 * dx(mesh)) + assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["det_lb"]))*dx(mesh)) # fallback strategy if ipopt wants to evaluate on mesh with bad qualities
 
         if flag:
           dJ = compute_gradient(J,Control(tu))

@@ -220,8 +220,8 @@ class Initialize_Mesh_and_FunctionSpaces():
 
       # normal on design boundary
       v = TestFunction(self.Vn)
-      n_mesh = assemble(inner(n, v)*ds(fluid_mesh_local))
-      n_norm = assemble(inner(Constant(("1.0","1.0")), v) * ds(fluid_mesh_local)) # to norm n_mesh
+      n_mesh = assemble_mixed(inner(n, v)*ds(fluid_mesh_local))
+      n_norm = assemble_mixed(inner(Constant(("1.0","1.0")), v) * ds(fluid_mesh_local)) # to norm n_mesh
       normal = Function(self.Vn)
       normal.vector().set_local(n_mesh.get_local())
       normal.vector().apply("")
