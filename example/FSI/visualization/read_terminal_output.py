@@ -1,11 +1,17 @@
 import re
 
+import os.path
 from pathlib import Path
 here = Path(__file__).parent.parent.resolve()
 
 def generate_table(txtname : str, txtout : str, txtout_all : str):
 
-    text_file = open(str(here) + '/mesh/Output/' + txtname,'r')
+    text_file = open(str(here) + "/" + txtname,'r')
+
+    import os.path
+    file_txt = os.path.join(str(here) + '/', txtout)
+
+    file_all_txt = os.path.join(str(here) + '/', txtout_all)
 
     # lines into separate strings
     file_lines = text_file.readlines()
@@ -112,11 +118,6 @@ def generate_table(txtname : str, txtout : str, txtout_all : str):
         else:
             data.append(' ')
         data_array.append(data)
-
-    import os.path
-    file_txt = os.path.join(str(here) + '/visualization/', txtout)
-
-    file_all_txt = os.path.join(str(here) + '/visualization/', txtout_all)
 
     with open(file_all_txt, 'w') as file:
         for i in range(len(data_list[4])):

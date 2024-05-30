@@ -7,12 +7,13 @@ from pathlib import Path
 here = Path(__file__).parent.parent.resolve()
 
 import sys, os
-sys.path.insert(0, str(here) + '/mesh')
+sys.path.insert(0, str(here))
 
-def visualize_shape(fname : str, save_filename : str):
+def visualize_shape(fname : str, save_fname : str):
 
     # specify filename and read mesh    
-    filename = str(here) + "/mesh/" + fname
+    filename = str(here) + "/" + fname
+    save_filename = str(here) + "/" + save_fname
     print(filename)
 
     reader = pyvista.get_reader(filename)
