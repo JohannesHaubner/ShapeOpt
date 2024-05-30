@@ -15,6 +15,10 @@ import shapeopt.Ipopt.ipopt_solver as ipopt_solver
 from shapeopt.Constraints import constraints
 from shapeopt.Control_to_Trafo import Extension
 from shapeopt.Reduced_Objective import reduced_objectives
+from shapeopt.Control_to_Trafo.Extension_Operator import extension_operators
+from shapeopt.Control_to_Trafo.Boundary_Operator import boundary_operators
+import shapeopt.Control_to_Trafo.dof_to_trafo as ctt
+
 
 stop_annotating()
 
