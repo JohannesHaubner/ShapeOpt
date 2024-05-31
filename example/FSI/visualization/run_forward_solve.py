@@ -26,13 +26,13 @@ stop_annotating()
 # initial or optimized geometry
 initial = True
 
-def run_forward(initial : bool, T : float, deltat : float):
+def run_forward(initial : bool, T : float, deltat : float, path_mesh : str, output_folder : str):
     if initial:
         load_mesh = False
-        folder_name = str("/Init")
+        folder_name = "/" + output_folder 
     else:
         load_mesh = True
-        folder_name = str("/Opt")
+        folder_name = "/" + output_folder
 
     # set and load parameters
     param["T"] = T
