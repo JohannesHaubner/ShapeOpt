@@ -9,6 +9,9 @@
 <p align="center">
     <img src="example/FSI/mesh/opt_fsi.gif"/>
 </p>
+<p align="center">
+    <img src="example/FSI/mesh3/opt_fsi_interface.gif"/>
+</p>
 
 ShapeOpt is based on FEniCS, dolfin-adjoint, IPOPT, cyipopt, pygmsh.
 
