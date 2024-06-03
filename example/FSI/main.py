@@ -19,14 +19,13 @@ from shapeopt.Control_to_Trafo.Extension_Operator import extension_operators
 from shapeopt.Control_to_Trafo.Boundary_Operator import boundary_operators
 import shapeopt.Control_to_Trafo.dof_to_trafo as ctt
 
-
 stop_annotating()
 
 # specify path of directory that contains the files 'mesh_triangles.xdmf' and 'facet_mesh.xdmf'
 path_mesh = str(here) + "/mesh"
 path_output = str(here) + "/obstacle_fsiII"
 # specify boundary and extension operator (use Extension.print_options())
-boundary_option = 'laplace_beltrami_withbc2'
+boundary_option = 'laplace_beltrami_withbc'
 extension_option = 'linear_elasticity'
 # governing equations
 application = 'fluid_structure'
@@ -82,7 +81,7 @@ if __name__ == "__main__":
     param["Vol_DmO"] = assemble(v*dx)
     param["Vol_O"] = param["Vol_D"] - param["Vol_DmO"]
     bo = param["Bary_O"]
-    bc = constraints['barycenter'](init_mfs, param, boundary_option, extension_option).eval(x0)
+    bc = constraints['barycenter'](init_mfs, param, dof_to_trafo).eval(x0)
     param["Bary_O"] = np.add(bc, bo)
 
     # solve optimization problem

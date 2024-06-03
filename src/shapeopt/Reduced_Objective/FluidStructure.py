@@ -49,7 +49,7 @@ class FluidStructure(ReducedObjective):
         return u
 
 
-    def eval(self, mesh, domains, boundaries, params, param, flag=False, red_func=False, control=False, add_penalty=True, visualize=False, vis_folder=str(), fallback_strategy=False):
+    def eval(self, mesh, domains, boundaries, params, param, flag=False, red_func=False, control=False, add_penalty=True, visualize=False, vis_folder=str(), fallback_strategy=False, point=[0.6, 0.2]):
         # mesh generated
         # params dictionary, includes labels for boundary parts:
         # params.inflow
@@ -320,7 +320,7 @@ class FluidStructure(ReducedObjective):
                 u_p = projectorU1.project(u)
                 u_p.rename("projection", "projection")
                 try:
-                    displacementy.append(u_p(Point(0.6, 0.2))[1])
+                    displacementy.append(u_p(Point(point[0], point[1]))[1])
                     times.append(t)
                     np.savetxt(dstring, displacementy)
                     np.savetxt(tstring, times)
@@ -387,7 +387,7 @@ class FluidStructure(ReducedObjective):
                     u_p = projectorU1.project(u)
                     u_p.rename("projection", "projection")
                     try:
-                        displacementy.append(u_p(Point(0.6, 0.2))[1])
+                        displacementy.append(u_p(Point(point[0], point[1]))[1])
                         times.append(t)
                         np.savetxt(dstring, displacementy)
                         np.savetxt(tstring, times)
