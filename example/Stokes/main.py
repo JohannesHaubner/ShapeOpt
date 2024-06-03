@@ -94,7 +94,7 @@ param["lb_off_p"] = 1.0
 for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:  #[1e0, 0.5, 0.25, 0.125, 0.1, 0.05, 0.025, 0.0125, 0.01, 0.005, 0.0025, 0.00125, 0.001, 0.0001, 0.00001, 1e-6]:
 
   deformation = dof_to_trafo.dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
-  #defo = project(deformation, Vn)
+  defo = project(deformation, Vn)
   ALE.move(mesh, deformation, annotate=False)
   if deform_mesh == True:
       defo_new  = mpp.biharmonic(deformation)
@@ -134,7 +134,7 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
   dnormal = init_mfs.get_dnormalf()
   if deform_mesh == True:
     bdfile << domains
-  boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(0.0))
+  boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(lb_off))
   extension_operator = extension_operators[extension_option](mesh, boundaries, params)
   dof_to_trafo = ctt.Extension(init_mfs, boundary_operator, extension_operator)
 
