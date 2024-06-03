@@ -3,8 +3,8 @@ from .ExtensionOperator import ExtensionOperator
 import numpy as np
 
 class ElasticExtension(ExtensionOperator):
-    def __init__(self, mesh, boundaries, params):
-        super().__init__(mesh, boundaries, params)
+    def __init__(self, mesh, boundaries, params, opt_inner_bdry=False):
+        super().__init__(mesh, boundaries, params, opt_inner_bdry=opt_inner_bdry)
 
     def eval(self, x):
         # x is a vector valued function in self.Vn that attains values on the design boundary
@@ -20,15 +20,16 @@ class ElasticExtension(ExtensionOperator):
         # Define boundary conditions
         bc = []
         for i in self.params.keys():
-            if i != "design" and not isinstance(self.params[i], bool) and self.params[i] in self.params["boundary_labels"]:
+            if i != "design" and not isinstance(self.params[i], bool) and self.params[i] in self.params["boundary_labels"] and self.params[i] != self.params["design"]:
                 bc.append(DirichletBC(self.Vn, Constant(("0.0", "0.0")), self.boundaries, self.params[i]))
 
         # Define bilinear form
         a = self.mu*inner(grad(u) + np.transpose(grad(u)), grad(v)) * dx  # + inner(u,v)*dx
         # Define linear form
-        L = inner(x, v)*self.ds(self.params["design"])
-
-
+        if self.opt_inner_bdry:
+          L = inner(avg(x), avg(v))*self.ds(self.params["design"])
+        else:
+          L = inner(x, v)*self.ds(self.params["design"])
 
         # solve variational problem
         u = Function(self.Vn)
@@ -76,7 +77,7 @@ class ElasticExtension(ExtensionOperator):
       # Define boundary conditions
       bc = []
       for i in self.params.keys():
-          if i != "design" and not isinstance(self.params[i], bool) and self.params[i] in self.params["boundary_labels"]:
+          if i != "design" and not isinstance(self.params[i], bool) and self.params[i] in self.params["boundary_labels"] and self.params[i] != self.params["design"]:
               bc.append(DirichletBC(self.Vn, Constant(("0.0", "0.0")), self.boundaries, self.params[i]))
 
       # Define bilinear form
@@ -103,7 +104,10 @@ class ElasticExtension(ExtensionOperator):
         return u
       elif option == 2:
         xt = TrialFunction(self.Vn)
-        ud = assemble(inner(u,xt)*self.ds(self.params["design"]))
+        if self.opt_inner_bdry:
+          ud = assemble(inner(avg(u),avg(xt))*self.ds(self.params["design"]))
+        else:
+          ud = assemble(inner(u,xt)*self.ds(self.params["design"]))
         u = Function(self.Vn)
         u.vector()[:] = ud
         return u

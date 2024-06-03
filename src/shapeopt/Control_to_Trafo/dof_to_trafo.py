@@ -11,12 +11,11 @@ sys.path.insert(0, str(here.parent))
 from Tools.first_order_check import perform_first_order_check
 
 class Extension():
-    def __init__(self, Mesh_, param, boundary_option : str, extension_option : str):
+    def __init__(self, Mesh_, boundary_operator, extension_operator):
       """
       # mesh: reference mesh
-      # params: params.design, params.inflow, params.outflow, params.noslip
-      # boundary_option: boundary operator (to see options run Extension.print_options())
-      # extension_option: extension operator (to see options run Extension.print_options())
+      # boundary_option: boundary operator 
+      # extension_option: extension operator 
       """
       mesh = Mesh_.get_mesh()
       dmesh = Mesh_.get_design_boundary_mesh()
@@ -32,10 +31,6 @@ class Extension():
       
       self.dmesh = dmesh
 
-      # Laplace Beltrami off
-      lb_off_p = param["lb_off_p"]
-      self.lb_off = Expression(("lb_off"), degree = 0, lb_off = lb_off_p) #Constant("0.1") #Constant('0.0') # 0.0 = multiply with n, 1.0 = Laplace Beltrami
-      
       # define function spaces
       self.V = Mesh_.get_V()
       self.Vd = Mesh_.get_Vd()
@@ -69,18 +64,8 @@ class Extension():
       #print((self.M_lumped_m05 * func.vector()).get_local())
       #exit(0)
 
-      self.boundary_option = boundary_option
-      self.extension_option = extension_option
-      try:
-        self.extension_operator = extension_operators[self.extension_option]
-      except:
-        print('Extension operator specified in extension_option not implemented. \
-               Run Extension.print_options() to see options for extension operator')
-      try:
-        self.boundary_operator = boundary_operators[self.boundary_option]
-      except:
-        print('Boundary operator specified in boundary_option not implemented. \
-               Run Extension.print_options() to see options for extension operator')
+      self.boundary_operator = boundary_operator
+      self.extension_operator = extension_operator
 
     @staticmethod
     def print_options():
@@ -99,9 +84,9 @@ class Extension():
       #deformation = extension.Extension(self.mesh, self.boundaries, self.params).eval(xd)
 
       ## strategy 3
-      xd = self.boundary_operator(self.dmesh, self.dnormalf, self.lb_off).eval(x) #self.lb_off).eval(x)
+      xd = self.boundary_operator.eval(x) #self.lb_off).eval(x)
       xd = self.Mesh_.Vdn_to_Vn(xd)
-      deformation = self.extension_operator(self.mesh, self.boundaries, self.params).eval(xd)
+      deformation = self.extension_operator.eval(xd)
       ###
       return deformation
 
@@ -114,9 +99,9 @@ class Extension():
       #djy = boundary.Boundary_Operator(self.dmesh, self.dnormalf, self.lb_off).chainrule(djxdf)
 
       ### strategy 3
-      djxd = self.extension_operator(self.mesh, self.boundaries, self.params).chainrule(djy, 1, option2)
+      djxd = self.extension_operator.chainrule(djy, 2, option2)
       djxdf = self.Mesh_.Vn_to_Vdn(djxd)
-      djy = self.boundary_operator(self.dmesh, self.dnormalf, self.lb_off).chainrule(djxdf)
+      djy = self.boundary_operator.chainrule(djxdf.vector(), gradient=False)
       ###
       return djy
 
@@ -177,16 +162,14 @@ class Extension():
       #ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
       y0 = self.dof_to_deformation(x0)
       j0 = assemble(0.5*inner(y0,y0)*dx(self.mesh))
-      print(j0)
-      exit(0)
       djy = y0
       djx = self.dof_to_deformation_chainrule(djy,1).get_local()
       epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
       ylist = [self.dof_to_deformation(x0+eps*ds) for eps in epslist]
       jlist = [assemble(0.5*inner(y, y)*dx) for y in ylist]
       ds_ = ds.vector().get_local()
-      perform_first_order_check(jlist, j0, djx, ds_, epslist)
-      return
+      order, diff = perform_first_order_check(jlist, j0, djx, ds_, epslist)
+      return order, diff
      
         
       

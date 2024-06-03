@@ -15,11 +15,15 @@ import shapeopt.Ipopt.ipopt_solver as ipopt_solver
 from shapeopt.Constraints import constraints
 from shapeopt.Control_to_Trafo import Extension
 from shapeopt.Reduced_Objective import reduced_objectives
+from shapeopt.Control_to_Trafo.Extension_Operator import extension_operators
+from shapeopt.Control_to_Trafo.Boundary_Operator import boundary_operators
+import shapeopt.Control_to_Trafo.dof_to_trafo as ctt
 
 stop_annotating()
 
 # specify path of directory that contains the files 'mesh_triangles.xdmf' and 'facet_mesh.xdmf'
 path_mesh = str(here) + "/mesh"
+path_output = str(here) + "/obstacle_fsiII"
 # specify boundary and extension operator (use Extension.print_options())
 boundary_option = 'laplace_beltrami_withbc'
 extension_option = 'linear_elasticity'
@@ -41,12 +45,11 @@ param = {"reg": 1e-1, # regularization parameter
          "H": geom_prop["heigth_pipe"],
          "relax_eq": 0.0, #relax barycenter
          #"Bary_eps": 0.0, # slack for barycenter
-         "det_lb": 2e-1, # lower bound for determinant of transformation gradient
+         "det_lb": 2e-1, # lower bound for determinant of transformation gradient, etaP
          "maxiter_IPOPT": 50,
          "T": 15.0, # simulation horizon for Fluid-Structure interaction simulation
          "deltat": 0.01, # time step size
          "gammaP": 1e-3, # penalty parameter for determinant constraint violation
-         "etaP": 0.2, # smoothing parameter for max term in determinant const. violation
          "output_path": path_mesh + "/Output/", # folder where intermediate results are stored
          }
 
@@ -61,6 +64,10 @@ if __name__ == "__main__":
     params = init_mfs.get_params()
     dnormal = init_mfs.get_dnormalf()
 
+    boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(0.0))
+    extension_operator = extension_operators[extension_option](mesh, boundaries, params)
+    dof_to_trafo = ctt.Extension(init_mfs, boundary_operator, extension_operator)
+
     #function space in which the control lives
     Vd = init_mfs.get_Vd()
     Vn = init_mfs.get_Vn()
@@ -74,7 +81,7 @@ if __name__ == "__main__":
     param["Vol_DmO"] = assemble(v*dx)
     param["Vol_O"] = param["Vol_D"] - param["Vol_DmO"]
     bo = param["Bary_O"]
-    bc = constraints['barycenter'](init_mfs, param, boundary_option, extension_option).eval(x0)
+    bc = constraints['barycenter'](init_mfs, param, dof_to_trafo).eval(x0)
     param["Bary_O"] = np.add(bc, bo)
 
     # solve optimization problem
@@ -114,20 +121,26 @@ if __name__ == "__main__":
         stop_annotating()
         set_working_tape(Tape())
         #param["reg"] = reg
-        param["lb_off_p"] = Constant(lb_off)
+        boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(lb_off))
+        extension_operator = extension_operators[extension_option](mesh, boundaries, params)
+        dof_to_trafo = ctt.Extension(init_mfs, boundary_operator, extension_operator)
         Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
         problem = MinimizationProblem(Jred)
-        IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, boundary_option, extension_option)
+        IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, dof_to_trafo)
         x, info = IPOPT.solve(x0)
         x0 = x
 
         print("FSI_main completed", flush=True)
 
-    deformation = Extension(init_mfs, param, boundary_option=boundary_option, extension_option=extension_option).dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
-    defo = deformation # project(deformation, Vn)
+    boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(lb_off))
+    extension_operator = extension_operators[extension_option](mesh, boundaries, params)
+    dof_to_trafo = ctt.Extension(init_mfs, boundary_operator, extension_operator)
+    deformation = dof_to_trafo.dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
+    np.save("x0_result.npy", x0)
+    #defo = project(deformation, Vn)
 
     # move mesh and save moved mesh
-    ALE.move(mesh, defo, annotate=False)
+    ALE.move(mesh, deformation, annotate=False)
     new_mesh = Mesh(mesh)
 
     mvc2 = MeshValueCollection("size_t", new_mesh, 2)
@@ -146,5 +159,5 @@ if __name__ == "__main__":
     xdmf3.write(new_domains)
 
 
-    defo = project(deformation, Vn)
-    bdfile << defo
+    #defo = project(deformation, Vn)
+    #bdfile << defo

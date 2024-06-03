@@ -1,0 +1,32 @@
+\begin{table}[ht!]
+  \begin{tabularx}{\textwidth}{R|x|x|x|xe}
+    \arrayrulecolor{white}
+    \rowcolor{tumblues2}
+    \textcolor{white}{iteration} & \textcolor{white}{objective}& \textcolor{white}{objective \mbox{ \small w/o reg. \& pen.}}& \textcolor{white}{dual infeasibility} & \textcolor{white}{linesearch-steps} &\\[0.5ex]
+0 & $1.5985e+02$ & $1.5985e+02$ & $3.85e+01$ & $0$ & \\[0.5ex]
+    \rowcolor{tumg}
+1 & $1.4593e+02$ & $1.4479e+02$ & $1.67e+01$ & $10$ & \\[0.5ex]
+2 & $1.3925e+02$ & $1.3592e+02$ & $1.46e+01$ & $1$ & \\[0.5ex]
+    \rowcolor{tumg}
+3 & $1.3246e+02$ & $1.2996e+02$ & $5.85e+00$ & $1$ & \\[0.5ex]
+4 & $1.2932e+02$ & $1.2732e+02$ & $2.91e+00$ & $1$ & \\[0.5ex]
+    \rowcolor{tumg}
+5 & $1.2782e+02$ & $1.2612e+02$ & $1.37e+00$ & $1$ & \\[0.5ex]
+6 & $1.2757e+02$ & $1.2567e+02$ & $3.63e-01$ & $1$ & \\[0.5ex]
+    \rowcolor{tumg}
+7 & $1.2754e+02$ & $1.2565e+02$ & $3.08e-01$ & $1$ & \\[0.5ex]
+8 & $1.2744e+02$ & $1.2541e+02$ & $2.26e-01$ & $1$ & \\[0.5ex]
+    \rowcolor{tumg}
+9 & $1.2743e+02$ & $1.2528e+02$ & $3.08e-02$ & $1$ & \\[0.5ex]
+10 & $1.2743e+02$ & $1.2528e+02$ & $1.99e-02$ & $1$ & \\[0.5ex]
+    \rowcolor{tumg}
+11 & $1.2743e+02$ & $1.2528e+02$ & $4.49e-03$ & $1$ & \\[0.5ex]
+12 & $1.2743e+02$ & $1.2528e+02$ & $5.56e-03$ & $2$ & \\[0.5ex]
+    \rowcolor{tumg}
+13 & $1.2743e+02$ & $1.2528e+02$ & $4.85e-03$ & $1$ & \\[0.5ex]
+14 & $1.2743e+02$ & $1.2527e+02$ & $9.04e-04$ & $1$ & \\[0.5ex]
+    \rowcolor{tumg}
+  \end{tabularx}
+  \caption{Optimization results when IPOPT converges up to an overall NLP tolerance of $10^{-3}$. The table shows the objective function value, the objective function value without the regularization and penalization term, the dual infeasibility and the number of linesearch-steps per iteration.}
+  \label{tab::or2}
+\end{table}

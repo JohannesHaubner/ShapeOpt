@@ -9,7 +9,7 @@ sys.path.insert(0, str(here.parent))
 from Tools.first_order_check import perform_first_order_check
 
 class Constraint(object):
-    def __init__(self, Mesh_, param, boundary_option, extension_option):
+    def __init__(self, Mesh_, param, dof_to_trafo):
         self.Mesh_ = Mesh_
         self.mesh = Mesh_.get_mesh()
         self.dim = self.Mesh_.mesh.geometric_dimension()
@@ -17,8 +17,7 @@ class Constraint(object):
         self.Vn = Mesh_.get_Vn()
         self.V = Mesh_.get_V()
         self.param = param
-        self.boundary_option = boundary_option
-        self.extension_option = extension_option
+        self.dof_to_trafo = dof_to_trafo
 
     def eval(self, x):
         raise NotImplementedError

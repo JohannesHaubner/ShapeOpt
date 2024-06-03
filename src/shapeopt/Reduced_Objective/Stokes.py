@@ -12,7 +12,7 @@ class Stokes(ReducedObjective):
     def __init__(self):
         super().__init__()
 
-    def eval(self, mesh, domains, boundaries, params, param, flag=False, red_func=False, control=False):
+    def eval(self, mesh, domains, boundaries, params, param, flag=False, red_func=False, control=False, fallback_strategy=False):
         # mesh generated
         # params dictionary, includes labels for boundary parts:
         # params.inflow

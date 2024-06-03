@@ -8,6 +8,8 @@ import shapeopt.Tools.settings_mesh as tsm
 from shapeopt.Constraints import constraints
 from shapeopt.Control_to_Trafo import Extension
 from shapeopt.Reduced_Objective import reduced_objectives
+from shapeopt.Control_to_Trafo.Boundary_Operator import boundary_operators
+from shapeopt.Control_to_Trafo.Extension_Operator import extension_operators
 import Ipopt.ipopt_solver as ipopt_solver
 
 from pathlib import Path
@@ -44,6 +46,9 @@ param = {"reg": 1e-2, # regularization parameter
 # specify boundary and extension operator (use Extension.print_options())
 boundary_option = 'laplace_beltrami'
 extension_option = 'linear_elasticity'
+boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(0.5))
+extension_operator = extension_operators[extension_option](mesh, boundaries, params)
+dof_to_trafo = Extension(init_mfs, boundary_operator, extension_operator)
 # governing equations
 application = 'stokes' #'fluid structure' needs to be tested: if no fluid domain assigned --> error since no fluid part of domain
 # constraints
@@ -63,7 +68,7 @@ d0 = interpolate(Constant(('0.0','0.0')), Vn)
 param["Vol_DmO"] = assemble(v*dx)
 param["Vol_O"] = param["Vol_D"] - param["Vol_DmO"]
 bo = param["Bary_O"]
-bc = constraints['barycenter'](init_mfs, param, boundary_option, extension_option).eval(x0)
+bc = constraints['barycenter'](init_mfs, param, dof_to_trafo).eval(x0)
 param["Bary_O"] = np.add(bc, bo)
 
 # solve optimization problem
@@ -73,11 +78,11 @@ problem = MinimizationProblem(Jred)
 def test_ipopt_objective():
     print('test ipopt objective')
     order, diff = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids,
-                                           boundary_option, extension_option).test_objective()
+                                           dof_to_trafo).test_objective()
     assert order > 1.8 or diff < 1e-12
 
 def test_ipopt_constraints():
     print('test ipopt constraints')
     order, diff = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids,
-                                           boundary_option, extension_option).test_constraints()
+                                           dof_to_trafo).test_constraints()
     assert order[0] > 1.8 or diff[0] < 1e-12

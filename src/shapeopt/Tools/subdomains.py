@@ -1,11 +1,59 @@
 """
-Code snippet from Jørgen Riseth
+Code snippets from Jørgen Riseth and Simon Funke
 """
 
 from typing import Dict, List, Tuple
 
-from dolfin import Mesh, MeshFunction, MeshView
+from dolfin import Mesh, MeshFunction, MeshView, interpolate, cells, Function
+import numpy as np
 from dolfin.cpp.mesh import MeshFunctionSizet
+import mpi4py as MPI
+comm = MPI.MPI.COMM_WORLD
+id = comm.Get_rank()
+
+def transfer_to_subfunc(f, Vbf):
+    # Extract meshes
+    V_full = f.function_space()
+    f_f = Function(Vbf)
+
+    mesh = V_full.mesh()
+    submesh = Vbf.mesh()
+
+    # Build cell mapping between sub and parent meshes
+    cell_map = submesh.topology().mapping()[mesh.id()].cell_map()
+
+    # Get cell dofmaps
+    dofmap = Vbf.dofmap()
+    dofmap_full = V_full.dofmap()
+
+
+    d_full = []
+    d = []
+
+    # Transfer dofs
+    for c in cells(submesh):
+        d_full.append([dofmap_full.local_to_global_index(i) for i in dofmap_full.cell_dofs(cell_map[c.index()])])
+        d.append([dofmap.local_to_global_index(i) for i in dofmap.cell_dofs(c.index())])  
+        #f_f.vector().set_local(dofmap_full.cell_dofs(cell_map[c.index()])) = f.vector()[dofmap.cell_dofs(c.index())]
+
+
+    d_f_a = np.asarray(d_full).flatten()
+    d_a = np.asarray(d).flatten()
+    d = np.column_stack((d_f_a, d_a))
+    reduced = np.asarray(list(set([tuple(i) for i in d.tolist()])), dtype='int')
+
+    data = reduced
+
+    #len data , data2
+
+    f_vec = f.vector().gather(range(f.vector().size()))
+    f_f_vec = f_f.vector().gather(range(f_f.vector().size()))
+    f_f_vec[data[:,1]] = f_vec[data[:,0]]
+
+
+    f_f.vector()[:] = f_f_vec
+    f_f.vector().apply("")
+    return f_f
 
 
 class FacetView(Mesh):
