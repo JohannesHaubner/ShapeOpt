@@ -65,7 +65,7 @@ if __name__ == "__main__":
     dnormal = init_mfs.get_dnormalf()
 
     boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(0.0))
-    extension_operator = extension_operators[extension_option](mesh, boundaries, params, opt_inner_bdry=True)
+    extension_operator = extension_operators[extension_option](mesh, boundaries, params)
     dof_to_trafo = ctt.Extension(init_mfs, boundary_operator, extension_operator)
 
     #function space in which the control lives
@@ -122,7 +122,7 @@ if __name__ == "__main__":
         set_working_tape(Tape())
         #param["reg"] = reg
         boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(lb_off))
-        extension_operator = extension_operators[extension_option](mesh, boundaries, params, opt_inner_bdry=True)
+        extension_operator = extension_operators[extension_option](mesh, boundaries, params)
         dof_to_trafo = ctt.Extension(init_mfs, boundary_operator, extension_operator)
         Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
         problem = MinimizationProblem(Jred)
@@ -133,7 +133,7 @@ if __name__ == "__main__":
         print("FSI_main completed", flush=True)
 
     boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(lb_off))
-    extension_operator = extension_operators[extension_option](mesh, boundaries, params, opt_inner_bdry=True)
+    extension_operator = extension_operators[extension_option](mesh, boundaries, params)
     dof_to_trafo = ctt.Extension(init_mfs, boundary_operator, extension_operator)
     deformation = dof_to_trafo.dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
     np.save("x0_result.npy", x0)

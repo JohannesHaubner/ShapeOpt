@@ -14,6 +14,9 @@ import shapeopt.Ipopt.ipopt_solver as ipopt_solver
 from shapeopt.Constraints import constraints
 from shapeopt.Control_to_Trafo import Extension
 from shapeopt.Reduced_Objective import reduced_objectives
+from shapeopt.Control_to_Trafo.Extension_Operator import extension_operators
+from shapeopt.Control_to_Trafo.Boundary_Operator import boundary_operators
+import shapeopt.Control_to_Trafo.dof_to_trafo as ctt
 
 stop_annotating()
 
@@ -23,7 +26,7 @@ path_mesh = str(here) + "/mesh"
 boundary_option = 'laplace_beltrami'
 extension_option = 'linear_elasticity'
 # governing equations
-application = 'stokes' #'fluid structure' needs to be tested: if no fluid domain assigned --> error since no fluid part of domain
+application = 'stokes' #if no fluid domain assigned --> error since no fluid part of domain
 # constraints
 constraint_ids = ['volume', 'barycenter'] #needs to be a list
 
@@ -54,6 +57,10 @@ domains = init_mfs.get_domains()
 params = init_mfs.get_params()
 dnormal = init_mfs.get_dnormalf()
 
+boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(0.0))
+extension_operator = extension_operators[extension_option](mesh, boundaries, params)
+dof_to_trafo = ctt.Extension(init_mfs, boundary_operator, extension_operator)
+
 #function space in which the control lives
 Vd = init_mfs.get_Vd()
 Vn = init_mfs.get_Vn()
@@ -67,7 +74,7 @@ d0 = interpolate(Constant(('0.0','0.0')), Vn)
 param["Vol_DmO"] = assemble(v*dx)
 param["Vol_O"] = param["Vol_D"] - param["Vol_DmO"]
 bo = param["Bary_O"]
-bc = constraints['barycenter'](init_mfs, param, boundary_option, extension_option).eval(x0)
+bc = constraints['barycenter'](init_mfs, param, dof_to_trafo).eval(x0)
 param["Bary_O"] = np.add(bc, bo)
 
 # solve optimization problem
@@ -86,7 +93,7 @@ param["lb_off_p"] = 1.0
 
 for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:  #[1e0, 0.5, 0.25, 0.125, 0.1, 0.05, 0.025, 0.0125, 0.01, 0.005, 0.0025, 0.00125, 0.001, 0.0001, 0.00001, 1e-6]:
 
-  deformation = Extension(init_mfs, param, boundary_option='laplace_beltrami', extension_option='linear_elasticity').dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
+  deformation = dof_to_trafo.dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
   #defo = project(deformation, Vn)
   ALE.move(mesh, deformation, annotate=False)
   if deform_mesh == True:
@@ -127,6 +134,9 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
   dnormal = init_mfs.get_dnormalf()
   if deform_mesh == True:
     bdfile << domains
+  boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(0.0))
+  extension_operator = extension_operators[extension_option](mesh, boundaries, params)
+  dof_to_trafo = ctt.Extension(init_mfs, boundary_operator, extension_operator)
 
   Vd = init_mfs.get_Vd()
   Vn = init_mfs.get_Vn()
@@ -142,7 +152,7 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
   param["lb_off_p"] = Constant(lb_off)
   Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
   problem = MinimizationProblem(Jred)
-  IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, boundary_option, extension_option)
+  IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, dof_to_trafo)
   x, info = IPOPT.solve(x0)
   x0 = x
 
@@ -157,7 +167,7 @@ xdmf.write(new_mesh)
 xdmf2.write(new_boundaries)
 xdmf3.write(new_domains)
 
-deformation = Extension(init_mfs, param, boundary_option='laplace_beltrami', extension_option='linear_elasticity').dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
+deformation = dof_to_trafo.dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
 defo = project(deformation, Vn)
 ALE.move(mesh, defo, annotate=False)
 bdfile << defo

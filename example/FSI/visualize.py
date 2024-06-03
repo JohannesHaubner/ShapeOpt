@@ -1,7 +1,7 @@
 plot_shapes = True         # generate the two left figures in Fig. 3
 generate_table_opt = True     # generate Table 1
-run_forward_opt = True     # output needed for the next two options
-rerun_simulation = True
+run_forward_opt = False     # output needed for the next two options
+rerun_simulation = False
 generate_dp = True        # generate the right plot of Fig. 3
 generate_mp4 = True        # generate mp4 of the time dependent results
 
@@ -113,7 +113,7 @@ if generate_dp:
         times_list.append(np.loadtxt(str_ + "/times.txt"))
         dy = np.loadtxt(str_ + "/displacementy.txt")
         if i == foldernames[1]:
-            dy += points[1].array()[1] - points[0].array()[0]
+            dy += points[1][1] - points[0][1]
         displacement_list.append(dy)
 
     plot_displacement(displacement_list, times_list,
