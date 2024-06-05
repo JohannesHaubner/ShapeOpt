@@ -39,8 +39,7 @@ def run_forward(initial : bool, T : float, deltat : float, path_mesh : str, outp
     # set and load parameters
     param["T"] = T
     param["deltat"] = deltat
-
-
+    
     #load mesh
     init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh, load_mesh=load_mesh)
     mesh = init_mfs.get_mesh()

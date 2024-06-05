@@ -1,7 +1,7 @@
 plot_shapes = True         # generate the two left figures in Fig. 3
 generate_table_opt = True     # generate Table 1
-run_forward_opt = False     # output needed for the next two options
-rerun_simulation = False
+run_forward_opt = True     # output needed for the next two options
+rerun_simulation = True
 generate_dp = True        # generate the right plot of Fig. 3
 generate_mp4 = True        # generate mp4 of the time dependent results
 
@@ -15,14 +15,14 @@ import visualization.colormaps
 from visualization.visualize_shapes import visualize_shape
 
 print('__Set options__')
-option = 1 # 0: optimization of obstacle, 1: optimzation of interface
+option = 0 # 0: optimization of obstacle, 1: optimzation of interface
 if option == 0:
     path_mesh = str(here) + "/" + "mesh"
     if plot_shapes:
         fnames = ["mesh/mesh_triangles.xdmf", "mesh/domains_final.xdmf"] # these files are in folder /example/FSI/
-        outname = ["mesh/init_plog.png", "mesh/final_plot.png"]
+        outname = ["mesh/init_plot.png", "mesh/final_plot.png"]
     if generate_table_opt:
-        txtname = "terminal_jun1.txt"   # terminal output of simulation needs to be saved to /example/FSI/txtname
+        txtname = "terminal_jun3_.txt"   # terminal output of simulation needs to be saved to /example/FSI/txtname
         txtout = 'mesh/table.txt'
         txtout_all = 'mesh/to_shortened.txt'
     if generate_dp:
@@ -76,7 +76,7 @@ if rerun_simulation:
         initial = [True, False]
 
     if False in initial:
-        folder = str(here) + "/mesh3"
+        folder = path_mesh
         os.chdir(folder)
         os.system("cp domains_final.h5 domains_new.h5 && cp domains_final.xdmf domains_new.xdmf")
         os.system("cp facet_mesh_final.h5 facet_mesh_new.h5 && cp facet_mesh_final.xdmf facet_mesh_new.xdmf")
