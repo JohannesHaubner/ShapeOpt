@@ -3,28 +3,28 @@
     \arrayrulecolor{white}
     \rowcolor{tumblues2}
     \textcolor{white}{iteration} & \textcolor{white}{objective}& \textcolor{white}{objective \mbox{ \small w/o reg. \& pen.}}& \textcolor{white}{dual infeasibility} & \textcolor{white}{linesearch-steps} &\\[0.5ex]
-0 & $1.5986e+02$ & $1.5986e+02$ & $2.25e+01$ & $0$ & \\[0.5ex]
+0 & $1.5985e+02$ & $1.5985e+02$ & $3.89e+01$ & $0$ & \\[0.5ex]
     \rowcolor{tumg}
-1 & $1.1807e+02$ & $1.1524e+02$ & $9.63e+00$ & $2$ & \\[0.5ex]
-2 & $1.1412e+02$ & $1.1037e+02$ & $4.13e+00$ & $1$ & \\[0.5ex]
+1 & $1.4515e+02$ & $1.4402e+02$ & $1.84e+01$ & $10$ & \\[0.5ex]
+2 & $1.3550e+02$ & $1.3319e+02$ & $7.23e+00$ & $2$ & \\[0.5ex]
     \rowcolor{tumg}
-3 & $1.1272e+02$ & $1.0941e+02$ & $2.46e+00$ & $1$ & \\[0.5ex]
-4 & $1.1037e+02$ & $1.0700e+02$ & $1.22e+01$ & $3$ & \\[0.5ex]
+3 & $1.3273e+02$ & $1.3072e+02$ & $5.29e+00$ & $1$ & \\[0.5ex]
+4 & $1.2792e+02$ & $1.2638e+02$ & $1.76e+00$ & $1$ & \\[0.5ex]
     \rowcolor{tumg}
-5 & $1.0771e+02$ & $1.0398e+02$ & $4.28e+00$ & $1$ & \\[0.5ex]
-6 & $1.0749e+02$ & $1.0353e+02$ & $4.37e+00$ & $1$ & \\[0.5ex]
+5 & $1.2761e+02$ & $1.2584e+02$ & $6.31e-01$ & $1$ & \\[0.5ex]
+6 & $1.2757e+02$ & $1.2581e+02$ & $5.76e-01$ & $1$ & \\[0.5ex]
     \rowcolor{tumg}
-7 & $1.0747e+02$ & $1.0345e+02$ & $1.44e+00$ & $1$ & \\[0.5ex]
-8 & $1.0743e+02$ & $1.0340e+02$ & $1.95e-01$ & $1$ & \\[0.5ex]
+7 & $1.2745e+02$ & $1.2552e+02$ & $5.94e-01$ & $1$ & \\[0.5ex]
+8 & $1.2741e+02$ & $1.2532e+02$ & $1.15e-01$ & $1$ & \\[0.5ex]
     \rowcolor{tumg}
-9 & $1.0735e+02$ & $1.0327e+02$ & $1.07e+00$ & $1$ & \\[0.5ex]
-10 & $1.0726e+02$ & $1.0310e+02$ & $4.34e-01$ & $1$ & \\[0.5ex]
+9 & $1.2741e+02$ & $1.2530e+02$ & $4.86e-02$ & $1$ & \\[0.5ex]
+10 & $1.2741e+02$ & $1.2528e+02$ & $4.41e-02$ & $1$ & \\[0.5ex]
     \rowcolor{tumg}
-11 & $1.0724e+02$ & $1.0311e+02$ & $1.39e+00$ & $3$ & \\[0.5ex]
-12 & $1.0723e+02$ & $1.0324e+02$ & $6.10e-01$ & $1$ & \\[0.5ex]
+11 & $1.2741e+02$ & $1.2530e+02$ & $7.01e-02$ & $1$ & \\[0.5ex]
+12 & $1.2741e+02$ & $1.2525e+02$ & $2.21e-02$ & $1$ & \\[0.5ex]
     \rowcolor{tumg}
-13 & $1.0723e+02$ & $1.0323e+02$ & $1.18e-01$ & $2$ & \\[0.5ex]
-14 & $1.0723e+02$ & $1.0323e+02$ & $7.88e-03$ & $1$ & \\[0.5ex]
+13 & $1.2741e+02$ & $1.2527e+02$ & $8.26e-03$ & $1$ & \\[0.5ex]
+14 & $1.2741e+02$ & $1.2527e+02$ & $5.79e-04$ & $1$ & \\[0.5ex]
     \rowcolor{tumg}
   \end{tabularx}
   \caption{Optimization results when IPOPT converges up to an overall NLP tolerance of $10^{-3}$. The table shows the objective function value, the objective function value without the regularization and penalization term, the dual infeasibility and the number of linesearch-steps per iteration.}
