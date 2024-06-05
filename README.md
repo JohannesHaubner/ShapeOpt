@@ -60,28 +60,6 @@ To obtain the tables and figures we ran (with setting the corresponding options 
 mpiexec -n 4 python3 example/FSI/visualize.py
 ```
 
-### HPC Clusters
-
-(The following might be outdated:)
-
-If the code is executed on clusters, we currently work with a version of IPOPT that is compiled against HSL (and also works in parallel). To do so, the Coin-HSL sources archive needs to be added such that it becomes shapeopt/hsl/coinhsl. Afterwards we build the docker image via Dockerfile_hsl and save it to a tar.gz file via:
-```
-docker save myimage:latest | gzip > shapeopt_hsl.tar.gz
-``` 
-Then we copy the shapeopt_hsl.tar.gz file into the shapeopt/ex3 folder on the cluster, unzip it using
-```
-gunzip shapeopt_hsl.tar.gz
-```
-and run the code using
-```
-sbatch run.sh
-```
-If shapeopt/ex3/shapeopt.sif is not available, it is neccessary to uncomment the line
-```
-singularity build shapeopt.sif docker-arxiv://shapopt_hsl.tar
-```
-in the run.sh script.
-
 ## Running Tests
 
 To run tests, run the following command
@@ -104,7 +82,7 @@ operators and extension operators.
 
 ### Reduced_Objective
 After having defined the transformation, the reduced objective and its gradient (computed using dolfin-adjoint) 
-can be evaluated. An example for a simple Stokes flow is given.
+can be evaluated. An example for a simple Stokes flow and Fluid-Structure Interaction is given.
 
 ### Constraints
 Collection of constraint for the optimization problem: volume, barycenter, determinant.

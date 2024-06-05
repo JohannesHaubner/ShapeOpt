@@ -2,11 +2,15 @@ import pyvista
 import numpy as np
 from .colormaps import cmap_1, cmap_2
 
+# specify output directory 
+from pathlib import Path
+here = Path(__file__).parent.parent.resolve()
+
 def make_movie(foldername : str, gifname : str):
 
     # specify filename and read mesh    
-    filename = "../Output/Forward/" + foldername + "/velocity2.pvd"
-    filename2 = "../Output/Forward/" + foldername + "/char_sol.pvd"
+    filename = str(here) + "/Output/Forward/" + foldername + "/velocity2.pvd"
+    filename2 = str(here) + "/Output/Forward/" + foldername + "/char_sol.pvd"
     print(filename)
 
     reader = pyvista.get_reader(filename)
