@@ -97,5 +97,5 @@ Solving the constraint optimization problem is performed using Ipopt.
 Here, different tools are collect, e.g. initialization of function spaces, save and load objects, etc.
 
 ## Acknowledgement
-We would like to acknowledge [Jørgen S. Dokken](http://jsdokken.com/) and [Henrik N. Finsberg](https://finsberg.github.io/) for the help, support and discussions on reproducibility.
+We would like to acknowledge [Jørgen S. Dokken](http://jsdokken.com/), [Henrik N. Finsberg](https://finsberg.github.io/) and [Simon W. Funke](https://github.com/funsim) for the help, support and discussions on reproducibility.
 
