@@ -98,7 +98,7 @@ Here, different tools are collect, e.g. initialization of function spaces, save 
 
 ## Authors
 - [Johannes Haubner](https://www.github.com/JohannesHaubner)
-- [Michael Ulbrich]([https://www-m1.ma.tum.de/bin/view/Lehrstuhl/MichaelUlbrich](https://www.math.cit.tum.de/math/personen/professuren/ulbrich-michael/))
+- [Michael Ulbrich](https://www-m1.ma.tum.de/bin/view/Lehrstuhl/MichaelUlbrich](https://www.math.cit.tum.de/math/personen/professuren/ulbrich-michael/)
 
 ## Acknowledgement
 We would like to acknowledge [Jørgen S. Dokken](http://jsdokken.com/), [Henrik N. Finsberg](https://finsberg.github.io/) and [Simon W. Funke](https://github.com/funsim) for the help, support and discussions on reproducibility.
