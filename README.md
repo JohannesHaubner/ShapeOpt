@@ -17,7 +17,7 @@ ShapeOpt is based on FEniCS, dolfin-adjoint, IPOPT, cyipopt, pygmsh.
 
 Code repository for the manuscript
 
->J. Haubner, M. Ulbrich: Advanced Numerical Methods for Shape Optimal Design of Fluid-Structure Interaction Problems. 
+>J. Haubner, M. Ulbrich: Numerical Methods for Shape Optimal Design of Fluid-Structure Interaction Problems. 
 
 based on the implementation for the PhD thesis 
 
