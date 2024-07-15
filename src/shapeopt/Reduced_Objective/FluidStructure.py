@@ -17,10 +17,11 @@ if not os.path.exists(save_directory):
 stop_annotating()
 
 class FluidStructure(ReducedObjective):
-    def __init__(self):
+    def __init__(self, drag=True):
         super().__init__()
+        self.drag = drag
 
-    def meanflow_function(self, mesh, boundaries, params):
+    def meanflow_function(self, mesh, boundaries, params, drag):
         # compute function that is (1, 0) on the obstacles boundary and 0 on the outer boundary
         V1 = VectorElement("CG", mesh.ufl_cell(), 1)
         VC = FunctionSpace(mesh, V1)
@@ -28,13 +29,19 @@ class FluidStructure(ReducedObjective):
         u = TrialFunction(VC)
         psiu = TestFunction(VC)
 
-        bc1 = DirichletBC(VC, Constant((1.0, 0.0)), boundaries, params["interface"])
-        bc2 = DirichletBC(VC, Constant((0.0, 0.0)), boundaries, params["noslip"])
-        bc3 = DirichletBC(VC, Constant((1.0, 0.0)), boundaries, params["noslip_obstacle"])
-        bc4 = DirichletBC(VC, Constant((0.0, 0.0)), boundaries, params["inflow"])
-        bc5 = DirichletBC(VC, Constant((0.0, 0.0)), boundaries, params["outflow"])
-        bc6 = DirichletBC(VC, Constant((1.0, 0.0)), boundaries, params["obstacle"])
-        bcs = [bc1, bc2, bc3, bc4, bc5, bc6]
+        if drag:
+            func = Constant((1.0, 0.0))
+        else:
+            func = Constant((0.0, 1.0))
+
+        bcs = []
+        for i in ["interface", "noslip_obstacle", "obstacle"]:
+            if i in params:
+                bcs.append(DirichletBC(VC, func, boundaries, params[i]))
+        for j in ["noslip", "inflow", "outflow"]:
+            if j in params:
+                bcs.append(DirichletBC(VC, Constant((0.0, 0.0)), boundaries, params[j]))
+
 
         a = inner(grad(u), grad(psiu))*dx(mesh)
         L = Constant(0.0)*psiu[0]*dx(mesh)
@@ -83,7 +90,7 @@ class FluidStructure(ReducedObjective):
         U = FunctionSpace(mesh, V1)
         P = FunctionSpace(mesh, S1)
 
-        phiv = self.meanflow_function(mesh, boundaries, params)
+        phiv = self.meanflow_function(mesh, boundaries, params, drag=self.drag)
 
         func = interpolate(Constant(1.0), P)
         bc_inter = DirichletBC(P, Constant(0.0), boundaries, params["interface"])
@@ -343,19 +350,30 @@ class FluidStructure(ReducedObjective):
                     u_p = ALE.move(mesh, u_p_inv)
 
             # boundary conditions
-            bc_in_0_1 = DirichletBC(W.sub(0), V_01, boundaries, params["inflow"])  # in   v
-            bc_in_0_2 = DirichletBC(W.sub(0), V_02, boundaries, params["inflow"])  # in   v
-            bc_ns_0 = DirichletBC(W.sub(0), V_1, boundaries, params["noslip"])  # ns   v
-            bc_d_0 = DirichletBC(W.sub(0), V_1, boundaries, params["obstacle"])  # ns   v
-            bc_in_2 = DirichletBC(W.sub(2), V_1, boundaries, params["inflow"])  # in   u
-            bc_ns_2 = DirichletBC(W.sub(2), V_1, boundaries, params["noslip"])  # ns   u
-            bc_d_2 = DirichletBC(W.sub(2), V_1, boundaries, params["obstacle"])  # ns   u
-            bc_nso_0 = DirichletBC(W.sub(0), V_1, boundaries, params["noslip_obstacle"])  # ns   v
-            bc_nso_2 = DirichletBC(W.sub(2), V_1, boundaries, params["noslip_obstacle"])  # ns   v
+            bc1 = []
+            bc2 = []
+            if "inflow" in params:
+              bc1.append(DirichletBC(W.sub(0), V_01, boundaries, params["inflow"]))  # in   v
+              bc2.append(DirichletBC(W.sub(0), V_02, boundaries, params["inflow"]))  # in   v
+              bc1.append(DirichletBC(W.sub(2), V_1, boundaries, params["inflow"]))  # in   u
+              bc2.append(DirichletBC(W.sub(2), V_1, boundaries, params["inflow"]))  # in   u
+            if "obstacle" in params:
+                bc1.append(DirichletBC(W.sub(0), V_1, boundaries, params["obstacle"]))  # ns   v
+                bc2.append(DirichletBC(W.sub(0), V_1, boundaries, params["obstacle"]))  # ns   v
+                bc1.append(DirichletBC(W.sub(2), V_1, boundaries, params["obstacle"]))  # ns   u
+                bc2.append(DirichletBC(W.sub(2), V_1, boundaries, params["obstacle"]))  # ns   u
+            if "noslip" in params:
+                bc1.append(DirichletBC(W.sub(0), V_1, boundaries, params["noslip"]))  # ns   v
+                bc2.append(DirichletBC(W.sub(0), V_1, boundaries, params["noslip"]))  # ns   v
+                bc1.append(DirichletBC(W.sub(2), V_1, boundaries, params["noslip"]))  # ns   u
+                bc2.append(DirichletBC(W.sub(2), V_1, boundaries, params["noslip"]))  # ns   u
+            if "noslip_obstacle" in params:
+                bc1.append(DirichletBC(W.sub(0), V_1, boundaries, params["noslip_obstacle"]))  # ns   v
+                bc1.append(DirichletBC(W.sub(2), V_1, boundaries, params["noslip_obstacle"]))  # ns   u
+                bc2.append(DirichletBC(W.sub(0), V_1, boundaries, params["noslip_obstacle"]))  # ns   v
+                bc2.append(DirichletBC(W.sub(2), V_1, boundaries, params["noslip_obstacle"]))  # ns   u
 
             # update pressure boundary condition
-            bc1 = [bc_in_0_1, bc_ns_0, bc_d_0, bc_in_2, bc_ns_2, bc_d_2, bc_nso_0, bc_nso_2]
-            bc2 = [bc_in_0_2, bc_ns_0, bc_d_0, bc_in_2, bc_ns_2, bc_d_2, bc_nso_0, bc_nso_2]
             Jac = derivative(F, w)
             problem1 = NonlinearVariationalProblem(F, w, bc1, J=Jac)
             problem2 = NonlinearVariationalProblem(F, w, bc2, J=Jac)
@@ -367,7 +385,6 @@ class FluidStructure(ReducedObjective):
 
             solver1.parameters.update(solver_parameters)
             solver2.parameters.update(solver_parameters)
-
 
             while t < T - 0.5 * deltat:
                 print("t = \t", t + deltat, "\n", flush=True)

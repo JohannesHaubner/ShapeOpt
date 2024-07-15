@@ -150,9 +150,10 @@ for lb_off in [1e0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 1e-6]:# [1e0, 0.1, 0.01, 
   set_working_tape(Tape())
   #param["reg"] = reg
   param["lb_off_p"] = Constant(lb_off)
-  Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
-  problem = MinimizationProblem(Jred)
-  IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, dof_to_trafo)
+  Jred = reduced_objectives[application]()
+  rf = Jred.eval(mesh, domains, boundaries, params, param, red_func=True)
+  problem = MinimizationProblem(rf)
+  IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, Jred, constraint_ids, dof_to_trafo)
   x, info = IPOPT.solve(x0)
   x0 = x
 

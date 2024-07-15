@@ -19,7 +19,7 @@ import cyipopt
 
 
 class IPOPTSolver(OptimizationSolver):
-    def __init__(self, problem, Mesh_, param, application, constraint_ids : list, dof_to_trafo, parameters=None):
+    def __init__(self, problem, Mesh_, param, red_obj, constraint_ids : list, dof_to_trafo, parameters=None):
         try:
             import cyipopt
         except ImportError:
@@ -38,7 +38,7 @@ class IPOPTSolver(OptimizationSolver):
         self.rf = self.problem.reduced_functional
         self.dmesh = self.Mesh_.get_design_boundary_mesh()
         self.dof_to_trafo = dof_to_trafo
-        self.application = application
+        self.red_obj = red_obj
         self.constraint_ids = constraint_ids
         self.problem_obj = self.create_problem_obj(self)
                
@@ -94,7 +94,7 @@ class IPOPTSolver(OptimizationSolver):
             self.Vd = outer.Vd
             self.scale = outer.scalingfactor
             self.dof_to_trafo = outer.dof_to_trafo
-            self.application = outer.application
+            self.red_obj = outer.red_obj
             self.constraint_ids = outer.constraint_ids
             self.mesh = self.Mesh_.get_mesh()
             self.domains = self.Mesh_.get_domains()
@@ -146,7 +146,7 @@ class IPOPTSolver(OptimizationSolver):
             mesh_quality = self.check_mesh_quality(deformation)
             if mesh_quality:
                 # move mesh in direction of deformation
-                j1 = reduced_objectives[self.application].eval(self.mesh, self.domains, self.boundaries, self.params, self.param,
+                j1 = self.red_obj.eval(self.mesh, self.domains, self.boundaries, self.params, self.param,
                                             control=deformation, flag=False)  #
                 #j1 =  self.rfn(deformation.vector()) #self.rfn(deformation)
 
@@ -169,10 +169,10 @@ class IPOPTSolver(OptimizationSolver):
             mesh_quality = self.check_mesh_quality(deformation)
             if not mesh_quality:
                 print('Warning: Gradient is evaluated at a point, where transformed mesh is degenerated. Check if your parameter setting is reasonable, or implement a routine that can deal with gradient evaluations for degenerated meshes.')
-                j, dJf = reduced_objectives[self.application].eval(self.mesh, self.domains, self.boundaries, self.params,
+                j, dJf = self.red_obj.eval(self.mesh, self.domains, self.boundaries, self.params,
                                                 self.param, flag=True, control=deformation, fallback_strategy=True)
             else: # compute gradient
-                j, dJf = reduced_objectives[self.application].eval(self.mesh, self.domains, self.boundaries, self.params,
+                j, dJf = self.red_obj.eval(self.mesh, self.domains, self.boundaries, self.params,
                                                 self.param, flag=True, control=deformation)
                 #new_params = [self.__copy_data(p.data()) for p in self.rfn.controls]
                 #self.rfn.set_local(new_params, deformation.vector().get_local())

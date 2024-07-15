@@ -231,6 +231,8 @@ RUN python3 -m pip install pygmsh
 RUN apt-get update
 RUN apt-get -y install libglu1 libxcursor-dev libxft2 libxinerama1 libfltk1.3-dev libfreetype6-dev libgl1-mesa-dev libocct-foundation-dev libocct-data-exchange-dev
 
+RUN /bin/bash -l -c "pip3 install h5py"
+
 ## Install Ipopt
 WORKDIR /usr/local
 RUN git clone https://github.com/coin-or/Ipopt.git

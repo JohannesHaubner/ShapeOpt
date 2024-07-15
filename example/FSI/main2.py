@@ -141,9 +141,10 @@ if __name__ == "__main__":
         boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(lb_off))
         extension_operator = extension_operators[extension_option](mesh, boundaries, params, opt_inner_bdry=True)
         dof_to_trafo = ctt.Extension(init_mfs, boundary_operator, extension_operator)
-        Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
-        problem = MinimizationProblem(Jred)
-        IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids, dof_to_trafo)
+        Jred = reduced_objectives[application]()
+        rf = Jred.eval(mesh, domains, boundaries, params, param, red_func=True)
+        problem = MinimizationProblem(rf)
+        IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, Jred, constraint_ids, dof_to_trafo)
         x, info = IPOPT.solve(x0)
         x0 = x
 
