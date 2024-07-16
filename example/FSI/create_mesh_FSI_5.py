@@ -8,8 +8,8 @@ import numpy as np
 from pathlib import Path
 here = Path(__file__).parent.resolve()
 
-if not os.path.exists(str(here) + "/mesh4"):
-    os.makedirs(str(here) + "/mesh4")
+if not os.path.exists(str(here) + "/mesh5"):
+    os.makedirs(str(here) + "/mesh5")
 
 # resolution
 resolution = 0.025  #0.05 #1 # 0.005 #0.1
@@ -84,8 +84,8 @@ geom_prop = {"barycenter_hold_all_domain": [0.5*L, 0.5*H],
              "heigth_pipe": H,
              "barycenter_obstacle": [ c[0], c[1]],
              }
-np.save(str(here) + '/mesh4/params.npy', params)
-np.save(str(here) + '/mesh4/geom_prop.npy', geom_prop)
+np.save(str(here) + '/mesh5/params.npy', params)
+np.save(str(here) + '/mesh5/geom_prop.npy', geom_prop)
 
 # Initialize empty geometry using the build in kernel in GMSH
 geometry = pygmsh.geo.Geometry()
@@ -144,12 +144,12 @@ model.add_physical([plane_surface2], "solid") # mark solid domain with 7
 
 geometry.generate_mesh(dim=2)
 import gmsh
-gmsh.write(str(here) + "/mesh4/mesh.msh")
+gmsh.write(str(here) + "/mesh5/mesh.msh")
 gmsh.clear()
 geometry.__exit__()
 
 import meshio
-mesh_from_file = meshio.read(str(here) + "/mesh4/mesh.msh")
+mesh_from_file = meshio.read(str(here) + "/mesh5/mesh.msh")
 
 import numpy
 def create_mesh(mesh: meshio.Mesh, cell_type: str, data_name: str = "name_to_read",
@@ -162,10 +162,10 @@ def create_mesh(mesh: meshio.Mesh, cell_type: str, data_name: str = "name_to_rea
     return out_mesh #https://fenicsproject.discourse.group/t/what-is-wrong-with-my-mesh/7504/8
 
 line_mesh = create_mesh(mesh_from_file, "line", prune_z=True)
-meshio.write(str(here) + "/mesh4/facet_mesh.xdmf", line_mesh)
+meshio.write(str(here) + "/mesh5/facet_mesh.xdmf", line_mesh)
 
 triangle_mesh = create_mesh(mesh_from_file, "triangle", prune_z=True)
-meshio.write(str(here) + "/mesh4/mesh_triangles.xdmf", triangle_mesh)
+meshio.write(str(here) + "/mesh5/mesh_triangles.xdmf", triangle_mesh)
 
 #mesh = line_mesh
 #mesh_boundary = meshio.Mesh(points=mesh.points,

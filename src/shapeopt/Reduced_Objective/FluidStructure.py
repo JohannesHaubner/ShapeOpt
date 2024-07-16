@@ -17,9 +17,10 @@ if not os.path.exists(save_directory):
 stop_annotating()
 
 class FluidStructure(ReducedObjective):
-    def __init__(self, drag=True):
+    def __init__(self, drag=True, min=True):
         super().__init__()
         self.drag = drag
+        self.min = min
 
     def meanflow_function(self, mesh, boundaries, params, drag):
         # compute function that is (1, 0) on the obstacles boundary and 0 on the outer boundary
@@ -32,7 +33,10 @@ class FluidStructure(ReducedObjective):
         if drag:
             func = Constant((1.0, 0.0))
         else:
-            func = Constant((0.0, 1.0))
+            if self.min:
+                func = Constant((0.0, 1.0))
+            else:
+                func = Constant((0.0, -1.0))
 
         bcs = []
         for i in ["interface", "noslip_obstacle", "obstacle"]:

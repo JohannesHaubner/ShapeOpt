@@ -10,16 +10,17 @@ colors = [np.asarray([218, 215, 213])*1./255,
           np.asarray([227, 114, 34])*1./255
           ]
 
-def plot_displacement(list, times, str, colors, foldernames):
+def plot_displacement(list, times, str, colors, foldernames, xrange, yrange):
     if False: #len(list)>2:
         colors = [(len(list)-i)/(len(list))*colors[0] + i/(len(list))*colors[1] for i in range(len(list)+1)]
     for i in range(len(list)):
         #pl.plot(times[i], list[i], linewidth=0.6, label=foldernames[i])
         pl.plot(times[i], list[i], color = colors[i], linewidth=0.6, label=foldernames[i])
-    pl.axis([0, 30, -0.1, 0.1])
+    pl.axis([xrange[0], xrange[1], yrange[0],yrange[1]])
     pl.legend(loc='lower left')
     pl.xlabel("time")
-    pl.ylabel("y-displacement of tip of the flap")
+    pl.ylabel("y-displacement of tip of elastic structure")
+    pl.tight_layout()
     pl.savefig(str)
     pl.close()
 
