@@ -24,8 +24,8 @@ parameters["ghost_mode"] = "shared_facet"
 stop_annotating()
 
 # specify path of directory that contains the files 'mesh_triangles.xdmf' and 'facet_mesh.xdmf'
-path_mesh = str(here) + "/mesh4"
-path_output = str(here) + "/interface_liftmax"
+path_mesh = str(here) + "/mesh6"
+path_output = str(here) + "/interface_liftmin_round_beta_1"
 # specify boundary and extension operator (use Extension.print_options())
 boundary_option = 'laplace_beltrami'
 extension_option = 'linear_elasticity'
@@ -52,7 +52,7 @@ param = {"reg": 10, # regularization parameter
          "T": 7.5, # simulation horizon for Fluid-Structure interaction simulation
          "deltat": 0.01, # time step size
          "gammaP": 1e-3, # penalty parameter for determinant constraint violation
-         "output_path": path_output + "/Output_liftmax/", # folder where intermediate results are stored
+         "output_path": path_output + "/Output_liftmin_round_beta_1em3/", # folder where intermediate results are stored
          }
 
 
@@ -141,7 +141,7 @@ if __name__ == "__main__":
         boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(lb_off))
         extension_operator = extension_operators[extension_option](mesh, boundaries, params, opt_inner_bdry=True)
         dof_to_trafo = ctt.Extension(init_mfs, boundary_operator, extension_operator)
-        Jred = reduced_objectives[application](drag=False, min=False)
+        Jred = reduced_objectives[application](drag=False)
         rf = Jred.eval(mesh, domains, boundaries, params, param, red_func=True, point=[0.2, 0.4]) #drag = False --> lift instead of drag
         problem = MinimizationProblem(rf)
         IPOPT = ipopt_solver.IPOPTSolver(problem, init_mfs, param, Jred, constraint_ids, dof_to_trafo)
