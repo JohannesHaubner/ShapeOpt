@@ -168,14 +168,14 @@ class FluidStructure(ReducedObjective):
 
         J = 0
 
-        if not fallback_strategy:
+        tu = interpolate(Expression(("0.0","0.0"), name = 'Control', degree =1), VC)
+        if control:
+            tu.vector().set_local(control.vector().get_local())
+            tu.vector().apply("")
+            if flag == True:
+                print(tu.vector().get_local(),flush=True)
 
-            tu = interpolate(Expression(("0.0","0.0"), name = 'Control', degree =1), VC)
-            if control:
-                tu.vector().set_local(control.vector().get_local())
-                tu.vector().apply("")
-                if flag == True:
-                    print(tu.vector().get_local(),flush=True)
+        if not fallback_strategy:
 
             # test and trial functions
             w = Function(W, name="state")
