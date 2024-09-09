@@ -137,10 +137,10 @@ model.add_physical([channel_lines[0]], "inflow") # mark inflow boundary with 1
 model.add_physical([channel_lines[2]], "outflow") # mark outflow boundary with 2
 model.add_physical([channel_lines[1], channel_lines[3]], "walls") # mark walls with 3
 model.add_physical([fl4], "noslip_obstacle")
-model.add_physical([circle1, circle2], "obstacle") # mark obstacle with 4
-model.add_physical([fl1, fl2, fl3], "interface") # mark interface with 5
-model.add_physical([plane_surface], "fluid") # mark fluid domain with 6
-model.add_physical([plane_surface2], "solid") # mark solid domain with 7
+model.add_physical([circle1, circle2], "obstacle") # mark obstacle with 5
+model.add_physical([fl1, fl2, fl3], "interface") # mark interface with 6
+model.add_physical([plane_surface], "fluid") # mark fluid domain with 7
+model.add_physical([plane_surface2], "solid") # mark solid domain with 8
 
 geometry.generate_mesh(dim=2)
 import gmsh

@@ -36,7 +36,7 @@ constraint_ids = ['volume_solid'] #needs to be a list
 
 # set and load parameters
 geom_prop = np.load(path_mesh + '/geom_prop.npy', allow_pickle='TRUE').item()
-param = {"reg": 10, # regularization parameter
+param = {"reg": 0.1, # regularization parameter
          "lb_off_p": Constant(1.0), #Laplace Beltrami weighting
          "Vol_D": geom_prop["volume_hold_all_domain"], # volume parameter
          "Bary_D": geom_prop["barycenter_hold_all_domain"], # barycenter
