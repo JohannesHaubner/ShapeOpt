@@ -78,8 +78,9 @@ bc = constraints['barycenter'](init_mfs, param, dof_to_trafo).eval(x0)
 param["Bary_O"] = np.add(bc, bo)
 
 # solve optimization problem
-Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
-problem = MinimizationProblem(Jred)
+Jred = reduced_objectives[application]()
+rf = Jred.eval(mesh, domains, boundaries, params, param, red_func=True)
+problem = MinimizationProblem(rf)
 
 if not os.path.exists(path_mesh + "/Output"):
     os.makedirs(path_mesh + "/Output")
