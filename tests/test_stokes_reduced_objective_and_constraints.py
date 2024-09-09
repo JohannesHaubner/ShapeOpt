@@ -68,5 +68,5 @@ def test_constraints(id):
 
 def test_stokes():
     print('test stokes')
-    order, diff = reduced_objectives[application].test(init_mfs, param)
+    order, diff = reduced_objectives[application]().test(init_mfs, param)
     assert order > 1.8 or diff < 1e-12

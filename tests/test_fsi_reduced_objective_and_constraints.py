@@ -81,7 +81,7 @@ def test_constraints(id):
 @pytest.mark.skip(reason="this test takes too much time")
 def test_fsi():
     print('test fsi')
-    order, diff = reduced_objectives[application].test(init_mfs, param)
+    order, diff = reduced_objectives[application]().test(init_mfs, param)
     assert order > 1.8 or diff < 1e-12
 
 if __name__ == "__main__":

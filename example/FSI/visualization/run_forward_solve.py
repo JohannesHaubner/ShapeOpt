@@ -28,7 +28,7 @@ stop_annotating()
 # initial or optimized geometry
 initial = True
 
-def run_forward(initial : bool, T : float, deltat : float, path_mesh : str, output_folder : str, point : list):
+def run_forward(initial : bool, T : float, deltat : float, path_mesh : str, output_folder : str, point : list, drag : bool):
     if initial:
         load_mesh = False
         folder_name = "/" + output_folder 
@@ -76,7 +76,7 @@ def run_forward(initial : bool, T : float, deltat : float, path_mesh : str, outp
     set_working_tape(Tape())
     #param["reg"] = reg
 
-    Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True, visualize=True, vis_folder=folder_name, point=point)
+    Jred = reduced_objectives[application](drag).eval(mesh, domains, boundaries, params, param, red_func=True, visualize=True, vis_folder=folder_name, point=point)
 
     print('simulation finished')
     pass

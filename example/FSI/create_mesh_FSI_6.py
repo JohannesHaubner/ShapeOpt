@@ -7,36 +7,48 @@ import os
 from pathlib import Path
 here = Path(__file__).parent.resolve()
 
-if not os.path.exists(str(here) + "/mesh2"):
-    os.makedirs(str(here) + "/mesh2")
+if not os.path.exists(str(here) + "/mesh6"):
+    os.makedirs(str(here) + "/mesh6")
 
 # resolution
 resolution = 0.025  #0.05 #1 # 0.005 #0.1
 alp = 0.2
+alp2 = 0.5
 
 # geometric properties
 L = 2.5 #2.5 #20            # length of channel
 H = 0.41 #0.4 #6           # heigth of channel
 c = [0.2, 0.2, 0]  #[0.2, 0.2, 0] #[10, 3, 0]  # position of object
-r = 0.05 #0.05 #0.5 # radius of object
+r = 0.025 #0.05 #0.5 # radius of object
+
+tip = [0.3, 0.2, 0]
+cmt = [0.27, 0.2, 0] # where circle rounds tip (x coordinate between c[0] and tip[0])
+
+a = ((0.5*(tip[0] - c[0]))**2 - (0.5*(tip[0]+ c[0]))**2 + c[0]**2 - r**2)/(-2 * (0.5 * (tip[0] + c[0]) - c[0]))
+b1 = c[1] + np.sqrt(r**2 - (a - c[0])**2)
+b2 = c[1] - np.sqrt(r**2 - (a - c[0])**2)
+
+xfrac = (tip[0] - cmt[0])/(tip[0] - a)
+y1 = c[1] + xfrac * np.sqrt(r**2 - (a - c[0])**2)
+y2 = c[1] - xfrac * np.sqrt(r**2 - (a - c[0])**2)
+
+cm = [cmt[0] - xfrac * (a - c[0]), cmt[1], cmt[2]]
 
 # labels
-boundary_labels = [1, 2, 3, 4, 5, 6] # has to contain all labels for boundary parts
+boundary_labels = [1, 2, 3, 4, 5] # has to contain all labels for boundary parts
 inflow = 1
 outflow = 2
 walls = 3
 noslipobstacle = 4
-obstacle = 5
-interface = 6
-fluid = 7
-solid = 8
+interface = 5
+fluid = 6
+solid = 7
 
 bdry_labels = {
           "inflow" : inflow,
           "outflow": outflow,
           "noslip": walls,
           "noslip_obstacle": noslipobstacle,
-          "obstacle": obstacle,
           "interface": interface, 
       }
 
@@ -48,7 +60,7 @@ subdom_labels = {
 
 # Dictionary with facet-labels from the boundary of each subdomain
 subdomain_boundaries = {
-    "fluid": ("inflow", "outflow", "noslip", "obstacle", "interface"),
+    "fluid": ("inflow", "outflow", "noslip", "interface"),
     "solid": ("interface", "obstacle_solid"),
 }
 
@@ -56,7 +68,6 @@ params = {"inflow" : inflow,
           "outflow": outflow,
           "noslip": walls,
           "noslip_obstacle": noslipobstacle,
-          "obstacle": obstacle,
           "design": interface,
           "interface": interface,
           "mesh_parts": True,
@@ -78,8 +89,8 @@ geom_prop = {"barycenter_hold_all_domain": [0.5*L, 0.5*H],
              "heigth_pipe": H,
              "barycenter_obstacle": [ c[0], c[1]],
              }
-np.save(str(here) + '/mesh2/params.npy', params)
-np.save(str(here) + '/mesh2/geom_prop.npy', geom_prop)
+np.save(str(here) + '/mesh6/params.npy', params)
+np.save(str(here) + '/mesh6/geom_prop.npy', geom_prop)
 
 # Initialize empty geometry using the build in kernel in GMSH
 geometry = pygmsh.geo.Geometry()
@@ -90,27 +101,23 @@ pc = model.add_point(c)
 sin = 0.5 # sin(30°)
 cos = np.sqrt(3)/2 # cos(30°)
 pc0 = model.add_point(c)
-pc1 = model.add_point((c[0]-r, c[1], 0), mesh_size=alp*resolution)
-pc2 = model.add_point((c[0], c[1]+r, 0), mesh_size=alp*resolution)
-pc3 = model.add_point((c[0], c[1]-r, 0), mesh_size=alp*resolution)
-pc4 = model.add_point((c[0]+r, c[1], 0), mesh_size=alp*resolution)
+pc1 = model.add_point((c[0]-r, c[1], 0), mesh_size=alp2*alp*resolution)
+pc2 = model.add_point((a, b1, 0), mesh_size=alp2*alp*resolution)
+pc3 = model.add_point((a, b2, 0), mesh_size=alp2*alp*resolution)
+pcm = model.add_point(cm, mesh_size=alp2*alp*resolution)
+pt1 = model.add_point((cmt[0], y1, 0), mesh_size=alp2*alp*resolution)
+pt2 = model.add_point((cmt[0], y2, 0), mesh_size=alp2*alp*resolution)
 circle1 = model.add_circle_arc(pc2, pc0, pc1)
 circle2 = model.add_circle_arc(pc1, pc0, pc3)
-circle3 = model.add_circle_arc(pc2, pc0, pc4)
-circle4 = model.add_circle_arc(pc4, pc0, pc3)
+circle3 = model.add_circle(c, 0.5*r, mesh_size=alp2*alp*resolution)
 
 # Add elastic flag
-pf1 = model.add_point((c[0]+r, c[1]+r, 0), mesh_size=alp*resolution)
-pf2 = model.add_point((c[0]+r, c[1]-r, 0), mesh_size=alp*resolution)
-pfc = model.add_point((c[0]+r, c[1], 0), mesh_size=alp*resolution)
-fl1 = model.add_line(pc3, pf2)
-fl2 = model.add_circle_arc(pf2, pfc, pf1)
-fl3 = model.add_line(pf1, pc2)
-fl4 = model.add_line(pc2, pc3)
+fl1 = model.add_line(pc3, pt2)
+circ = model.add_circle_arc(pt2, pcm, pt1)
+fl2 = model.add_line(pt1, pc2)
 
 # obstacle
-obstacle = model.add_curve_loop([fl1, fl2, fl3, circle1, circle2])
-flag = model.add_curve_loop([fl4, fl1, fl2, fl3])
+obstacle = model.add_curve_loop([fl1, circ, fl2, circle1, circle2])
 
 # Add points with finer resolution on left side
 points = [model.add_point((0, 0, 0), mesh_size=resolution),
@@ -127,7 +134,7 @@ channel_loop = model.add_curve_loop(channel_lines)
 plane_surface = model.add_plane_surface(
     channel_loop, holes=[obstacle])
 plane_surface2 = model.add_plane_surface(
-    flag)
+    obstacle, holes=[circle3])
 
 # Call gmsh kernel before add physical entities
 model.synchronize()
@@ -136,20 +143,19 @@ volume_marker = 6
 model.add_physical([channel_lines[0]], "inflow") # mark inflow boundary with 1
 model.add_physical([channel_lines[2]], "outflow") # mark outflow boundary with 2
 model.add_physical([channel_lines[1], channel_lines[3]], "walls") # mark walls with 3
-model.add_physical([fl4], "noslip_obstacle")
-model.add_physical([circle1, circle2], "obstacle") # mark obstacle with 5
-model.add_physical([fl1, fl2, fl3], "interface") # mark interface with 6
-model.add_physical([plane_surface], "fluid") # mark fluid domain with 7
-model.add_physical([plane_surface2], "solid") # mark solid domain with 8
+model.add_physical(circle3.curve_loop.curves, "noslip_obstacle")
+model.add_physical([fl1, circ, fl2, circle1, circle2], "interface") # mark interface with 5
+model.add_physical([plane_surface], "fluid") # mark fluid domain with 6
+model.add_physical([plane_surface2], "solid") # mark solid domain with 7
 
 geometry.generate_mesh(dim=2)
 import gmsh
-gmsh.write(str(here) + "/mesh2/mesh.msh")
+gmsh.write(str(here) + "/mesh6/mesh.msh")
 gmsh.clear()
 geometry.__exit__()
 
 import meshio
-mesh_from_file = meshio.read(str(here) + "/mesh2/mesh.msh")
+mesh_from_file = meshio.read(str(here) + "/mesh6/mesh.msh")
 
 import numpy
 def create_mesh(mesh: meshio.Mesh, cell_type: str, data_name: str = "name_to_read",
@@ -162,10 +168,10 @@ def create_mesh(mesh: meshio.Mesh, cell_type: str, data_name: str = "name_to_rea
     return out_mesh #https://fenicsproject.discourse.group/t/what-is-wrong-with-my-mesh/7504/8
 
 line_mesh = create_mesh(mesh_from_file, "line", prune_z=True)
-meshio.write(str(here) + "/mesh2/facet_mesh.xdmf", line_mesh)
+meshio.write(str(here) + "/mesh6/facet_mesh.xdmf", line_mesh)
 
 triangle_mesh = create_mesh(mesh_from_file, "triangle", prune_z=True)
-meshio.write(str(here) + "/mesh2/mesh_triangles.xdmf", triangle_mesh)
+meshio.write(str(here) + "/mesh6/mesh_triangles.xdmf", triangle_mesh)
 
 #mesh = line_mesh
 #mesh_boundary = meshio.Mesh(points=mesh.points,

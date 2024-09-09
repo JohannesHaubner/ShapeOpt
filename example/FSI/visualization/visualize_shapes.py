@@ -9,7 +9,7 @@ here = Path(__file__).parent.parent.resolve()
 import sys, os
 sys.path.insert(0, str(here))
 
-def visualize_shape(fname : str, save_fname : str):
+def visualize_shape(fname : str, save_fname : str, factor : float = 1.0):
 
     # specify filename and read mesh    
     filename = str(here) + "/" + fname
@@ -21,8 +21,9 @@ def visualize_shape(fname : str, save_fname : str):
     print('mesh loaded')
 
     # plot region of interest
-
-    roi = pyvista.Cube(center=(0.375, 0.2, 0.0), x_length=0.65, y_length=0.2, z_length=0.1)
+    assert factor > 0
+    cx = 0.2 + (0.375-0.2)/(factor)
+    roi = pyvista.Cube(center=(cx, 0.2, 0.0), x_length=0.65/factor, y_length=0.2/factor, z_length=0.1/factor)
     extracted = mesh.clip_box(roi, invert=False)
 
     pyvista.start_xvfb()

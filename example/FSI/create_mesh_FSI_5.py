@@ -3,12 +3,13 @@ from ogs5py import OGS
 import pygmsh, meshio
 import h5py
 import os
+import numpy as np
 
 from pathlib import Path
 here = Path(__file__).parent.resolve()
 
-if not os.path.exists(str(here) + "/mesh2"):
-    os.makedirs(str(here) + "/mesh2")
+if not os.path.exists(str(here) + "/mesh5"):
+    os.makedirs(str(here) + "/mesh5")
 
 # resolution
 resolution = 0.025  #0.05 #1 # 0.005 #0.1
@@ -18,7 +19,12 @@ alp = 0.2
 L = 2.5 #2.5 #20            # length of channel
 H = 0.41 #0.4 #6           # heigth of channel
 c = [0.2, 0.2, 0]  #[0.2, 0.2, 0] #[10, 3, 0]  # position of object
-r = 0.05 #0.05 #0.5 # radius of object
+r = 0.025 #0.05 #0.5 # radius of object
+tip = [0.3, 0.2, 0]
+
+a = ((0.5*(tip[0] - c[0]))**2 - (0.5*(tip[0]+ c[0]))**2 + c[0]**2 - r**2)/(-2 * (0.5 * (tip[0] + c[0]) - c[0]))
+b1 = c[1] + np.sqrt(r**2 - (a - c[0])**2)
+b2 = c[1] - np.sqrt(r**2 - (a - c[0])**2)
 
 # labels
 boundary_labels = [1, 2, 3, 4, 5, 6] # has to contain all labels for boundary parts
@@ -78,8 +84,8 @@ geom_prop = {"barycenter_hold_all_domain": [0.5*L, 0.5*H],
              "heigth_pipe": H,
              "barycenter_obstacle": [ c[0], c[1]],
              }
-np.save(str(here) + '/mesh2/params.npy', params)
-np.save(str(here) + '/mesh2/geom_prop.npy', geom_prop)
+np.save(str(here) + '/mesh5/params.npy', params)
+np.save(str(here) + '/mesh5/geom_prop.npy', geom_prop)
 
 # Initialize empty geometry using the build in kernel in GMSH
 geometry = pygmsh.geo.Geometry()
@@ -91,26 +97,20 @@ sin = 0.5 # sin(30°)
 cos = np.sqrt(3)/2 # cos(30°)
 pc0 = model.add_point(c)
 pc1 = model.add_point((c[0]-r, c[1], 0), mesh_size=alp*resolution)
-pc2 = model.add_point((c[0], c[1]+r, 0), mesh_size=alp*resolution)
-pc3 = model.add_point((c[0], c[1]-r, 0), mesh_size=alp*resolution)
-pc4 = model.add_point((c[0]+r, c[1], 0), mesh_size=alp*resolution)
+pc2 = model.add_point((a, b1, 0), mesh_size=alp*resolution)
+pc3 = model.add_point((a, b2,0), mesh_size=alp*resolution)
 circle1 = model.add_circle_arc(pc2, pc0, pc1)
 circle2 = model.add_circle_arc(pc1, pc0, pc3)
-circle3 = model.add_circle_arc(pc2, pc0, pc4)
-circle4 = model.add_circle_arc(pc4, pc0, pc3)
 
 # Add elastic flag
-pf1 = model.add_point((c[0]+r, c[1]+r, 0), mesh_size=alp*resolution)
-pf2 = model.add_point((c[0]+r, c[1]-r, 0), mesh_size=alp*resolution)
-pfc = model.add_point((c[0]+r, c[1], 0), mesh_size=alp*resolution)
-fl1 = model.add_line(pc3, pf2)
-fl2 = model.add_circle_arc(pf2, pfc, pf1)
-fl3 = model.add_line(pf1, pc2)
-fl4 = model.add_line(pc2, pc3)
+pt = model.add_point(tip, mesh_size=alp*alp*resolution)
+fl1 = model.add_line(pc3, pt)
+fl2 = model.add_line(pt, pc2)
+fl3 = model.add_line(pc2, pc3)
 
 # obstacle
-obstacle = model.add_curve_loop([fl1, fl2, fl3, circle1, circle2])
-flag = model.add_curve_loop([fl4, fl1, fl2, fl3])
+obstacle = model.add_curve_loop([fl1, fl2, circle1, circle2])
+flag = model.add_curve_loop([fl1, fl2, fl3])
 
 # Add points with finer resolution on left side
 points = [model.add_point((0, 0, 0), mesh_size=resolution),
@@ -136,20 +136,20 @@ volume_marker = 6
 model.add_physical([channel_lines[0]], "inflow") # mark inflow boundary with 1
 model.add_physical([channel_lines[2]], "outflow") # mark outflow boundary with 2
 model.add_physical([channel_lines[1], channel_lines[3]], "walls") # mark walls with 3
-model.add_physical([fl4], "noslip_obstacle")
-model.add_physical([circle1, circle2], "obstacle") # mark obstacle with 5
-model.add_physical([fl1, fl2, fl3], "interface") # mark interface with 6
-model.add_physical([plane_surface], "fluid") # mark fluid domain with 7
-model.add_physical([plane_surface2], "solid") # mark solid domain with 8
+model.add_physical([fl3], "noslip_obstacle")
+model.add_physical([circle1, circle2], "obstacle") # mark obstacle with 4
+model.add_physical([fl1, fl2, fl3], "interface") # mark interface with 5
+model.add_physical([plane_surface], "fluid") # mark fluid domain with 6
+model.add_physical([plane_surface2], "solid") # mark solid domain with 7
 
 geometry.generate_mesh(dim=2)
 import gmsh
-gmsh.write(str(here) + "/mesh2/mesh.msh")
+gmsh.write(str(here) + "/mesh5/mesh.msh")
 gmsh.clear()
 geometry.__exit__()
 
 import meshio
-mesh_from_file = meshio.read(str(here) + "/mesh2/mesh.msh")
+mesh_from_file = meshio.read(str(here) + "/mesh5/mesh.msh")
 
 import numpy
 def create_mesh(mesh: meshio.Mesh, cell_type: str, data_name: str = "name_to_read",
@@ -162,10 +162,10 @@ def create_mesh(mesh: meshio.Mesh, cell_type: str, data_name: str = "name_to_rea
     return out_mesh #https://fenicsproject.discourse.group/t/what-is-wrong-with-my-mesh/7504/8
 
 line_mesh = create_mesh(mesh_from_file, "line", prune_z=True)
-meshio.write(str(here) + "/mesh2/facet_mesh.xdmf", line_mesh)
+meshio.write(str(here) + "/mesh5/facet_mesh.xdmf", line_mesh)
 
 triangle_mesh = create_mesh(mesh_from_file, "triangle", prune_z=True)
-meshio.write(str(here) + "/mesh2/mesh_triangles.xdmf", triangle_mesh)
+meshio.write(str(here) + "/mesh5/mesh_triangles.xdmf", triangle_mesh)
 
 #mesh = line_mesh
 #mesh_boundary = meshio.Mesh(points=mesh.points,

@@ -72,12 +72,13 @@ bc = constraints['barycenter'](init_mfs, param, dof_to_trafo).eval(x0)
 param["Bary_O"] = np.add(bc, bo)
 
 # solve optimization problem
-Jred = reduced_objectives[application].eval(mesh, domains, boundaries, params, param, red_func=True)
-problem = MinimizationProblem(Jred)
+Jred = reduced_objectives[application]()
+rf = Jred.eval(mesh, domains, boundaries, params, param, red_func=True)
+problem = MinimizationProblem(rf)
 
 def test_ipopt_objective():
     print('test ipopt objective')
-    order, diff = ipopt_solver.IPOPTSolver(problem, init_mfs, param, application, constraint_ids,
+    order, diff = ipopt_solver.IPOPTSolver(problem, init_mfs, param, Jred, constraint_ids,
                                            dof_to_trafo).test_objective()
     assert order > 1.8 or diff < 1e-12
 
