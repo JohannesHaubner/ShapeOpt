@@ -448,11 +448,11 @@ class FluidStructure(ReducedObjective):
 
         else:
             I = Identity(2)
-+           tFhat = I + grad(tu)
-+           tFhatt = tFhat.T
-+           tFhati = inv(tFhat)
-+           tFhatti = tFhati.T
-+           tJhat = det(tFhat)
+            tFhat = I + grad(tu)
+            tFhatt = tFhat.T
+            tFhati = inv(tFhat)
+            tFhatti = tFhati.T
+            tJhat = det(tFhat)
             J += assemble((tu[0] + tu[1]) * 10e9 * dx(mesh)) + assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["det_lb"]))*dx(mesh)) # fallback strategy if ipopt wants to evaluate on mesh with bad qualities
 
         if flag:
