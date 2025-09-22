@@ -243,10 +243,12 @@ class Initialize_Mesh_and_FunctionSpaces():
       dnormalf = self.Vn_to_Vdn(normal)
       n_normf = self.Vn_to_Vdn(nnorm)
       n_normf.vector().apply("")
-      normed_normal = [dnormalf.vector().get_local()[i]/n_normf.vector().get_local()[i] for i in range(np.size(dnormalf.vector().get_local()))]
+      n_normf.vector().update_ghost_values()
+      normed_normal = [dnormalf.vector().get_local()[i]/max(n_normf.vector().get_local()[i], 1e-5) for i in range(np.size(dnormalf.vector().get_local()))]
       self.dnormalf = Function(self.Vdn)
       self.dnormalf.vector().set_local(normed_normal)
       self.dnormalf.vector().apply("")
+      #TODO check normed normal
 
     def vec_to_Vn(self, x):
         """
