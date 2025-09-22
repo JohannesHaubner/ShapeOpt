@@ -15,14 +15,14 @@ gmsh.initialize()
 gmsh.model.add("3d FSI")
 
 L, B, H, r = 2.5, 0.41, 0.41, 0.05
-channel = gmsh.model.occ.addBox(0, 0, 0, L, B, H)
-flap = gmsh.model.occ.addBox(0.5, 0.11, 0.19, 0.4, 0.2, 0.02)
-cylinder = gmsh.model.occ.addCylinder(0.5, 0, 0.2, 0, B, 0, r)
+channel = gmsh.model.occ.addBox(0, 0, 0, L, H, B)
+flap = gmsh.model.occ.addBox(0.5, 0.19, 0.11, 0.4, 0.02, 0.2)
+cylinder = gmsh.model.occ.addCylinder(0.5, 0.2, 0, 0, 0, B, r)
 fluid, _ = gmsh.model.occ.cut([(3, channel)], [(3, flap), (3, cylinder)])
-flap2 = gmsh.model.occ.addBox(0.5, 0.11, 0.19, 0.4, 0.2, 0.02)
-cylinder2 = gmsh.model.occ.addCylinder(0.5, 0, 0.2, 0, B, 0, r)
+flap2 = gmsh.model.occ.addBox(0.5, 0.19, 0.11, 0.4, 0.02, 0.2)
+cylinder2 = gmsh.model.occ.addCylinder(0.5, 0.2, 0, 0, 0, B, r)
 solid, _ = gmsh.model.occ.cut([(3, flap2)], [(3, cylinder2)])
-c = [0.5, B/2, 0.2] #Barycenter of cylinder
+c = [0.5, 0.2, B/2] #Barycenter of cylinder
 
 
 gmsh.model.occ.synchronize()
@@ -44,19 +44,19 @@ interface = []
 interface_ = []
 for surface in surfaces:
     com = gmsh.model.occ.getCenterOfMass(surface[0], surface[1])
-    if np.allclose(com, [0, B/2, H/2]):
+    if np.allclose(com, [0, H/2, B/2]):
         gmsh.model.addPhysicalGroup(surface[0], [surface[1]], inlet_marker)
         inlet = surface[1]
         gmsh.model.setPhysicalName(surface[0], inlet_marker, "Fluid inlet")
-    elif np.allclose(com, [L, B/2, H/2]):
+    elif np.allclose(com, [L, H/2, B/2]):
         gmsh.model.addPhysicalGroup(surface[0], [surface[1]], outlet_marker)
         gmsh.model.setPhysicalName(surface[0], outlet_marker, "Fluid outlet")
-    elif np.isclose(com[2], 0) or np.isclose(com[1], B) or np.isclose(com[2], H) or np.isclose(com[1], 0):
+    elif np.isclose(com[1], 0) or np.isclose(com[2], B) or np.isclose(com[1], H) or np.isclose(com[2], 0):
         walls.append(surface[1])
-    elif 0.19 <= com[2] <= 0.21 and com[0] <= 0.5+1e-4 and 0.11 <= com[1] <= 0.31:
+    elif 0.19 <= com[1] <= 0.21 and com[0] <= 0.5+1e-4 and 0.11 <= com[2] <= 0.31:
         obstacles.append(surface[1])
         interface_.append(surface[1])
-    elif 0.25 < com[0] <= 0.6 and 0.19 <= com[2] <= 0.21:
+    elif 0.25 < com[0] <= 0.6 and 0.19 <= com[1] <= 0.21:
         obstacle_solid.append(surface[1])
         interface_.append(surface[1])
     else:
