@@ -63,13 +63,13 @@ class Initialize_Mesh_and_FunctionSpaces():
       self.boundaries = boundaries
       self.domains = domains
 
+
       # create pyadjoint mesh
       mesh = create_overloaded_object(mesh)
-      mvc = MeshValueCollection("size_t", mesh, 1)
+      mvc = MeshValueCollection("size_t", mesh, mesh.geometric_dimension() - 1)
       new_boundaries = cpp.mesh.MeshFunctionSizet(mesh, mvc)
       new_boundaries.set_values(boundaries.array())
       boundaries = new_boundaries
-
 
 
       mesh_global = Mesh(MPI.comm_self)
@@ -77,11 +77,11 @@ class Initialize_Mesh_and_FunctionSpaces():
         infile.read(mesh_global)
 
       if load_mesh and domains:
-          mvc_glob = MeshValueCollection("size_t", mesh_global, 1)
+          mvc_glob = MeshValueCollection("size_t", mesh_global, mesh.geometric_dimension() - 1)
           with XDMFFile(MPI.comm_self, stri3) as infile:
               infile.read(mvc_glob)
       else:
-          mvc_glob = MeshValueCollection("size_t", mesh_global, 2)
+          mvc_glob = MeshValueCollection("size_t", mesh_global, mesh.geometric_dimension())
           with XDMFFile(MPI.comm_self, stri) as infile:
             infile.read(mvc_glob, "name_to_read")
       domains_global = cpp.mesh.MeshFunctionSizet(mesh_global, mvc_glob)
@@ -89,7 +89,7 @@ class Initialize_Mesh_and_FunctionSpaces():
       dfile << domains_global
 
       # full boundary information on each process
-      mvc2 = MeshValueCollection("size_t", mesh_global, 1)
+      mvc2 = MeshValueCollection("size_t", mesh_global, mesh.geometric_dimension() - 1)
       if load_mesh:
           with XDMFFile(MPI.comm_self, stri2) as infile:
               infile.read(mvc2)
@@ -128,7 +128,7 @@ class Initialize_Mesh_and_FunctionSpaces():
       fluid_markers = markers_fluid.mesh().boundaries
 
       bmesh = BoundaryMesh(fluid_mesh, "exterior")
-      dofs = bmesh.entity_map(1)
+      dofs = bmesh.entity_map(mesh.geometric_dimension() - 1)
 
       # create MeshFunctionSizet on boundary
       bmvc = MeshValueCollection("size_t", bmesh, 1)
