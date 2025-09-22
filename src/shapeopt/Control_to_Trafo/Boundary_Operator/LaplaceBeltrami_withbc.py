@@ -27,10 +27,8 @@ class LaplaceBeltrami_withbc(BoundaryOperator):
         u = TrialFunction(self.Vdn)
         v = TestFunction(self.Vdn)
         # Define boundary conditions
-        if self.Vdn.mesh().topology().dim() == 1:
-            self.bc = DirichletBC(self.Vdn, Constant(("0.0", "0.0")), 'on_boundary')
-        elif self.Vdn.mesh().topology().dim() == 2:
-            self.bc = DirichletBC(self.Vdn, Constant(("0.0", "0.0", "0.0")), 'on_boundary')
+        dim = self.Vdn.mesh().topology().dim() + 1
+        self.bc = DirichletBC(self.Vdn, Constant([0.0]*dim), 'on_boundary')
         # Define bilinear form
         a = self.lb_off * inner(grad(u), grad(v)) * dx(self.dmesh) + inner(u, v) * dx(self.dmesh)
         A = assemble(a)

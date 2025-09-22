@@ -19,10 +19,8 @@ class ElasticExtension(ExtensionOperator):
 
         # Define boundary conditions
         bc = []
-        if self.V.mesh().topology().dim() == 2:
-          const = Constant(("0.0", "0.0"))
-        elif self.V.mesh().topology().dim() == 3:
-          const = Constant(("0.0", "0.0", "0.0"))
+        dim = self.V.mesh().topology().dim()
+        const = Constant([0.0]*dim)
 
         for i in self.params.keys():
             if i != "design" and not isinstance(self.params[i], bool) and self.params[i] in self.params["boundary_labels"] and self.params[i] != self.params["design"]:
@@ -81,10 +79,8 @@ class ElasticExtension(ExtensionOperator):
 
       # Define boundary conditions
       bc = []
-      if self.V.mesh().topology().dim() == 2:
-          const = Constant(("0.0", "0.0"))
-      elif self.V.mesh().topology().dim() == 3:
-          const = Constant(("0.0", "0.0", "0.0"))
+      dim = self.V.mesh().topology().dim()
+      const = Constant([0.0]*dim)
       for i in self.params.keys():
           if i != "design" and not isinstance(self.params[i], bool) and self.params[i] in self.params["boundary_labels"] and self.params[i] != self.params["design"]:
               bc.append(DirichletBC(self.Vn, const, self.boundaries, self.params[i]))

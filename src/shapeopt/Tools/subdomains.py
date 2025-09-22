@@ -116,6 +116,7 @@ class SubMeshCollection:
                 subdomain.mark_all_outer(self.boundaries['interface'].value)
                 set_rel_bdry = set(relevant_boundaries)
                 set_rel_bdry.remove('interface')
+                relevant_boundaries = list(set_rel_bdry)
             subdomain.mark_boundaries([
-                self.boundaries[bdry_name] for bdry_name in self.boundaries if bdry_name in list(set_rel_bdry)
+                self.boundaries[bdry_name] for bdry_name in self.boundaries if bdry_name in relevant_boundaries
             ])
