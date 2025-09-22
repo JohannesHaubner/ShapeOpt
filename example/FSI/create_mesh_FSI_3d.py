@@ -65,10 +65,10 @@ for surface in surfaces:
 #from IPython import embed; embed()
 gmsh.model.addPhysicalGroup(2, walls, wall_marker)
 gmsh.model.setPhysicalName(2, wall_marker, "Walls")
-gmsh.model.addPhysicalGroup(2, obstacles, obstacle_marker)
-gmsh.model.setPhysicalName(2, obstacle_marker, "Obstacle")
 gmsh.model.addPhysicalGroup(2, interface, interface_marker)
 gmsh.model.setPhysicalName(2, interface_marker, "Interface")
+gmsh.model.addPhysicalGroup(2, obstacles, obstacle_marker)
+gmsh.model.setPhysicalName(2, obstacle_marker, "Obstacle")
 gmsh.model.addPhysicalGroup(2, obstacle_solid, obstacle_solid_marker)
 gmsh.model.setPhysicalName(2, obstacle_solid_marker, "Obstacle_solid")
 
@@ -80,6 +80,8 @@ bdry_labels = {
           "noslip": wall_marker,
           "noslip_obstacle": obstacle_marker,
           "interface": interface_marker, 
+          "obstacle_solid": obstacle_solid_marker,
+          "obstacle": obstacle_marker,
       }
 
 # dictionary of tags for the subdomains
@@ -90,7 +92,7 @@ subdom_labels = {
 
 # Dictionary with facet-labels from the boundary of each subdomain
 subdomain_boundaries = {
-    "fluid": ("inflow", "outflow", "noslip", "interface", "obstacle"),
+    "fluid": ("noslip", "obstacle", "inflow", "outflow", "interface"),
     "solid": ("interface", "obstacle_solid"),
 }
 
