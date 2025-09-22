@@ -146,7 +146,6 @@ class Initialize_Mesh_and_FunctionSpaces():
 
       xdmf = XDMFFile("./Output/Tests/SettingsMesh/bboundaries.xdmf")
       xdmf.write(bboundaries)
-      exit(0)
       
 
       # boundary mesh and submesh
@@ -212,7 +211,6 @@ class Initialize_Mesh_and_FunctionSpaces():
       p = Function(self.Vd)
       xdmffile = XDMFFile("./Output/Tests/SettingsMesh/Vd.xdmf")
       xdmffile.write_checkpoint(p, 'p', XDMFFile.Encoding.HDF5)
-      exit(0)
 
       # dof-maps between V and Vb
       Vb_to_V_map = self.__Vb_to_V(Vfg, Vb, global_to_glocal_map, dof_map_fluid_full)
@@ -232,7 +230,10 @@ class Initialize_Mesh_and_FunctionSpaces():
       # normal on design boundary
       v = TestFunction(self.Vn)
       n_mesh = assemble_mixed(inner(n, v)*ds(fluid_mesh_local))
-      n_norm = assemble_mixed(inner(Constant(("1.0","1.0")), v) * ds(fluid_mesh_local)) # to norm n_mesh
+      if bmesh.topology().dim() == 1:
+        n_norm = assemble_mixed(inner(Constant(("1.0","1.0")), v) * ds(fluid_mesh_local)) # to norm n_mesh
+      elif bmesh.topology().dim() == 2:
+        n_norm = assemble_mixed(inner(Constant(("1.0","1.0","1.0")), v) * ds(fluid_mesh_local)) # to norm n_mesh
       normal = Function(self.Vn)
       normal.vector().set_local(n_mesh.get_local())
       normal.vector().apply("")
@@ -541,7 +542,6 @@ class Initialize_Mesh_and_FunctionSpaces():
         # Transfer dofs
         GValues = np.zeros(np.size(f.vector().get_local()))
         for c in cells(submesh):
-            from IPython import embed; embed(); exit(0)
             GValues[dofmap.cell_dofs(c.index())] = dofmap_full.cell_dofs(cell_map[c.index()])
         #GValuesnew = np.zeros(np.size(f.vector().get_local()))
         #for i in range(len(GValues)):
