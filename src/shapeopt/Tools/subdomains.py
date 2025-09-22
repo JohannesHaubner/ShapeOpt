@@ -5,6 +5,7 @@ Code snippets from Jørgen Riseth and Simon Funke
 from typing import Dict, List, Tuple
 
 from dolfin import Mesh, MeshFunction, MeshView, interpolate, cells, Function
+import dolfin as df
 import numpy as np
 from dolfin.cpp.mesh import MeshFunctionSizet
 import mpi4py as MPI
@@ -78,6 +79,17 @@ class SubdomainView(Mesh):
         self.value = value
         self.mesh = MeshView.create(subdomains, value)
         self.boundaries = MeshFunction('size_t', self, self.topology().dim()-1, 0)
+        self.boundaries.set_all(0)
+        # hack to make it run in 3d
+        class OuterBoundary(df.SubDomain):
+            def inside(self, x, on_boundary):
+                return on_boundary
+        self.outer_boundary = OuterBoundary()
+        #
+
+    def mark_all_outer(self, interface_marker):
+        self.outer_boundary.mark(self.boundaries, interface_marker)
+        pass
         
     def mark_boundaries(self, boundarymeshes: List[FacetView]):
         for bdry in boundarymeshes:
@@ -100,6 +112,10 @@ class SubMeshCollection:
     def _create_boundary_maps(self, subdomain_boundaries):
         for subdomain in self.subdomains.values():
             relevant_boundaries = subdomain_boundaries[subdomain.name()]
+            if 'interface' in relevant_boundaries:
+                subdomain.mark_all_outer(self.boundaries['interface'].value)
+                set_rel_bdry = set(relevant_boundaries)
+                set_rel_bdry.remove('interface')
             subdomain.mark_boundaries([
-                self.boundaries[bdry_name] for bdry_name in self.boundaries if bdry_name in relevant_boundaries
+                self.boundaries[bdry_name] for bdry_name in self.boundaries if bdry_name in list(set_rel_bdry)
             ])

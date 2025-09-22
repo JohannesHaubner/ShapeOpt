@@ -128,18 +128,26 @@ class Initialize_Mesh_and_FunctionSpaces():
       fluid_markers = markers_fluid.mesh().boundaries
 
       bmesh = BoundaryMesh(fluid_mesh, "exterior")
-      dofs = bmesh.entity_map(mesh.geometric_dimension() - 1)
+      dofs = bmesh.entity_map(bmesh.geometric_dimension() - 1)
 
       # create MeshFunctionSizet on boundary
-      bmvc = MeshValueCollection("size_t", bmesh, 1)
+      bmvc = MeshValueCollection("size_t", bmesh, bmesh.topology().dim())
       bboundaries = cpp.mesh.MeshFunctionSizet(bmesh, bmvc)
 
       # write boundaries[dof of facet in mesh] into bboundaries[dof of facet in bmesh]
-      bnum = bmesh.num_vertices()
+      if bmesh.topology().dim() == 1:
+        bnum = bmesh.num_vertices()
+      else:
+        bnum = bmesh.num_cells()
       bsize = bboundaries.size()
 
       for i in range(bnum):
           bboundaries.set_value(i, fluid_markers[dofs[i]])
+
+      xdmf = XDMFFile("./Output/Tests/SettingsMesh/bboundaries.xdmf")
+      xdmf.write(bboundaries)
+      exit(0)
+      
 
       # boundary mesh and submesh
       #bmesh = BoundaryMesh(mesh_global, "exterior")
@@ -158,9 +166,6 @@ class Initialize_Mesh_and_FunctionSpaces():
       #for i in range(bnum):
       #  bboundaries.set_value(i, boundaries_global[dofs[i]])
 
-      # write to pvd-file for testing
-      bdfile = File(MPI.comm_self, "./Output/Tests/ForwardEquation/bboundary.pvd")
-      bdfile << bboundaries
 
       # create design-boundary mesh
       dmesh = MeshView.create(bboundaries, params["design"])
@@ -204,8 +209,14 @@ class Initialize_Mesh_and_FunctionSpaces():
       # dof-maps between V and Vg
       global_to_glocal_map, glocal_to_global_map = self.__meshglobal_to_mesh__(mesh_global)
 
+      p = Function(self.Vd)
+      xdmffile = XDMFFile("./Output/Tests/SettingsMesh/Vd.xdmf")
+      xdmffile.write_checkpoint(p, 'p', XDMFFile.Encoding.HDF5)
+      exit(0)
+
       # dof-maps between V and Vb
       Vb_to_V_map = self.__Vb_to_V(Vfg, Vb, global_to_glocal_map, dof_map_fluid_full)
+      self.__test_Vb_to_V(Vfg, Vb, global_to_glocal_map, dof_map_fluid_full)
 
       # dof-maps between V and Vd
       self.Vd_to_V_map = self.__Vd_to_V(Vb, Vb_to_V_map)
@@ -494,10 +505,10 @@ class Initialize_Mesh_and_FunctionSpaces():
         imin, imax = dof.ownership_range()
         p.vector().set_local(values[imin:imax])
         p.vector().apply("")
-        as_backend_type(p.vector()).vec().ghostUpdate()
+        p.vector().update_ghost_values()
 
-        bdfile = File(MPI.comm_self, "./Output/Tests/SettingsMesh/Vb_to_V.pvd")
-        bdfile << p
+        xdmffile = XDMFFile("./Output/Tests/SettingsMesh/Vb_to_V.xdmf")
+        xdmffile.write_checkpoint(p, 'p', XDMFFile.Encoding.HDF5)
         pass
     
     def __dof_maps_fluid_full(self, V, V_full):
@@ -530,6 +541,7 @@ class Initialize_Mesh_and_FunctionSpaces():
         # Transfer dofs
         GValues = np.zeros(np.size(f.vector().get_local()))
         for c in cells(submesh):
+            from IPython import embed; embed(); exit(0)
             GValues[dofmap.cell_dofs(c.index())] = dofmap_full.cell_dofs(cell_map[c.index()])
         #GValuesnew = np.zeros(np.size(f.vector().get_local()))
         #for i in range(len(GValues)):
