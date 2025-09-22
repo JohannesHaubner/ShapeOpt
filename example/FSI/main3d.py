@@ -48,7 +48,7 @@ param = {"reg": 1e-1, # regularization parameter
          #"Bary_eps": 0.0, # slack for barycenter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient, etaP
          "maxiter_IPOPT": 50,
-         "T": 15.0, # simulation horizon for Fluid-Structure interaction simulation
+         "T": 2.5, # simulation horizon for Fluid-Structure interaction simulation
          "deltat": 0.01, # time step size
          "gammaP": 1e-3, # penalty parameter for determinant constraint violation
          "output_path": path_mesh + "/Output/", # folder where intermediate results are stored

@@ -101,7 +101,7 @@ params = {"inflow" : inlet_marker,
           "noslip": wall_marker,
           "noslip_obstacle": obstacle_solid_marker, #noslipobstacle=obstacle_solid
           "obstacle": obstacle_marker,
-          "design": interface_marker,
+          "design": obstacle_marker,
           "interface": interface_marker,
           "mesh_parts": True,
           "fluid": fluid_marker,
@@ -131,7 +131,7 @@ distance = gmsh.model.mesh.field.add("Distance")
 gmsh.model.mesh.field.setNumbers(distance, "FacesList", interface_)
 #gmsh.model.mesh.field.setNumbers(distance, "FacesList", obstacle_solid)
 
-resolution = r/2 #r/10
+resolution = r/10
 threshold = gmsh.model.mesh.field.add("Threshold")
 gmsh.model.mesh.field.setNumber(threshold, "IField", distance)
 gmsh.model.mesh.field.setNumber(threshold, "LcMin", resolution)
