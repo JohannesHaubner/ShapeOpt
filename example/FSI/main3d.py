@@ -88,8 +88,6 @@ if __name__ == "__main__":
     param["Bary_O"] = np.add(bc, bo)
 
     #constraints['barycenter'](init_mfs, param, dof_to_trafo).test()
-    #TODO update FSI boundary conditions
-    exit(0)
 
 
     # solve optimization problem

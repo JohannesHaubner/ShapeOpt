@@ -144,8 +144,8 @@ class Initialize_Mesh_and_FunctionSpaces():
       for i in range(bnum):
           bboundaries.set_value(i, fluid_markers[dofs[i]])
 
-      xdmf = XDMFFile("./Output/Tests/SettingsMesh/bboundaries.xdmf")
-      xdmf.write(bboundaries)
+      #xdmf = XDMFFile("./Output/Tests/SettingsMesh/bboundaries.xdmf")
+      #xdmf.write(bboundaries)
       
 
       # boundary mesh and submesh
@@ -208,9 +208,9 @@ class Initialize_Mesh_and_FunctionSpaces():
       # dof-maps between V and Vg
       global_to_glocal_map, glocal_to_global_map = self.__meshglobal_to_mesh__(mesh_global)
 
-      p = Function(self.Vd)
-      xdmffile = XDMFFile("./Output/Tests/SettingsMesh/Vd.xdmf")
-      xdmffile.write_checkpoint(p, 'p', XDMFFile.Encoding.HDF5)
+      #p = Function(self.Vd)
+      #xdmffile = XDMFFile("./Output/Tests/SettingsMesh/Vd.xdmf")
+      #xdmffile.write_checkpoint(p, 'p', XDMFFile.Encoding.HDF5)
 
       # dof-maps between V and Vb
       Vb_to_V_map = self.__Vb_to_V(Vfg, Vb, global_to_glocal_map, dof_map_fluid_full)
@@ -508,8 +508,8 @@ class Initialize_Mesh_and_FunctionSpaces():
         p.vector().apply("")
         p.vector().update_ghost_values()
 
-        xdmffile = XDMFFile("./Output/Tests/SettingsMesh/Vb_to_V.xdmf")
-        xdmffile.write_checkpoint(p, 'p', XDMFFile.Encoding.HDF5)
+        #xdmffile = XDMFFile("./Output/Tests/SettingsMesh/Vb_to_V.xdmf")
+        #xdmffile.write_checkpoint(p, 'p', XDMFFile.Encoding.HDF5)
         pass
     
     def __dof_maps_fluid_full(self, V, V_full):

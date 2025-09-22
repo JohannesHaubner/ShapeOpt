@@ -30,21 +30,31 @@ class FluidStructure(ReducedObjective):
         u = TrialFunction(VC)
         psiu = TestFunction(VC)
 
-        if drag:
-            func = Constant((1.0, 0.0))
-        else:
-            if self.min:
-                func = Constant((0.0, 1.0))
+        if mesh.topology().dim() == 2:
+            if drag:
+                func = Constant((1.0, 0.0))
             else:
-                func = Constant((0.0, -1.0))
+                if self.min:
+                    func = Constant((0.0, 1.0))
+                else:
+                    func = Constant((0.0, -1.0))
+        elif mesh.topology().dim() == 3:
+            if drag:
+                func = Constant((1.0, 0.0, 0.0))
+            else:
+                if self.min:
+                    func = Constant((0.0, 1.0, 0.0))
+                else:
+                    func = Constant((0.0, -1.0, 0.0))
 
         bcs = []
+        dim = mesh.topology().dim()
         for i in ["interface", "noslip_obstacle", "obstacle"]:
             if i in params:
                 bcs.append(DirichletBC(VC, func, boundaries, params[i]))
         for j in ["noslip", "inflow", "outflow"]:
             if j in params:
-                bcs.append(DirichletBC(VC, Constant((0.0, 0.0)), boundaries, params[j]))
+                bcs.append(DirichletBC(VC, Constant([0.0]*dim), boundaries, params[j]))
 
 
         a = inner(grad(u), grad(psiu))*dx(mesh)
@@ -80,8 +90,8 @@ class FluidStructure(ReducedObjective):
         n = FacetNormal(mesh)
         dim = mesh.geometric_dimension()
 
-        dxf = dx(mesh)(params['fluid'])
-        dxs = dx(mesh)(params['solid'])
+        dxf = dx(mesh)(params['fluid'], metadata={"quadrature_degree": 20})
+        dxs = dx(mesh)(params['solid'], metadata={"quadrature_degree": 20})
 
         # function spaces
         V2 = VectorElement("CG", mesh.ufl_cell(), dim)
@@ -136,11 +146,17 @@ class FluidStructure(ReducedObjective):
         INH = False
 
         # Expressions
-        (x, y) = SpatialCoordinate(mesh)
-        V_01 = Expression(("1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ 0.1681*0.5*(1-cos(pi/2*t))", "0.0"), Ubar=Ubar, \
-                          t=t, degree=2)
-        V_02 = Expression(("1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ \
-                   0.1681", "0.0"), Ubar=Ubar, t=t, degree=2)
+        # TODO
+        if dim == 2:
+            (x, y) = SpatialCoordinate(mesh)
+            V_01 = Expression(("1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ 0.1681*0.5*(1-cos(pi/2*t))", "0.0"), Ubar=Ubar, \
+                            t=t, degree=2)
+            V_02 = Expression(("1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ \
+                    0.1681", "0.0", "0.0"), Ubar=Ubar, t=t, degree=2)
+        elif dim == 3:
+            V_01 =  Expression(("Ubar*36*x[1]*(0.41 -x[1])*x[2]*(0.41 - x[2])/ (0.02825761)*0.5*(1-cos(pi/2*t))", "0.0", "0.0"), Ubar=Ubar, \
+                            t=t, degree=2)
+            V_02 = Expression(("Ubar*36*x[1]*(0.41 -x[1])*x[2]*(0.41 - x[2])/ (0.02825761)", "0.0", "0.0"), Ubar=Ubar, t=t, degree=2)
         V_1 = Constant([0.0]*dim)
 
         # output files
@@ -168,7 +184,10 @@ class FluidStructure(ReducedObjective):
 
         J = 0
 
-        tu = interpolate(Expression(("0.0","0.0"), name = 'Control', degree =1), VC)
+        if dim == 2:
+            tu = interpolate(Expression(("0.0","0.0"), name = 'Control', degree =1), VC) 
+        elif dim == 3:
+            tu = interpolate(Expression(("0.0","0.0","0.0"), name = 'Control', degree =1), VC)
         if control:
             tu.vector().set_local(control.vector().get_local())
             tu.vector().apply("")
@@ -188,7 +207,7 @@ class FluidStructure(ReducedObjective):
             (psiv, psip, psiu, psiz) = split(psi)
 
             # weak form
-            I = Identity(2)
+            I = Identity(dim)
             tFhat = I + grad(tu)
             tFhatt = tFhat.T
             tFhati = inv(tFhat)
