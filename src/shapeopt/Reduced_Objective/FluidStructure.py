@@ -16,6 +16,9 @@ if not os.path.exists(save_directory):
 
 stop_annotating()
 
+PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
+PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
+
 class FluidStructure(ReducedObjective):
     def __init__(self, drag=True, min=True):
         super().__init__()
@@ -404,7 +407,7 @@ class FluidStructure(ReducedObjective):
             solver1 = NonlinearVariationalSolver(problem1)
             solver2 = NonlinearVariationalSolver(problem2) 
 
-            solver_parameters = {"nonlinear_solver": "newton", "newton_solver": {"maximum_iterations": 25}}
+            solver_parameters = {"nonlinear_solver": "newton", "newton_solver": {"maximum_iterations": 25, "linear_solver": "mumps"}}
 
             solver1.parameters.update(solver_parameters)
             solver2.parameters.update(solver_parameters)
