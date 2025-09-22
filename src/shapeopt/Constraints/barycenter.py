@@ -19,6 +19,9 @@ class Barycenter(Constraint):
         self.Vol = param["Vol_DmO"]
         self.L = param["L"]
         self.H = param["H"]
+        self.dim = Mesh_.mesh.topology().dim()
+        if self.dim == 3:
+            self.B = param["B"]
 
     def output_dim(self):
         return self.mesh.geometry().dim()
@@ -30,23 +33,41 @@ class Barycenter(Constraint):
         x = SpatialCoordinate(self.mesh)
         dF = Identity(self.dim) + grad(deformation)
         Jhat = det(dF)
-        bc1 = (L**2 * H / 2 - assemble((x[0]+deformation[0])*Jhat * dx))/ (L * H - self.Vol) - self.Bary_O[0]
-        bc2 = (L * H**2 / 2 - assemble((x[1]+deformation[1])*Jhat * dx))/ (L * H - self.Vol) - self.Bary_O[1]
-        bc = [bc1, bc2]
+        if self.dim == 2:
+            bc1 = (L**2 * H / 2 - assemble((x[0]+deformation[0])*Jhat * dx))/ (L * H - self.Vol) - self.Bary_O[0]
+            bc2 = (L * H**2 / 2 - assemble((x[1]+deformation[1])*Jhat * dx))/ (L * H - self.Vol) - self.Bary_O[1]
+            bc = [bc1, bc2]
+        elif self.dim == 3:
+            B = self.B
+            bc1 = (L**2 * H * B / 2 - assemble((x[0]+deformation[0])*Jhat * dx))/ (L * H * B - self.Vol) - self.Bary_O[0]
+            bc2 = (L * H * B**2 / 2 - assemble((x[0]+deformation[0])*Jhat * dx))/ (L * H * B - self.Vol) - self.Bary_O[1]
+            bc3 = (L * H**2 * B / 2 - assemble((x[1]+deformation[1])*Jhat * dx))/ (L * H * B - self.Vol) - self.Bary_O[2]
+            bc = [bc1, bc2, bc3]
         return bc
     
     def grad(self, y):
         L = self.L
         H = self.H
+        fac = L * H
+        if self.dim == 3:
+            B = self.B 
+            fac = fac * B
         deformation = self.dof_to_trafo.dof_to_deformation_precond(y)
         x = SpatialCoordinate(self.mesh)
         form1 = (x[0]+deformation[0])*det(Identity(self.dim) + grad(deformation)) * dx
         form2 = (x[1]+deformation[1])*det(Identity(self.dim) + grad(deformation)) * dx
-        df1 = -1.0/ (L * H - self.Vol)*assemble(derivative(form1, deformation))
-        df2 = -1.0/ (L * H - self.Vol)*assemble(derivative(form2, deformation))
+        if self.dim == 3:
+            form3 = (x[2]+deformation[2])*det(Identity(self.dim) + grad(deformation)) * dx
+        df1 = -1.0/ (fac - self.Vol)*assemble(derivative(form1, deformation))
+        df2 = -1.0/ (fac - self.Vol)*assemble(derivative(form2, deformation))
+        if self.dim == 3:
+            df3 = -1.0/ (fac - self.Vol)*assemble(derivative(form3, deformation))
         cgf1 = self.dof_to_trafo.dof_to_deformation_precond_chainrule(df1, 2)
         cgf2 = self.dof_to_trafo.dof_to_deformation_precond_chainrule(df2, 2)
-        return [cgf1, cgf2]
+        cgf = [cgf1, cgf2]
+        if self.dim == 3:
+            cgf.append(self.dof_to_trafo.dof_to_deformation_precond_chainrule(df3, 2))
+        return cgf
 
     def test(self):
         # check eval and gradient computation with first order derivative check (test2 better for Barycenter, e.g.)

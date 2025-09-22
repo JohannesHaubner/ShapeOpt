@@ -19,9 +19,14 @@ class ElasticExtension(ExtensionOperator):
 
         # Define boundary conditions
         bc = []
+        if self.V.mesh().topology().dim() == 2:
+          const = Constant(("0.0", "0.0"))
+        elif self.V.mesh().topology().dim() == 3:
+          const = Constant(("0.0", "0.0", "0.0"))
+
         for i in self.params.keys():
             if i != "design" and not isinstance(self.params[i], bool) and self.params[i] in self.params["boundary_labels"] and self.params[i] != self.params["design"]:
-                bc.append(DirichletBC(self.Vn, Constant(("0.0", "0.0")), self.boundaries, self.params[i]))
+                bc.append(DirichletBC(self.Vn, const, self.boundaries, self.params[i]))
 
         # Define bilinear form
         a = self.mu*inner(grad(u) + np.transpose(grad(u)), grad(v)) * dx  # + inner(u,v)*dx
@@ -76,9 +81,13 @@ class ElasticExtension(ExtensionOperator):
 
       # Define boundary conditions
       bc = []
+      if self.V.mesh().topology().dim() == 2:
+          const = Constant(("0.0", "0.0"))
+      elif self.V.mesh().topology().dim() == 3:
+          const = Constant(("0.0", "0.0", "0.0"))
       for i in self.params.keys():
           if i != "design" and not isinstance(self.params[i], bool) and self.params[i] in self.params["boundary_labels"] and self.params[i] != self.params["design"]:
-              bc.append(DirichletBC(self.Vn, Constant(("0.0", "0.0")), self.boundaries, self.params[i]))
+              bc.append(DirichletBC(self.Vn, const, self.boundaries, self.params[i]))
 
       # Define bilinear form
       a = self.mu*inner(grad(u) + np.transpose(grad(u)), grad(v))*dx
