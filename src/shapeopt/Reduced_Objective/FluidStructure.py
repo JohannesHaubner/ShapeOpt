@@ -17,7 +17,7 @@ if not os.path.exists(save_directory):
 stop_annotating()
 
 PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
-PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
+#PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
 PETScOptions.set("mat_mumps_use_omp_threads", 1)
 
 class FluidStructure(ReducedObjective):
@@ -165,7 +165,7 @@ class FluidStructure(ReducedObjective):
             V_01 = Expression(("1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ 0.1681*0.5*(1-cos(pi/2*t))", "0.0"), Ubar=Ubar, \
                             t=t, degree=2)
             V_02 = Expression(("1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ \
-                    0.1681", "0.0", "0.0"), Ubar=Ubar, t=t, degree=2)
+                    0.1681", "0.0"), Ubar=Ubar, t=t, degree=2)
         elif dim == 3:
             V_01 =  Expression(("Ubar*36*x[1]*(0.41 -x[1])*x[2]*(0.41 - x[2])/ (0.02825761)*0.5*(1-cos(pi/2*t))", "0.0", "0.0"), Ubar=Ubar, \
                             t=t, degree=2)
@@ -419,7 +419,7 @@ class FluidStructure(ReducedObjective):
 
             list_linear_solver_methods()
 
-            solver_parameters = {"nonlinear_solver": "newton", "newton_solver": {"maximum_iterations": 25, "linear_solver": "mumps-mpi"}}
+            solver_parameters = {"nonlinear_solver": "newton", "newton_solver": {"maximum_iterations": 25, "linear_solver": "mumps"}}
 
             solver1.parameters.update(solver_parameters)
             solver2.parameters.update(solver_parameters)

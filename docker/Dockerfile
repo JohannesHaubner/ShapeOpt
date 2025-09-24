@@ -18,8 +18,8 @@ ARG DOLFIN_CMAKE_CXX_FLAGS="-O2"
 
 ########################################
 
-#FROM ubuntu:22.04 as fenics-base
-FROM public.ecr.aws/lts/ubuntu:22.04 as fenics-base
+FROM ubuntu:22.04 as fenics-base
+#FROM public.ecr.aws/lts/ubuntu:22.04 as fenics-base
 # Usage of pip setuptools
 ENV DEB_PYTHON_INSTALL_LAYOUT=deb_system
 
