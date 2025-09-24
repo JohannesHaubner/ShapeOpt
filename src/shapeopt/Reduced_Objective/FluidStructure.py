@@ -18,6 +18,7 @@ stop_annotating()
 
 PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
 PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
+PETScOptions.set("mat_mumps_use_omp_threads", 1)
 
 class FluidStructure(ReducedObjective):
     def __init__(self, drag=True, min=True):
@@ -135,6 +136,15 @@ class FluidStructure(ReducedObjective):
         rhos = Constant(1.0e4)
         rhof = Constant(1.0e3)
         nyf = Constant(1.0e-3)
+
+        if dim == 3:
+            Ubar = Constant(1.75)
+            lambdas = Constant(8.0e6)
+            mys = Constant(2e6)
+            rhos = Constant(1.0e3)
+            rhof = Constant(1.0e3)
+            nyf = Constant(1.0e-3)
+
 
         auhat = Constant(1e-9)
         azhat = Constant(1e-9)
@@ -407,7 +417,9 @@ class FluidStructure(ReducedObjective):
             solver1 = NonlinearVariationalSolver(problem1)
             solver2 = NonlinearVariationalSolver(problem2) 
 
-            solver_parameters = {"nonlinear_solver": "newton", "newton_solver": {"maximum_iterations": 25, "linear_solver": "mumps"}}
+            list_linear_solver_methods()
+
+            solver_parameters = {"nonlinear_solver": "newton", "newton_solver": {"maximum_iterations": 25, "linear_solver": "mumps-mpi"}}
 
             solver1.parameters.update(solver_parameters)
             solver2.parameters.update(solver_parameters)
