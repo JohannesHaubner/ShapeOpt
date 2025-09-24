@@ -123,7 +123,6 @@ python3 ./configure \
 --with-debugging=${PETSC_SLEPC_DEBUGGING} \
 --with-fortran-bindings=no \
 --with-shared-libraries \
---with-mpich \
 --download-blacs \
 --download-hypre \
 --download-metis \
