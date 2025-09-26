@@ -16,9 +16,8 @@ if not os.path.exists(save_directory):
 
 stop_annotating()
 
-PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
-#PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
-PETScOptions.set("mat_mumps_use_omp_threads", 1)
+PETScOptions.set("mat_mumps_icntl_4", 4) #3) #verbosity
+PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
 
 class FluidStructure(ReducedObjective):
     def __init__(self, drag=True, min=True):
