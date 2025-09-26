@@ -16,7 +16,7 @@ if not os.path.exists(save_directory):
 
 stop_annotating()
 
-PETScOptions.set("mat_mumps_icntl_4", 4) #3) #verbosity
+PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
 PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
 
 class FluidStructure(ReducedObjective):
@@ -204,7 +204,8 @@ class FluidStructure(ReducedObjective):
             tu.vector().set_local(control.vector().get_local())
             tu.vector().apply("")
             if flag == True:
-                print(tu.vector().get_local(),flush=True)
+                #print(tu.vector().get_local(),flush=True)
+                pass
 
         if not fallback_strategy:
 
