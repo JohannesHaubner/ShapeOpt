@@ -16,8 +16,12 @@ if not os.path.exists(save_directory):
 
 stop_annotating()
 
+PETScOptions.set("pc_type", "lu")
+PETScOptions.set("pc_factor_mat_solver_type", "mumps")
 PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
-PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
+#PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
+PETScOptions.set("mat_mumps_icntl_35", 1)
+PETScOptions.set("mat_mumps_icntl_7", 1e-8)
 
 class FluidStructure(ReducedObjective):
     def __init__(self, drag=True, min=True):
@@ -417,7 +421,7 @@ class FluidStructure(ReducedObjective):
             solver1 = NonlinearVariationalSolver(problem1)
             solver2 = NonlinearVariationalSolver(problem2) 
 
-            list_linear_solver_methods()
+            #list_linear_solver_methods()
 
             solver_parameters = {"nonlinear_solver": "newton", "newton_solver": {"maximum_iterations": 25, "linear_solver": "mumps"}}
 
