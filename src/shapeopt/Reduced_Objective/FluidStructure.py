@@ -21,7 +21,7 @@ PETScOptions.set("pc_factor_mat_solver_type", "mumps")
 PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
 #PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
 PETScOptions.set("mat_mumps_icntl_35", 1)
-PETScOptions.set("mat_mumps_icntl_7", 1e-8)
+PETScOptions.set("mat_mumps_cntl_7", 1e-8)
 
 class FluidStructure(ReducedObjective):
     def __init__(self, drag=True, min=True):
