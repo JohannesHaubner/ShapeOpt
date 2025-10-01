@@ -14,12 +14,15 @@ if not os.path.exists(str(here) + "/mesh3d"):
 gmsh.initialize()
 gmsh.model.add("3d FSI")
 
-L, B, H, r = 2.5, 0.41, 0.41, 0.05
+L, H, B, r = 2.5, 0.41, 0.07, 0.05
 channel = gmsh.model.occ.addBox(0, 0, 0, L, H, B)
-flap = gmsh.model.occ.addBox(0.5, 0.19, 0.11, 0.4, 0.02, 0.2)
+#
+left = (1-1/41)*B/4 + 1/41*B
+flap_width = 2 * left
+flap = gmsh.model.occ.addBox(0.5, 0.19, left, 0.4, 0.02, flap_width)
 cylinder = gmsh.model.occ.addCylinder(0.5, 0.2, 0, 0, 0, B, r)
 fluid, _ = gmsh.model.occ.cut([(3, channel)], [(3, flap), (3, cylinder)])
-flap2 = gmsh.model.occ.addBox(0.5, 0.19, 0.11, 0.4, 0.02, 0.2)
+flap2 = gmsh.model.occ.addBox(0.5, 0.19, left, 0.4, 0.02, flap_width)
 cylinder2 = gmsh.model.occ.addCylinder(0.5, 0.2, 0, 0, 0, B, r)
 solid, _ = gmsh.model.occ.cut([(3, flap2)], [(3, cylinder2)])
 c = [0.5, 0.2, B/2] #Barycenter of cylinder
@@ -53,7 +56,7 @@ for surface in surfaces:
         gmsh.model.setPhysicalName(surface[0], outlet_marker, "Fluid outlet")
     elif np.isclose(com[1], 0) or np.isclose(com[2], B) or np.isclose(com[1], H) or np.isclose(com[2], 0):
         walls.append(surface[1])
-    elif 0.19 <= com[1] <= 0.21 and com[0] <= 0.5+1e-4 and 0.11 <= com[2] <= 0.31:
+    elif 0.19 <= com[1] <= 0.21 and com[0] <= 0.5+1e-4 and left <= com[2] <= left+flap_width:
         obstacles.append(surface[1])
         interface_.append(surface[1])
     elif 0.25 < com[0] <= 0.6 and 0.19 <= com[1] <= 0.21:
@@ -78,7 +81,7 @@ bdry_labels = {
           "inflow" : inlet_marker,
           "outflow": outlet_marker,
           "noslip": wall_marker,
-          "noslip_obstacle": obstacle_marker,
+          "noslip_obstacle": obstacle_solid_marker,
           "interface": interface_marker, 
           "obstacle_solid": obstacle_solid_marker,
           "obstacle": obstacle_marker,
@@ -132,11 +135,12 @@ distance = gmsh.model.mesh.field.add("Distance")
 gmsh.model.mesh.field.setNumbers(distance, "FacesList", interface_)
 #gmsh.model.mesh.field.setNumbers(distance, "FacesList", obstacle_solid)
 
-resolution = r/3
+resolution = r/8 
+alpha = 1
 threshold = gmsh.model.mesh.field.add("Threshold")
 gmsh.model.mesh.field.setNumber(threshold, "IField", distance)
 gmsh.model.mesh.field.setNumber(threshold, "LcMin", resolution)
-gmsh.model.mesh.field.setNumber(threshold, "LcMax", 20*resolution)
+gmsh.model.mesh.field.setNumber(threshold, "LcMax", alpha*20*resolution)
 gmsh.model.mesh.field.setNumber(threshold, "DistMin", 0.5*r)
 gmsh.model.mesh.field.setNumber(threshold, "DistMax", r)
 
@@ -144,8 +148,8 @@ inlet_dist = gmsh.model.mesh.field.add("Distance")
 gmsh.model.mesh.field.setNumbers(inlet_dist, "FacesList", [inlet])
 inlet_thre = gmsh.model.mesh.field.add("Threshold")
 gmsh.model.mesh.field.setNumber(inlet_thre, "IField", inlet_dist)
-gmsh.model.mesh.field.setNumber(inlet_thre, "LcMin", 5*resolution)
-gmsh.model.mesh.field.setNumber(inlet_thre, "LcMax", 10*resolution)
+gmsh.model.mesh.field.setNumber(inlet_thre, "LcMin", alpha*5*resolution)
+gmsh.model.mesh.field.setNumber(inlet_thre, "LcMax", alpha*10*resolution)
 gmsh.model.mesh.field.setNumber(inlet_thre, "DistMin", 0.1)
 gmsh.model.mesh.field.setNumber(inlet_thre, "DistMax", 0.5)
 

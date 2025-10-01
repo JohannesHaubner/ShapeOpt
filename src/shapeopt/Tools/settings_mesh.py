@@ -214,7 +214,7 @@ class Initialize_Mesh_and_FunctionSpaces():
 
       # dof-maps between V and Vb
       Vb_to_V_map = self.__Vb_to_V(Vfg, Vb, global_to_glocal_map, dof_map_fluid_full)
-      self.__test_Vb_to_V(Vfg, Vb, global_to_glocal_map, dof_map_fluid_full)
+      #self.__test_Vb_to_V(Vfg, Vb, global_to_glocal_map, dof_map_fluid_full)
 
       # dof-maps between V and Vd
       self.Vd_to_V_map = self.__Vd_to_V(Vb, Vb_to_V_map)
@@ -493,7 +493,7 @@ class Initialize_Mesh_and_FunctionSpaces():
 
 
     def __test_Vb_to_V(self, Vfg, Vb, global_to_glocal_map, fluid_full_map):
-        print(Vb)
+        #print(Vb)
         f = Function(Vb)
         n = np.size(f.vector().get_local())
         f.vector().set_local(np.ones(n))

@@ -19,7 +19,7 @@ stop_annotating()
 PETScOptions.set("pc_type", "lu")
 PETScOptions.set("pc_factor_mat_solver_type", "mumps")
 PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
-#PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
+PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
 PETScOptions.set("mat_mumps_icntl_35", 1)
 PETScOptions.set("mat_mumps_cntl_7", 1e-8)
 
@@ -170,10 +170,10 @@ class FluidStructure(ReducedObjective):
             V_02 = Expression(("1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ \
                     0.1681", "0.0"), Ubar=Ubar, t=t, degree=2)
         elif dim == 3:
-            V_01 =  Expression(("Ubar*36*x[1]*(0.41 -x[1])*x[2]*(0.41 - x[2])/ (0.02825761)*0.5*(1-cos(pi/2*t))", "0.0", "0.0"), Ubar=Ubar, \
-                            t=t, degree=2)
-            V_02 = Expression(("Ubar*36*x[1]*(0.41 -x[1])*x[2]*(0.41 - x[2])/ (0.02825761)", "0.0", "0.0"), Ubar=Ubar, t=t, degree=2)
-        V_1 = Constant([0.0]*dim)
+            V_01 =  Expression(("Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)*0.5*(1-cos(pi/2*t))", "0.0", "0.0"), Ubar=Ubar, \
+                            H=param["H"], B=param["B"], t=t, degree=4)
+            V_02 = Expression(("Ubar*x[1]*(0.41 -x[1])*x[2]*(0.41 - x[2])/ (0.001764)", "0.0", "0.0"), Ubar=Ubar, t=t, degree=4)
+        V_1 = Constant([0.0]*dim)  
 
         # output files
         if visualize:
@@ -412,6 +412,15 @@ class FluidStructure(ReducedObjective):
                 bc1.append(DirichletBC(W.sub(2), V_1, boundaries, params["noslip_obstacle"]))  # ns   u
                 bc2.append(DirichletBC(W.sub(0), V_1, boundaries, params["noslip_obstacle"]))  # ns   v
                 bc2.append(DirichletBC(W.sub(2), V_1, boundaries, params["noslip_obstacle"]))  # ns   u
+
+            # # pressure BC
+            # class PressureB(SubDomain):
+            #     def inside(self, x, on_boundary):
+            #         return near(x[0], (0.0)) and near(x[1], (0.0))
+            # pressureB = PressureB()
+            # bc1.append(DirichletBC(W.sub(1), Constant(0.0), pressureB, method='pointwise'))
+            # bc2.append(DirichletBC(W.sub(1), Constant(0.0), pressureB, method='pointwise'))
+            
 
             # update pressure boundary condition
             Jac = derivative(F, w)
