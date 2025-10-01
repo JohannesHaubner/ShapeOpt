@@ -171,7 +171,7 @@ class FluidStructure(ReducedObjective):
         elif dim == 3:
             V_01 =  Expression(("Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)*0.5*(1-cos(pi/2*t))", "0.0", "0.0"), Ubar=Ubar, \
                             H=param["H"], B=param["B"], t=t, degree=4)
-            V_02 = Expression(("Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)", "0.0", "0.0"), Ubar=Ubar, t=t, degree=4)
+            V_02 = Expression(("Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)", "0.0", "0.0"), H=param["H"], B=param["B"], Ubar=Ubar, t=t, degree=4)
         V_1 = Constant([0.0]*dim)  
 
         # output files
