@@ -162,7 +162,6 @@ class FluidStructure(ReducedObjective):
         INH = False
 
         # Expressions
-        # TODO
         if dim == 2:
             (x, y) = SpatialCoordinate(mesh)
             V_01 = Expression(("1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ 0.1681*0.5*(1-cos(pi/2*t))", "0.0"), Ubar=Ubar, \
@@ -172,7 +171,7 @@ class FluidStructure(ReducedObjective):
         elif dim == 3:
             V_01 =  Expression(("Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)*0.5*(1-cos(pi/2*t))", "0.0", "0.0"), Ubar=Ubar, \
                             H=param["H"], B=param["B"], t=t, degree=4)
-            V_02 = Expression(("Ubar*x[1]*(0.41 -x[1])*x[2]*(0.41 - x[2])/ (0.001764)", "0.0", "0.0"), Ubar=Ubar, t=t, degree=4)
+            V_02 = Expression(("Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)", "0.0", "0.0"), Ubar=Ubar, t=t, degree=4)
         V_1 = Constant([0.0]*dim)  
 
         # output files
