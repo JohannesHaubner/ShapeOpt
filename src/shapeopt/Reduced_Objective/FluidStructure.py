@@ -91,9 +91,9 @@ class FluidStructure(ReducedObjective):
 
         # compute help function for evaluation of objective
 
-        dx = Measure('dx', domain=mesh, subdomain_data=domains)
-        dS = Measure('dS', domain=mesh, subdomain_data=boundaries)
-        ds = Measure('ds', domain=mesh, subdomain_data=boundaries)
+        dx = Measure('dx', domain=mesh, subdomain_data=domains, metadata={"quadrature_degree": 20})
+        dS = Measure('dS', domain=mesh, subdomain_data=boundaries, metadata={"quadrature_degree": 20})
+        ds = Measure('ds', domain=mesh, subdomain_data=boundaries, metadata={"quadrature_degree": 20})
         n = FacetNormal(mesh)
         dim = mesh.geometric_dimension()
 
