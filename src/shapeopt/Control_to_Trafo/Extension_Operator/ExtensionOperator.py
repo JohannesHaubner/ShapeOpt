@@ -19,10 +19,12 @@ class ExtensionOperator(object):
         self.mu = Constant("1.0") #self.param()
         self.opt_inner_bdry = opt_inner_bdry
 
+        self.dx = Measure('dx', domain=mesh, metadata={"quadrature_degree": 20})
+
         if opt_inner_bdry:
-            self.ds = Measure("dS", domain=self.mesh, subdomain_data=boundaries)
+            self.ds = Measure("dS", domain=self.mesh, subdomain_data=boundaries, metadata={"quadrature_degree": 20})
         else:
-            self.ds = Measure("ds", subdomain_data=boundaries)
+            self.ds = Measure("ds", subdomain_data=boundaries, metadata={"quadrature_degree": 20})
 
     def eval(self, x):
         """

@@ -27,7 +27,7 @@ class ElasticExtension(ExtensionOperator):
                 bc.append(DirichletBC(self.Vn, const, self.boundaries, self.params[i]))
 
         # Define bilinear form
-        a = self.mu*inner(grad(u) + np.transpose(grad(u)), grad(v)) * dx  # + inner(u,v)*dx
+        a = self.mu*inner(grad(u) + np.transpose(grad(u)), grad(v)) * self.dx  # + inner(u,v)*dx
         # Define linear form
         if self.opt_inner_bdry:
           L = inner(avg(x), avg(v))*self.ds(self.params["design"])
@@ -51,9 +51,9 @@ class ElasticExtension(ExtensionOperator):
       bc = [bc1, bc2, bc3, bc4]
 
       # Define bilinear form
-      a = inner(grad(u), grad(v)) * dx(self.mesh)  # + inner(u,v)*dx
+      a = inner(grad(u), grad(v)) * self.dx  # + inner(u,v)*dx
       # Define linear form
-      L =Constant("0.0")*v * dx(self.mesh)
+      L =Constant("0.0")*v * self.dx
 
       # solve variational problem
       u = Function(self.V)
@@ -86,10 +86,10 @@ class ElasticExtension(ExtensionOperator):
               bc.append(DirichletBC(self.Vn, const, self.boundaries, self.params[i]))
 
       # Define bilinear form
-      a = self.mu*inner(grad(u) + np.transpose(grad(u)), grad(v))*dx
+      a = self.mu*inner(grad(u) + np.transpose(grad(u)), grad(v))*self.dx
       if option2 ==1:
         # define linear form
-        L = inner(djy,v)*dx
+        L = inner(djy,v)*self.dx
         # solve variational problem
         u = Function(self.Vn)
         solve(a==L, u, bc)

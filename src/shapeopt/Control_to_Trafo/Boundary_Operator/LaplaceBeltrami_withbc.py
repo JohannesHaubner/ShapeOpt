@@ -13,7 +13,7 @@ class LaplaceBeltrami_withbc(BoundaryOperator):
         # Define boundary conditions
         self.bc_param = DirichletBC(self.Vd, Constant("1.0"), 'on_boundary')
         # Define bilinear form
-        a = lb_off*inner(grad(u), grad(v)) * dx(self.dmesh) + inner(u, v) * dx(self.dmesh)
+        a = lb_off*inner(grad(u), grad(v)) * self.dx + inner(u, v) * self.dx
         A = assemble(a)
         self.bc_param.apply(A)
         self.solver_param = PETScLUSolver()
@@ -30,7 +30,7 @@ class LaplaceBeltrami_withbc(BoundaryOperator):
         dim = self.Vdn.mesh().topology().dim() + 1
         self.bc = DirichletBC(self.Vdn, Constant([0.0]*dim), 'on_boundary')
         # Define bilinear form
-        a = self.lb_off * inner(grad(u), grad(v)) * dx(self.dmesh) + inner(u, v) * dx(self.dmesh)
+        a = self.lb_off * inner(grad(u), grad(v)) * self.dx + inner(u, v) * self.dx
         A = assemble(a)
         self.bc.apply(A)
         
@@ -44,7 +44,7 @@ class LaplaceBeltrami_withbc(BoundaryOperator):
     
         # Define linear form
         v = TestFunction(self.Vd)
-        L = inner(lb_off, v) * dx(self.dmesh)
+        L = inner(lb_off, v) * self.dx
         b = assemble(L)
         self.bc_param.apply(b)
 
@@ -61,7 +61,7 @@ class LaplaceBeltrami_withbc(BoundaryOperator):
 
         # Define linear form
         v = TestFunction(self.Vdn)
-        L = inner(x * self.dnormalf, v) * dx(self.dmesh)
+        L = inner(x * self.dnormalf, v) * self.dx
         b = assemble(L)
         self.bc.apply(b)
 
@@ -81,7 +81,7 @@ class LaplaceBeltrami_withbc(BoundaryOperator):
             z = TestFunction(self.Vdn)
 
             # Define linear form
-            L = inner(djy, z) * dx(self.dmesh)
+            L = inner(djy, z) * self.dx
             b = assemble(L)
         else:
             b = djy
@@ -94,7 +94,7 @@ class LaplaceBeltrami_withbc(BoundaryOperator):
 
         # evaluate dj/dx
         xt = TrialFunction(self.Vd)
-        djx = assemble(inner(v, self.dnormalf) * xt * dx(self.dmesh))
+        djx = assemble(inner(v, self.dnormalf) * xt * self.dx)
 
         return djx
 

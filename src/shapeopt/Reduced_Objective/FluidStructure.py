@@ -88,6 +88,11 @@ class FluidStructure(ReducedObjective):
         print("Use FluidStructure to compute reduced objective",flush=True)
 
         #parameters["adjoint"]["stop_annotating"] = False
+        #parameters["form_compiler"]["cpp_optimize"] = True
+        #parameters["form_compiler"]["optimize"] = True
+
+        parameters['form_compiler']['cpp_optimize_flags'] = '-O3 -fno-math-errno -march=native'        
+        parameters['form_compiler']['quadrature_degree'] = 20   
 
         # compute help function for evaluation of objective
 
