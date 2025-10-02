@@ -81,7 +81,8 @@ if __name__ == "__main__":
         d0 = interpolate(Constant((0.0, 0.0, 0.0)), Vn)
 
     # update discretized params
-    param["Vol_DmO"] = assemble(v*dx)
+    dX = Measure('dx', domain=V.mesh(), metadata={"quadrature_degree": 20})
+    param["Vol_DmO"] = assemble(v*dX)
     param["Vol_O"] = param["Vol_D"] - param["Vol_DmO"]
     bo = param["Bary_O"]
     bc = constraints['barycenter'](init_mfs, param, dof_to_trafo).eval(x0)

@@ -20,6 +20,7 @@ class Barycenter(Constraint):
         self.L = param["L"]
         self.H = param["H"]
         self.dim = Mesh_.mesh.topology().dim()
+        self.dx = Measure('dx', subdomain_data=Mesh_.domains, metadata={"quadrature_degree": 20})
         if self.dim == 3:
             self.B = param["B"]
 
@@ -34,14 +35,14 @@ class Barycenter(Constraint):
         dF = Identity(self.dim) + grad(deformation)
         Jhat = det(dF)
         if self.dim == 2:
-            bc1 = (L**2 * H / 2 - assemble((x[0]+deformation[0])*Jhat * dx))/ (L * H - self.Vol) - self.Bary_O[0]
-            bc2 = (L * H**2 / 2 - assemble((x[1]+deformation[1])*Jhat * dx))/ (L * H - self.Vol) - self.Bary_O[1]
+            bc1 = (L**2 * H / 2 - assemble((x[0]+deformation[0])*Jhat * self.dx))/ (L * H - self.Vol) - self.Bary_O[0]
+            bc2 = (L * H**2 / 2 - assemble((x[1]+deformation[1])*Jhat * self.dx))/ (L * H - self.Vol) - self.Bary_O[1]
             bc = [bc1, bc2]
         elif self.dim == 3:
             B = self.B
-            bc1 = (L**2 * H * B / 2 - assemble((x[0]+deformation[0])*Jhat * dx))/ (L * H * B - self.Vol) - self.Bary_O[0]
-            bc2 = (L * H * B**2 / 2 - assemble((x[0]+deformation[0])*Jhat * dx))/ (L * H * B - self.Vol) - self.Bary_O[1]
-            bc3 = (L * H**2 * B / 2 - assemble((x[1]+deformation[1])*Jhat * dx))/ (L * H * B - self.Vol) - self.Bary_O[2]
+            bc1 = (L**2 * H * B / 2 - assemble((x[0]+deformation[0])*Jhat * self.dx))/ (L * H * B - self.Vol) - self.Bary_O[0]
+            bc2 = (L * H * B**2 / 2 - assemble((x[0]+deformation[0])*Jhat * self.dx))/ (L * H * B - self.Vol) - self.Bary_O[1]
+            bc3 = (L * H**2 * B / 2 - assemble((x[1]+deformation[1])*Jhat * self.dx))/ (L * H * B - self.Vol) - self.Bary_O[2]
             bc = [bc1, bc2, bc3]
         return bc
     
@@ -54,10 +55,10 @@ class Barycenter(Constraint):
             fac = fac * B
         deformation = self.dof_to_trafo.dof_to_deformation_precond(y)
         x = SpatialCoordinate(self.mesh)
-        form1 = (x[0]+deformation[0])*det(Identity(self.dim) + grad(deformation)) * dx
-        form2 = (x[1]+deformation[1])*det(Identity(self.dim) + grad(deformation)) * dx
+        form1 = (x[0]+deformation[0])*det(Identity(self.dim) + grad(deformation)) * self.dx
+        form2 = (x[1]+deformation[1])*det(Identity(self.dim) + grad(deformation)) * self.dx
         if self.dim == 3:
-            form3 = (x[2]+deformation[2])*det(Identity(self.dim) + grad(deformation)) * dx
+            form3 = (x[2]+deformation[2])*det(Identity(self.dim) + grad(deformation)) * self.dx
         df1 = -1.0/ (fac - self.Vol)*assemble(derivative(form1, deformation))
         df2 = -1.0/ (fac - self.Vol)*assemble(derivative(form2, deformation))
         if self.dim == 3:

@@ -87,23 +87,23 @@ class FluidStructure(ReducedObjective):
 
         print("Use FluidStructure to compute reduced objective",flush=True)
 
-        #parameters["adjoint"]["stop_annotating"] = False
+        ##parameters["adjoint"]["stop_annotating"] = False
         #parameters["form_compiler"]["cpp_optimize"] = True
         #parameters["form_compiler"]["optimize"] = True
 
-        parameters['form_compiler']['cpp_optimize_flags'] = '-O3 -fno-math-errno -march=native'        
-        parameters['form_compiler']['quadrature_degree'] = 20   
+        ##parameters['form_compiler']['cpp_optimize_flags'] = '-O3 -fno-math-errno -march=native'        
+        ##parameters['form_compiler']['quadrature_degree'] = 20   
 
         # compute help function for evaluation of objective
 
-        dx = Measure('dx', domain=mesh, subdomain_data=domains, metadata={"quadrature_degree": 20})
+        dX = Measure('dx', domain=mesh, subdomain_data=domains, metadata={"quadrature_degree": 20})
         dS = Measure('dS', domain=mesh, subdomain_data=boundaries, metadata={"quadrature_degree": 20})
         ds = Measure('ds', domain=mesh, subdomain_data=boundaries, metadata={"quadrature_degree": 20})
         n = FacetNormal(mesh)
         dim = mesh.geometric_dimension()
 
-        dxf = dx(mesh)(params['fluid'], metadata={"quadrature_degree": 20})
-        dxs = dx(mesh)(params['solid'], metadata={"quadrature_degree": 20})
+        dxf = dX(mesh)(params['fluid'], metadata={"quadrature_degree": 20})
+        dxs = dX(mesh)(params['solid'], metadata={"quadrature_degree": 20})
 
         # function spaces
         V2 = VectorElement("CG", mesh.ufl_cell(), dim)
@@ -129,8 +129,8 @@ class FluidStructure(ReducedObjective):
             chfun = Function(C, name="charfunc")
             psi = TestFunction(C)
             u = TrialFunction(C)
-            L = Constant(1.0)*psi*dx(mesh)(params["solid"]) + Constant(0.0)*psi*dx(mesh)(params["fluid"]) 
-            a = u * psi *dx
+            L = Constant(1.0)*psi*dxs + Constant(0.0)*psi*dxf
+            a = u * psi *dX(mesh)
             solve(a == L, chfun, [])
 
         stop_annotating()
@@ -350,12 +350,12 @@ class FluidStructure(ReducedObjective):
                 def __init__(self, V):
                     self.v = TestFunction(V)
                     u = TrialFunction(V)
-                    form = inner(u, self.v)*dx
+                    form = inner(u, self.v)*dX(mesh)
                     self.A = assemble(form, annotate=False)
                     self.solver = LUSolver(self.A)
                     self.uh = Function(V)
                 def project(self, f):
-                    L = inner(f, self.v)*dx
+                    L = inner(f, self.v)*dX(mesh)
                     b = assemble(L, annotate=False)
                     self.solver.solve(self.uh.vector(), b)
                     return self.uh
@@ -495,7 +495,7 @@ class FluidStructure(ReducedObjective):
             #objective function
             if add_penalty:
                 print("Objective value without penalization is ", J)
-                J += assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["det_lb"]))*dx(mesh))
+                J += assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["det_lb"]))*dX(mesh))
 
         else:
             I = Identity(2)
@@ -504,7 +504,7 @@ class FluidStructure(ReducedObjective):
             tFhati = inv(tFhat)
             tFhatti = tFhati.T
             tJhat = det(tFhat)
-            J += assemble((tu[0] + tu[1]) * 10e9 * dx(mesh)) + assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["det_lb"]))*dx(mesh)) # fallback strategy if ipopt wants to evaluate on mesh with bad qualities
+            J += assemble((tu[0] + tu[1]) * 10e9 * dX(mesh)) + assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["det_lb"]))*dX(mesh)) # fallback strategy if ipopt wants to evaluate on mesh with bad qualities
 
         if flag:
           dJ = compute_gradient(J,Control(tu))
