@@ -49,7 +49,7 @@ param = {"reg": 1e-1, # regularization parameter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient, etaP
          "maxiter_IPOPT": 50,
          "T": 0.02, # simulation horizon for Fluid-Structure interaction simulation
-         "deltat": 0.001, # time step size
+         "deltat": 0.01, # time step size
          "gammaP": 1e-3, # penalty parameter for determinant constraint violation
          "output_path": path_mesh + "/Output/", # folder where intermediate results are stored
          }

@@ -14,7 +14,7 @@ if not os.path.exists(str(here) + "/mesh3d"):
 gmsh.initialize()
 gmsh.model.add("3d FSI")
 
-L, H, B, r = 2.5, 0.41, 0.07, 0.05
+L, H, B, r = 2.5, 0.41, 0.05, 0.05
 channel = gmsh.model.occ.addBox(0, 0, 0, L, H, B)
 #
 left = (1-1/41)*B/4 + 1/41*B
