@@ -14,7 +14,7 @@ class BoundaryOperator(object):
         self.Vdn = VectorFunctionSpace(dmesh, "CG", 1)
         self.dnormalf = dnormal
         self.lb_off = lb_off
-        self.dx = Measure('dx', domain=self.dmesh, metadata={"quadrature_degree": 20})
+        self.dx = Measure('dx', domain=self.dmesh, metadata={"quadrature_degree": 5})
 
     def eval(self, x):
         """

@@ -40,8 +40,8 @@ class Extension():
       self.params = params
       self.domains = domains
       self.boundaries = boundaries
-      self.ds = Measure("ds", subdomain_data=boundaries, metadata={"quadrature_degree": 10})
-      self.dx = Measure("dx", domain=self.dmesh, metadata={"quadrature_degree": 10})
+      self.ds = Measure("ds", subdomain_data=boundaries, metadata={"quadrature_degree": 5})
+      self.dx = Measure("dx", domain=self.dmesh, metadata={"quadrature_degree": 5})
       
       # lumped mass matrix for IPOPT
       v = TestFunction(self.Vd)
@@ -145,12 +145,12 @@ class Extension():
       ds = 1.0*np.ones(xl)
       #ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
       y0 = self.dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x0))
-      j0 = assemble(0.5*inner(y0,y0)*dx)
+      j0 = assemble(0.5*inner(y0,y0)*self.dx)
       djy = y0
       djx = self.dof_to_deformation_precond_chainrule(djy, 1)
       epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
       ylist = [self.dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x0+eps*ds)) for eps in epslist]
-      jlist = [assemble(0.5*inner(y, y)*dx) for y in ylist]
+      jlist = [assemble(0.5*inner(y, y)*self.dx) for y in ylist]
       order, diff = perform_first_order_check(jlist, j0, djx, ds, epslist)
       return order, diff
 
@@ -162,12 +162,12 @@ class Extension():
       ds = interpolate(Constant(1.0), self.Vd)
       #ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
       y0 = self.dof_to_deformation(x0)
-      j0 = assemble(0.5*inner(y0,y0)*dx(self.mesh))
+      j0 = assemble(0.5*inner(y0,y0)*self.dx(self.mesh))
       djy = y0
       djx = self.dof_to_deformation_chainrule(djy,1).get_local()
       epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
       ylist = [self.dof_to_deformation(x0+eps*ds) for eps in epslist]
-      jlist = [assemble(0.5*inner(y, y)*dx) for y in ylist]
+      jlist = [assemble(0.5*inner(y, y)*self.dx) for y in ylist]
       ds_ = ds.vector().get_local()
       order, diff = perform_first_order_check(jlist, j0, djx, ds_, epslist)
       return order, diff
@@ -180,7 +180,7 @@ class Extension():
       print('----------------------------------------------------------------')
       print('Extension.test_design_boundary_mesh started.....................')
       v = interpolate(Constant(("1.0")), self.Vd)
-      print('output: ', assemble(inner(v,v)*dx))
+      print('output: ', assemble(inner(v,v)*self.dx))
       print('test finished...................................................')
       pass
 

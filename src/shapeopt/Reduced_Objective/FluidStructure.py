@@ -18,11 +18,11 @@ stop_annotating()
 
 PETScOptions.set("pc_type", "lu")
 PETScOptions.set("pc_factor_mat_solver_type", "mumps")
-PETScOptions.set("mat_mumps_icntl_4", 1) #verbosity
-PETScOptions.set("mat_mumps_icntl_14", 400)
-PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
-PETScOptions.set("mat_mumps_icntl_35", 1)
-PETScOptions.set("mat_mumps_cntl_7", 1e-8)
+PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
+PETScOptions.set("mat_mumps_icntl_14", 1000)
+#PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
+#PETScOptions.set("mat_mumps_icntl_35", 1)
+#PETScOptions.set("mat_mumps_cntl_7", 1e-8)
 
 class FluidStructure(ReducedObjective):
     def __init__(self, drag=True, min=True):
@@ -32,7 +32,7 @@ class FluidStructure(ReducedObjective):
 
     def meanflow_function(self, mesh, boundaries, params, drag):
         # compute function that is (1, 0) on the obstacles boundary and 0 on the outer boundary
-        dX = Measure('dx', domain=mesh, metadata={"quadrature_degree": 10})
+        dX = Measure('dx', domain=mesh, metadata={"quadrature_degree": 2})
         V1 = VectorElement("CG", mesh.ufl_cell(), 1)
         VC = FunctionSpace(mesh, V1)
 
@@ -98,14 +98,14 @@ class FluidStructure(ReducedObjective):
 
         # compute help function for evaluation of objective
 
-        dX = Measure('dx', domain=mesh, subdomain_data=domains, metadata={"quadrature_degree": 20})
-        dS = Measure('dS', domain=mesh, subdomain_data=boundaries, metadata={"quadrature_degree": 20})
-        ds = Measure('ds', domain=mesh, subdomain_data=boundaries, metadata={"quadrature_degree": 20})
+        dX = Measure('dx', domain=mesh, subdomain_data=domains, metadata={"quadrature_degree": 7})
+        dS = Measure('dS', domain=mesh, subdomain_data=boundaries, metadata={"quadrature_degree": 7})
+        ds = Measure('ds', domain=mesh, subdomain_data=boundaries, metadata={"quadrature_degree": 7})
         n = FacetNormal(mesh)
         dim = mesh.geometric_dimension()
 
-        dxf = dX(mesh)(params['fluid'], metadata={"quadrature_degree": 20})
-        dxs = dX(mesh)(params['solid'], metadata={"quadrature_degree": 20})
+        dxf = dX(mesh)(params['fluid'], metadata={"quadrature_degree": 7})
+        dxs = dX(mesh)(params['solid'], metadata={"quadrature_degree": 7})
 
         # function spaces
         V2 = VectorElement("CG", mesh.ufl_cell(), dim)
@@ -177,8 +177,8 @@ class FluidStructure(ReducedObjective):
                     0.1681", "0.0"), Ubar=Ubar, t=t, degree=2)
         elif dim == 3:
             V_01 =  Expression(("Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)*0.5*(1-cos(pi/2*t))", "0.0", "0.0"), Ubar=Ubar, \
-                            H=param["H"], B=param["B"], t=t, degree=4)
-            V_02 = Expression(("Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)", "0.0", "0.0"), H=param["H"], B=param["B"], Ubar=Ubar, t=t, degree=4)
+                            H=param["H"], B=param["B"], t=t, degree=2)
+            V_02 = Expression(("Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)", "0.0", "0.0"), H=param["H"], B=param["B"], Ubar=Ubar, t=t, degree=2)
         V_1 = Constant([0.0]*dim)  
 
         # output files

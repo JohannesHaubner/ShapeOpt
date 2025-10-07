@@ -13,7 +13,7 @@ class VolumeSolid(Constraint):
         super().__init__(Mesh_, param, dof_to_trafo)
         self.V = param["Vol_solid"]
         self.scalingfactor = 1.0
-        self.dx = Measure('dx', subdomain_data=Mesh_.domains, metadata={"quadrature_degree": 20})
+        self.dx = Measure('dx', subdomain_data=Mesh_.domains, metadata={"quadrature_degree": 2})
         self.id = self.param["solid"]
 
     def output_dim(self):

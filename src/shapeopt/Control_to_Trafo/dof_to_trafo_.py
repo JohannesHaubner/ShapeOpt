@@ -35,7 +35,7 @@ class Extension():
       self.dnormalf = Mesh_.get_dnormalf()
       self.params = params
       self.boundaries = boundaries
-      self.ds = Measure("ds", subdomain_data=boundaries, metadata={"quadrature_degree": 10})
+      self.ds = Measure("ds", subdomain_data=boundaries, metadata={"quadrature_degree": 5})
       
       # lumped mass matrix for IPOPT
       v = TestFunction(self.Vd)

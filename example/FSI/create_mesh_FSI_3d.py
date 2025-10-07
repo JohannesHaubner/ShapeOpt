@@ -137,7 +137,7 @@ distance = gmsh.model.mesh.field.add("Distance")
 gmsh.model.mesh.field.setNumbers(distance, "FacesList", fine_resolution_surface_)
 #gmsh.model.mesh.field.setNumbers(distance, "FacesList", obstacle_solid)
 
-resolution = r/6 
+resolution = r/4
 alpha = 1
 threshold = gmsh.model.mesh.field.add("Threshold")
 gmsh.model.mesh.field.setNumber(threshold, "IField", distance)

@@ -81,7 +81,7 @@ if __name__ == "__main__":
         d0 = interpolate(Constant((0.0, 0.0, 0.0)), Vn)
 
     # update discretized params
-    dX = Measure('dx', domain=V.mesh(), metadata={"quadrature_degree": 20})
+    dX = Measure('dx', domain=V.mesh(), metadata={"quadrature_degree": 2})
     param["Vol_DmO"] = assemble(v*dX)
     param["Vol_O"] = param["Vol_D"] - param["Vol_DmO"]
     bo = param["Bary_O"]
