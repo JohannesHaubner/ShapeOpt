@@ -17,13 +17,13 @@ if not os.path.exists(save_directory):
 
 stop_annotating()
 
-#PETScOptions.set("pc_type", "lu")
-#PETScOptions.set("pc_factor_mat_solver_type", "mumps")
+PETScOptions.set("pc_type", "lu")
+PETScOptions.set("pc_factor_mat_solver_type", "mumps")
 PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
 PETScOptions.set("mat_mumps_icntl_14", 400)
-#PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
-#PETScOptions.set("mat_mumps_icntl_35", 1)
-#PETScOptions.set("mat_mumps_cntl_7", 1e-8)
+PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
+PETScOptions.set("mat_mumps_icntl_35", 1)
+PETScOptions.set("mat_mumps_cntl_7", 1e-8)
 
 class FluidStructure(ReducedObjective):
     def __init__(self, drag=True, min=True):
@@ -506,7 +506,7 @@ class FluidStructure(ReducedObjective):
             J += assemble((tu[0] + tu[1]) * 10e9 * dX(mesh)) + assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["det_lb"]))*dX(mesh)) # fallback strategy if ipopt wants to evaluate on mesh with bad qualities
 
         if flag:
-          dJ = compute_gradient(J,Control(tu))
+          dJ = compute_gradient(J,tu, apply_riesz=False)
 
         ## plot solution
         #import matplotlib.pyplot as plt

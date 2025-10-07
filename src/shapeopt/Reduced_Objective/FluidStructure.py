@@ -509,7 +509,7 @@ class FluidStructure(ReducedObjective):
             J += assemble((tu[0] + tu[1]) * 10e9 * dX(mesh)) + assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["det_lb"]))*dX(mesh)) # fallback strategy if ipopt wants to evaluate on mesh with bad qualities
 
         if flag:
-          dJ = compute_gradient(J,Control(tu))
+          dJ = compute_gradient(J,tu, apply_riesz=False)
 
         ## plot solution
         #import matplotlib.pyplot as plt
