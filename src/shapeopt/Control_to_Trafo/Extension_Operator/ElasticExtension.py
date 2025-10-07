@@ -27,12 +27,12 @@ class ElasticExtension(ExtensionOperator):
                 bc.append(DirichletBC(self.Vn, const, self.boundaries, self.params[i]))
 
         # Define bilinear form
-        a = self.mu*inner(grad(u) + np.transpose(grad(u)), grad(v)) * self.dx  # + inner(u,v)*dx
+        a = self.mu*inner(grad(u) + np.transpose(grad(u)), grad(v)) * self.dx(metadata={"quadrature_degree": 2})  # + inner(u,v)*dx
         # Define linear form
         if self.opt_inner_bdry:
-          L = inner(avg(x), avg(v))*self.ds(self.params["design"])
+          L = inner(avg(x), avg(v))*self.ds(self.params["design"], metadata={"quadrature_degree": 2})
         else:
-          L = inner(x, v)*self.ds(self.params["design"])
+          L = inner(x, v)*self.ds(self.params["design"], metadata={"quadrature_degree": 2})
 
         # solve variational problem
         u = Function(self.Vn)
@@ -51,9 +51,9 @@ class ElasticExtension(ExtensionOperator):
       bc = [bc1, bc2, bc3, bc4]
 
       # Define bilinear form
-      a = inner(grad(u), grad(v)) * self.dx  # + inner(u,v)*dx
+      a = inner(grad(u), grad(v)) * self.dx(metadata={"quadrature_degree": 2})  # + inner(u,v)*dx
       # Define linear form
-      L =Constant("0.0")*v * self.dx
+      L =Constant("0.0")*v * self.dx(metadata={"quadrature_degree": 2})
 
       # solve variational problem
       u = Function(self.V)
@@ -86,10 +86,10 @@ class ElasticExtension(ExtensionOperator):
               bc.append(DirichletBC(self.Vn, const, self.boundaries, self.params[i]))
 
       # Define bilinear form
-      a = self.mu*inner(grad(u) + np.transpose(grad(u)), grad(v))*self.dx
+      a = self.mu*inner(grad(u) + np.transpose(grad(u)), grad(v))*self.dx(metadata={"quadrature_degree": 2})
       if option2 ==1:
         # define linear form
-        L = inner(djy,v)*self.dx
+        L = inner(djy,v)*self.dx(metadata={"quadrature_degree": 2})
         # solve variational problem
         u = Function(self.Vn)
         solve(a==L, u, bc)
@@ -110,9 +110,9 @@ class ElasticExtension(ExtensionOperator):
       elif option == 2:
         xt = TrialFunction(self.Vn)
         if self.opt_inner_bdry:
-          ud = assemble(inner(avg(u),avg(xt))*self.ds(self.params["design"]))
+          ud = assemble(inner(avg(u),avg(xt))*self.ds(self.params["design"]), metadata={"quadrature_degree": 2})
         else:
-          ud = assemble(inner(u,xt)*self.ds(self.params["design"]))
+          ud = assemble(inner(u,xt)*self.ds(self.params["design"], metadata={"quadrature_degree": 2}))
         u = Function(self.Vn)
         u.vector()[:] = ud
         return u

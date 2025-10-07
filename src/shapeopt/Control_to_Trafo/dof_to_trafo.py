@@ -40,12 +40,13 @@ class Extension():
       self.params = params
       self.domains = domains
       self.boundaries = boundaries
-      self.ds = Measure("ds", subdomain_data=boundaries)
+      self.ds = Measure("ds", subdomain_data=boundaries, metadata={"quadrature_degree": 10})
+      self.dx = Measure("dx", domain=self.dmesh, metadata={"quadrature_degree": 10})
       
       # lumped mass matrix for IPOPT
       v = TestFunction(self.Vd)
       u = TrialFunction(self.Vd)
-      mass_form = v*u*dx(self.dmesh)
+      mass_form = v*u*self.dx
       mass_action_form = action(mass_form, interpolate(Constant(1.0),self.Vd))
       M_lumped = assemble(mass_form)
       M_lumped_m05= assemble(mass_form)

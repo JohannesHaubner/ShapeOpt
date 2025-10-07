@@ -18,7 +18,8 @@ stop_annotating()
 
 PETScOptions.set("pc_type", "lu")
 PETScOptions.set("pc_factor_mat_solver_type", "mumps")
-PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
+PETScOptions.set("mat_mumps_icntl_4", 1) #verbosity
+PETScOptions.set("mat_mumps_icntl_14", 400)
 PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
 PETScOptions.set("mat_mumps_icntl_35", 1)
 PETScOptions.set("mat_mumps_cntl_7", 1e-8)
@@ -31,6 +32,7 @@ class FluidStructure(ReducedObjective):
 
     def meanflow_function(self, mesh, boundaries, params, drag):
         # compute function that is (1, 0) on the obstacles boundary and 0 on the outer boundary
+        dX = Measure('dx', domain=mesh, metadata={"quadrature_degree": 10})
         V1 = VectorElement("CG", mesh.ufl_cell(), 1)
         VC = FunctionSpace(mesh, V1)
 
@@ -64,8 +66,8 @@ class FluidStructure(ReducedObjective):
                 bcs.append(DirichletBC(VC, Constant([0.0]*dim), boundaries, params[j]))
 
 
-        a = inner(grad(u), grad(psiu))*dx(mesh)
-        L = Constant(0.0)*psiu[0]*dx(mesh)
+        a = inner(grad(u), grad(psiu))*dX(mesh)
+        L = Constant(0.0)*psiu[0]*dX(mesh)
 
         u = Function(VC)
 

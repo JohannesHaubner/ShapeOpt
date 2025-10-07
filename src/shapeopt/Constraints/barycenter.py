@@ -20,7 +20,7 @@ class Barycenter(Constraint):
         self.L = param["L"]
         self.H = param["H"]
         self.dim = Mesh_.mesh.topology().dim()
-        self.dx = Measure('dx', subdomain_data=Mesh_.domains, metadata={"quadrature_degree": 20})
+        self.dx = Measure('dx', subdomain_data=Mesh_.domains, metadata={"quadrature_degree": 10})
         if self.dim == 3:
             self.B = param["B"]
 

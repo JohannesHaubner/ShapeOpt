@@ -35,7 +35,7 @@ class Extension():
       self.dnormalf = Mesh_.get_dnormalf()
       self.params = params
       self.boundaries = boundaries
-      self.ds = Measure("ds", subdomain_data=boundaries)
+      self.ds = Measure("ds", subdomain_data=boundaries, metadata={"quadrature_degree": 10})
       
       # lumped mass matrix for IPOPT
       v = TestFunction(self.Vd)
@@ -96,7 +96,7 @@ class Extension():
       djy = y0
       djx = self.dof_to_deformation_precond_chainrule(djy, 1)
       epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
-      ylist = [self.dof_to_deformation_precond(x0+eps*ds) for eps in epslist]
+      ylist = [self.dof_to_deformation_precond(x0+eps*self.ds) for eps in epslist]
       jlist = [assemble(0.5*inner(y, y)*dx) for y in ylist]
       self.perform_first_order_check(jlist, j0, djx, ds, epslist)
       return

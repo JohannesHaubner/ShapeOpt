@@ -13,7 +13,7 @@ class Volume(Constraint):
         super().__init__(Mesh_, param, dof_to_trafo)
         self.V = param["Vol_DmO"]
         self.scalingfactor = 1.0
-        self.dx = Measure('dx', subdomain_data=Mesh_.domains, metadata={"quadrature_degree": 20})
+        self.dx = Measure('dx', subdomain_data=Mesh_.domains, metadata={"quadrature_degree": 10})
 
     def output_dim(self):
         return 1
