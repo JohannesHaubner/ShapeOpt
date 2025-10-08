@@ -95,7 +95,7 @@ class Stokes(ReducedObjective):
         J = assemble(inner(grad(u)*tFhati, grad(u)*tFhati)*tJhat*dx(mesh)
                      + 0.5*gammaP * smoothmax(etaP - tJhat)**2*dx(mesh))
         if flag:
-          dJ = compute_gradient(J, tu, apply_riesz=False)
+          dJ = compute_gradient(J, Control(tu))
 
         ## plot solution
         #import matplotlib.pyplot as plt

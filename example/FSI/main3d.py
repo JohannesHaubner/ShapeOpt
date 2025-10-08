@@ -1,3 +1,7 @@
+import ufl_legacy
+import sys
+sys.modules['ufl'] = ufl_legacy
+
 from dolfin import *
 from pyadjoint import *
 import numpy as np

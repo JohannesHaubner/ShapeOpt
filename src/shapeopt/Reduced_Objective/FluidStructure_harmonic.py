@@ -19,7 +19,7 @@ stop_annotating()
 
 PETScOptions.set("pc_type", "lu")
 PETScOptions.set("pc_factor_mat_solver_type", "mumps")
-PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
+#PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
 PETScOptions.set("mat_mumps_icntl_14", 400)
 PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
 PETScOptions.set("mat_mumps_icntl_35", 1)
@@ -506,7 +506,7 @@ class FluidStructure(ReducedObjective):
             J += assemble((tu[0] + tu[1]) * 10e9 * dX(mesh)) + assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["det_lb"]))*dX(mesh)) # fallback strategy if ipopt wants to evaluate on mesh with bad qualities
 
         if flag:
-          dJ = compute_gradient(J,tu, apply_riesz=False)
+          dJ = compute_gradient(J, Control(tu))
 
         ## plot solution
         #import matplotlib.pyplot as plt
