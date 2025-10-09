@@ -17,6 +17,39 @@ from Tools.first_order_check import perform_first_order_check
 
 import cyipopt
 
+from pathlib import Path
+
+class Warmstart(object):
+    def __init__(self, param):
+        self.param = param
+        self.i = -1 # iterator
+        self.path = param["warmstart_path"]
+        Path(self.path).mkdir(parents=True, exist_ok=True)
+        self.read = param["warmstart_read"]
+        self.write = param["warmstart_write"]
+        
+
+    def run(self, func, *args, **kwargs):
+        def wrapper(*args, **kwargs):
+            print('use warmstarting', func.__name__, self.i)
+            self.i = self.i + 1
+            x = args[0]
+            if self.read or self.write:
+                name = func.__name__
+                filename = self.path + name + "_" + str(self.i) + ".npy"
+            if self.read:
+                loaded = np.load(filename, allow_pickle=True)
+                x = loaded.item().get('x')
+                if np.allclose(x, args[0]):
+                    result = loaded.item().get('result')
+            if 'result' not in locals():
+                result = func(*args, **kwargs)
+            if self.write:
+                save_dict = {'x': args[0], 'result': result}
+                np.save(filename, save_dict)
+            print('end warmstarting')
+            return result
+        return wrapper(*args, **kwargs)
 
 class IPOPTSolver(OptimizationSolver):
     def __init__(self, problem, Mesh_, param, red_obj, constraint_ids : list, dof_to_trafo, parameters=None):
@@ -41,7 +74,7 @@ class IPOPTSolver(OptimizationSolver):
         self.red_obj = red_obj
         self.constraint_ids = constraint_ids
         self.problem_obj = self.create_problem_obj(self)
-               
+
         #self.param.reg contains regularization parameter
         print('Initialization of IPOPTSolver finished', flush=True)
 
@@ -102,6 +135,15 @@ class IPOPTSolver(OptimizationSolver):
             self.params = self.Mesh_.get_params()
             self.save_opt = True
             self.counter = 0
+            self.warmstart = Warmstart(self.param)
+
+        def _warmstart(func):
+            def wrapper(self, *args, **kwargs):
+                new_func = lambda *args, **kwargs : func(self, *args, **kwargs)
+                new_func.__name__ = func.__name__
+                result = self.warmstart.run(new_func, *args, **kwargs)
+                return result
+            return wrapper
 
         def save_output(self, deformation, grad=True, constraint=False):
             print('save output')
@@ -131,8 +173,7 @@ class IPOPTSolver(OptimizationSolver):
             else:
                 return True
 
-
-
+        @_warmstart
         def objective(self, x):
             #
             # The callback for calculating the objective
@@ -158,6 +199,7 @@ class IPOPTSolver(OptimizationSolver):
                 j = 1e16
             return j
 
+        @_warmstart
         def gradient(self, x):
             #
             # The callback for calculating the gradient
@@ -187,6 +229,7 @@ class IPOPTSolver(OptimizationSolver):
 
             return dJ
 
+        @_warmstart
         def constraints(self, x):
             #
             # The callback for calculating the constraints
@@ -209,6 +252,7 @@ class IPOPTSolver(OptimizationSolver):
                 con = 1e9*np.ones(con.shape)
             return con
 
+        @_warmstart
         def jacobian(self, x):
             #
             # The callback for calculating the Jacobian
