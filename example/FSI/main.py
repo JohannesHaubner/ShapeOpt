@@ -55,6 +55,9 @@ param = {"reg": 1e-1, # regularization parameter
          "deltat": 0.01, # time step size
          "gammaP": 1e-3, # penalty parameter for determinant constraint violation
          "output_path": path_mesh + "/Output/", # folder where intermediate results are stored
+         "warmstart_write": True, # write results to warmstart_path
+         "warmstart_read": False, # read iterates obj func value from warmstart_path
+         "warmstart_path": path_mesh + '/warmstart/', # warmstart path
          }
 
 
