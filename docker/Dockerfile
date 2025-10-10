@@ -224,7 +224,7 @@ RUN python3 -m pip install pytest
 # Install dolfin-adjoint
 
 # Install dolfin-adjoint
-RUN python3 -m pip install --no-cache-dir git+https://github.com/dolfin-adjoint/dolfin-adjoint.git@2023.0.0
+RUN python3 -m pip install --no-cache-dir git+https://github.com/dolfin-adjoint/dolfin-adjoint.git
 RUN /bin/bash -l -c "pip3 install matplotlib"
 
 # Install IPython

@@ -8,7 +8,7 @@ here = Path(__file__).parent.resolve()
 import sys, os
 
 sys.path.insert(0, str(here.parent.parent.parent))
-from example.FSI.main import param, geom_prop, path_mesh, application
+from example.FSI.main3d import param, geom_prop, path_mesh, application
 
 
 sys.path.insert(0, str(here.parent.parent.parent) + '/src')
@@ -40,6 +40,7 @@ def run_forward(initial : bool, T : float, deltat : float, path_mesh : str, outp
     param["T"] = T
     param["deltat"] = deltat
     
+    
     #load mesh
     init_mfs = tsm.Initialize_Mesh_and_FunctionSpaces(path_mesh=path_mesh, load_mesh=load_mesh)
     mesh = init_mfs.get_mesh()
@@ -56,7 +57,10 @@ def run_forward(initial : bool, T : float, deltat : float, path_mesh : str, outp
     v = interpolate(Constant(1.0),V)
 
     x0 = interpolate(Constant(0.0), Vd)
-    d0 = interpolate(Constant((0.0, 0.0)), Vn)
+    if mesh.geometry().dim() == 2:
+        d0 = interpolate(Constant((0.0, 0.0)), Vn)
+    else:
+        d0 = interpolate(Constant((0.0, 0.0, 0.0)), Vn)
 
     mesh = init_mfs.get_mesh()
     dmesh = init_mfs.get_design_boundary_mesh()
@@ -82,5 +86,5 @@ def run_forward(initial : bool, T : float, deltat : float, path_mesh : str, outp
     pass
 
 if __name__ == "__main__":
-    T = 15.0
-    run_forward(initial=True, T=T, deltat=0.01)
+    T = 1.0
+    run_forward(initial=True, T=T, deltat=0.01, path_mesh="example/FSI/mesh3d", output_folder="3d_forward", point=[0.4, 0.2, 0.125], drag=True)
