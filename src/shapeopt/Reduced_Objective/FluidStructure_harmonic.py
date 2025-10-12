@@ -25,6 +25,38 @@ PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
 PETScOptions.set("mat_mumps_icntl_35", 1)
 PETScOptions.set("mat_mumps_cntl_7", 1e-8)
 
+class Write_to_XDMF(object):
+    def __init__(self, output_directory, mesh):
+        self.output_directory = output_directory
+        self.mesh = mesh
+        self._initialize()
+        self.append = False
+
+    def _initialize(self):
+        fssim = self.output_directory + "/"
+        Path(fssim).mkdir(parents=True, exist_ok=True)
+
+        vstring = fssim + 'results.xdmf'
+        self.results_xdmf = XDMFFile(self.mesh.mpi_comm(), vstring)
+        self.results_xdmf.parameters["functions_share_mesh"] = False
+        self.results_xdmf.parameters["rewrite_function_mesh"] = True
+
+    
+    def write(self, vp, pp, chfun, u_p, t):
+        vp.rename("v", "v")
+        pp.rename("p", "p")
+        chfun.rename("c", "c")
+        u_p.rename("d", "d")
+        self.results_xdmf.write(vp, t)
+        self.results_xdmf.write(pp, t)
+        self.results_xdmf.write(chfun, t)
+        self.results_xdmf.write(u_p, t)
+    
+
+    def close(self):
+        self.results_xdmf.close()
+
+
 class FluidStructure(ReducedObjective):
     def __init__(self, drag=True, min=True):
         super().__init__()
@@ -184,20 +216,9 @@ class FluidStructure(ReducedObjective):
         # output files
         if visualize:
             save_directory = str(here.parent.parent.parent) + "/example/FSI/Output/Forward" + vis_folder
-            fssim = save_directory + "/"
-            import os
-            if not os.path.exists(save_directory):
-                os.makedirs(save_directory)
-            vstring = fssim + 'velocity.pvd'
-            v2string = fssim + 'velocity2.pvd'
-            pstring = fssim + 'pressure.pvd'
-            dstring = fssim + 'displacementy.txt'
-            tstring = fssim + 'times.txt'
-            charstring = fssim + 'char_sol.pvd'
-            vfile = File(vstring)
-            pfile = File(pstring)
-            v2file = File(v2string)
-            charfile = File(charstring)
+            write_to_xdmf = Write_to_XDMF(save_directory, mesh)
+            dstring = save_directory + '/displacementy.txt'
+            tstring = save_directory + '/times.txt'
             displacementy = []
             times = []
 
@@ -308,7 +329,7 @@ class FluidStructure(ReducedObjective):
                     + inner(tJhat * tr(tFhatti * grad(Jhat * Fhati * v).T), psip) * dxf
                     + inner(aphat * tJhat * tFhati * tFhatti * (grad(p)), (grad(psip))) * dxs
                     + inner(aphat * tJhat * p, psip) * dxs
-        )
+                    )
 
             # remaining explicit terms
             A_E = (inner(auhat * tJhat * tFhati * tFhatti * grad(u).T, grad(func * psiu).T) * dxf
@@ -330,20 +351,6 @@ class FluidStructure(ReducedObjective):
             # shifted crank nicolson scheme
             F = A_T + A_P + A_I + theta * A_E + (Constant(1.0) - theta) * A_E_rhs
 
-            # output files
-            if visualize == True:
-                fssim = save_directory + "/"
-                vstring = fssim + 'velocity.pvd'
-                v2string = fssim + 'velocity2.pvd'
-                pstring = fssim + 'pressure.pvd'
-                dstring = fssim + 'displacementy.txt'
-                charstring = fssim + 'char_sol.pvd'
-                vfile = File(vstring)
-                pfile = File(pstring)
-                v2file = File(v2string)
-                charfile = File(charstring)
-                displacementy = []
-
             class Projector():
                 def __init__(self, V):
                     self.v = TestFunction(V)
@@ -351,12 +358,12 @@ class FluidStructure(ReducedObjective):
                     form = inner(u, self.v)*dX(mesh)
                     self.A = assemble(form, annotate=False)
                     self.solver = LUSolver(self.A)
-                    self.uh = Function(V)
+                    self.func = Function(V)
                 def project(self, f):
                     L = inner(f, self.v)*dX(mesh)
                     b = assemble(L, annotate=False)
-                    self.solver.solve(self.uh.vector(), b)
-                    return self.uh
+                    self.solver.solve(self.func.vector(), b)
+                    return self.func
 
             projectorU = Projector(U)
             projectorU1 = Projector(U1)
@@ -375,21 +382,6 @@ class FluidStructure(ReducedObjective):
                     np.savetxt(tstring, times)
                 except:
                     pass
-
-                # plot transformed mesh
-                if abs(counter / 4.0 - int(counter / 4.0)) == 0:
-                    u_p_inv = Function(U1)
-                    u_p_inv.vector().axpy(-1.0, u_p.vector())
-                    ALE.move(mesh, u_p)
-                    vp = projectorU.project(v)
-                    pp = projectorP.project(p)
-                    vp.rename("velocity", "velocity")
-                    pp.rename("pressure", "pressure")
-                    pfile << pp
-                    vfile << vp
-                    v2file << vp
-                    charfile << chfun
-                    u_p = ALE.move(mesh, u_p_inv)
 
             # boundary conditions
             bc1 = []
@@ -467,19 +459,14 @@ class FluidStructure(ReducedObjective):
 
                     # plot transformed mesh
                     if abs(counter / 4.0 - int(counter / 4.0)) == 0:
+                        print('here', t )
                         u_p_inv = Function(U1)
                         u_p_inv.vector().axpy(-1.0, u_p.vector())
                         ALE.move(mesh, u_p)
-                        up = projectorU.project(u)
                         vp = projectorU.project(v)
                         pp = projectorP.project(p)
-                        vp.rename("velocity", "velocity")
-                        pp.rename("pressure", "pressure")
-                        pfile << pp
-                        vfile << vp
-                        v2file << vp
-                        charfile << chfun
-                        ALE.move(mesh, u_p_inv)
+                        write_to_xdmf.write(vp, pp, chfun, u_p, t)
+                        u_p = ALE.move(mesh, u_p_inv)
 
                     ##########################
                 J += assemble(float(deltat)*(-1.0 / T * (inner(tJhat * Jhat * rhof * (
@@ -504,6 +491,9 @@ class FluidStructure(ReducedObjective):
             tFhatti = tFhati.T
             tJhat = det(tFhat)
             J += assemble((tu[0] + tu[1]) * 10e9 * dX(mesh)) + assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["det_lb"]))*dX(mesh)) # fallback strategy if ipopt wants to evaluate on mesh with bad qualities
+
+        if visualize:
+            write_to_xdmf.close()
 
         if flag:
           dJ = compute_gradient(J, Control(tu))
