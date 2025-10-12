@@ -36,10 +36,17 @@ class Write_to_XDMF(object):
         fssim = self.output_directory + "/"
         Path(fssim).mkdir(parents=True, exist_ok=True)
 
-        vstring = fssim + 'results.xdmf'
-        self.results_xdmf = XDMFFile(self.mesh.mpi_comm(), vstring)
-        self.results_xdmf.parameters["functions_share_mesh"] = False
-        self.results_xdmf.parameters["rewrite_function_mesh"] = True
+        names = []
+        names.append(fssim + 'velocity.xdmf')
+        names.append(fssim + 'pressure.xdmf')
+        names.append(fssim + 'characteristic_function.xdmf')
+        names.append(fssim + 'deformation.xdmf')
+        self.files = []
+        for i in names:
+            self.files.append(XDMFFile(self.mesh.mpi_comm(), i))
+        for file in self.files:
+            file.parameters["functions_share_mesh"] = False
+            file.parameters["rewrite_function_mesh"] = True
 
     
     def write(self, vp, pp, chfun, u_p, t):
@@ -47,14 +54,15 @@ class Write_to_XDMF(object):
         pp.rename("p", "p")
         chfun.rename("c", "c")
         u_p.rename("d", "d")
-        self.results_xdmf.write(vp, t)
-        self.results_xdmf.write(pp, t)
-        self.results_xdmf.write(chfun, t)
-        self.results_xdmf.write(u_p, t)
+        self.files[0].write(vp, t)
+        self.files[1].write(pp, t)
+        self.files[2].write(chfun, t)
+        self.files[3].write(u_p, t)
     
 
     def close(self):
-        self.results_xdmf.close()
+        for file in self.files:
+            file.close()
 
 
 class FluidStructure(ReducedObjective):
