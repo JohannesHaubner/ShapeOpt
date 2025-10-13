@@ -15,7 +15,7 @@ gmsh.initialize()
 gmsh.model.add("3d FSI")
 
 L, H, B, r = 1.0, 0.41, 0.25, 0.05 #2.5, 0.41, 0.41, 0.05
-length_flap = 0.2 #0.4
+length_flap = 0.4
 channel = gmsh.model.occ.addBox(0, 0, 0, L, H, B)
 #
 left = (1-1/41)*B/4 + 1/41*B

@@ -188,13 +188,13 @@ class FluidStructure(ReducedObjective):
         rhof = Constant(1.0e3)
         nyf = Constant(1.0e-3)
 
-        # if dim == 3:
-        #     Ubar = Constant(1.75)
-        #     lambdas = Constant(8.0e6)
-        #     mys = Constant(2e6)
-        #     rhos = Constant(1.0e3)
-        #     rhof = Constant(1.0e3)
-        #     nyf = Constant(1.0e-3)
+        if dim == 3:
+            Ubar = Constant(1.75)
+            lambdas = Constant(8.0e6)
+            mys = Constant(2e6)
+            rhos = Constant(1.0e3)
+            rhof = Constant(1.0e3)
+            nyf = Constant(1.0e-3)
 
 
         auhat = Constant(1e-9)
