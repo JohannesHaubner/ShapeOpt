@@ -1,3 +1,7 @@
+import ufl_legacy
+import sys
+sys.modules['ufl'] = ufl_legacy
+
 from dolfin import *
 from pyadjoint import *
 import numpy as np
@@ -52,6 +56,8 @@ param = {"reg": 1e-2, # regularization parameter
          "gammaP": 1e-3, # penalty parameter for determinant constraint violation
          "etaP": 0.2, # smoothing parameter for max term in determinant const. violation
          "output_path": path_mesh + "/Output/", # folder where intermediate results are stored
+         "warmstart_write": False, # write results to warmstart_path
+         "warmstart_read": False, # read iterates obj func value from warmstart_path
          }
 
 # specify boundary and extension operator (use Extension.print_options())
