@@ -1,3 +1,7 @@
+import ufl_legacy
+import sys
+sys.modules['ufl'] = ufl_legacy
+
 from dolfin import *
 from pyadjoint import *
 import numpy as np
@@ -47,13 +51,13 @@ param = {"reg": 1e-1, # regularization parameter
          "relax_eq": 0.0, #relax barycenter
          #"Bary_eps": 0.0, # slack for barycenter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient, etaP
-         "maxiter_IPOPT": 50,
+         "maxiter_IPOPT": 2, # 50,
          "T": 0.02, # simulation horizon for Fluid-Structure interaction simulation
          "deltat": 0.01, # time step size
          "gammaP": 1e-3, # penalty parameter for determinant constraint violation
          "output_path": path_mesh + "/Output/", # folder where intermediate results are stored
-         "warmstart_write": True, # write results to warmstart_path
-         "warmstart_read": False, # read iterates obj func value from warmstart_path
+         "warmstart_write": False, # write results to warmstart_path
+         "warmstart_read": True, # read iterates obj func value from warmstart_path
          "warmstart_path": path_mesh + '/warmstart/', # warmstart path
          }
 
@@ -141,24 +145,35 @@ if __name__ == "__main__":
         x, info = IPOPT.solve(x0)
         x0 = x
 
+        np.save("x0_result.npy", x0)
+
         print("FSI_main completed", flush=True)
 
     boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant(lb_off))
     extension_operator = extension_operators[extension_option](mesh, boundaries, params)
+
+    print("extension and boundary operator initialized")
+
     dof_to_trafo = ctt.Extension(init_mfs, boundary_operator, extension_operator)
+
+    print("dof_to_trafo_map initialized")
+
     deformation = dof_to_trafo.dof_to_deformation_precond(init_mfs.vec_to_Vd(x0))
-    np.save("x0_result.npy", x0)
     #defo = project(deformation, Vn)
+
+    print("deformation determined")
 
     # move mesh and save moved mesh
     ALE.move(mesh, deformation, annotate=False)
     new_mesh = Mesh(mesh)
 
-    mvc2 = MeshValueCollection("size_t", new_mesh, 2)
+    dim = mesh.geometric_dimension()
+
+    mvc2 = MeshValueCollection("size_t", new_mesh, dim)
     new_domains = cpp.mesh.MeshFunctionSizet(new_mesh, mvc2)
     new_domains.set_values(domains.array())
 
-    mvc = MeshValueCollection("size_t", new_mesh, 1)
+    mvc = MeshValueCollection("size_t", new_mesh, dim - 1)
     new_boundaries = cpp.mesh.MeshFunctionSizet(new_mesh, mvc)
     new_boundaries.set_values(boundaries.array())
 
@@ -168,6 +183,9 @@ if __name__ == "__main__":
     xdmf.write(new_mesh)
     xdmf2.write(new_boundaries)
     xdmf3.write(new_domains)
+    xdmf.close()
+    xdmf2.close()
+    xdmf3.close()
 
 
     #defo = project(deformation, Vn)
