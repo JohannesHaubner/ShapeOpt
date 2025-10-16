@@ -189,12 +189,19 @@ class FluidStructure(ReducedObjective):
         nyf = Constant(1.0e-3)
 
         if dim == 3:
-            Ubar = Constant(1.75)
-            lambdas = Constant(8.0e6)
-            mys = Constant(2e6)
-            rhos = Constant(1.0e3)
+            # Ubar = Constant(1.75)
+            # lambdas = Constant(8.0e6)
+            # mys = Constant(2e6)
+            # rhos = Constant(1.0e3)
+            # rhof = Constant(1.0e3)
+            # nyf = Constant(1.0e-3)
+            Ubar = Constant(2.5)
+            lambdas = Constant(2.0e6)
+            mys = Constant(0.5e6)
+            rhos = Constant(1.0e4)
             rhof = Constant(1.0e3)
             nyf = Constant(1.0e-3)
+
 
 
         auhat = Constant(1e-9)
@@ -467,11 +474,32 @@ class FluidStructure(ReducedObjective):
 
                     # plot transformed mesh
                     if abs(counter / 4.0 - int(counter / 4.0)) == 0:
-                        print('here', t )
+                        # take care of bc that might not be fulfilled by projection
+                        bcv = []
+                        bcu = []
+                        if "inflow" in params:
+                            if t < 2. :
+                                bcv.append(DirichletBC(U, V_01, boundaries, params["inflow"]))  # in   v
+                            else: 
+                                bcv.append(DirichletBC(U, V_02, boundaries, params["inflow"]))  # in   v
+                            bcu.append(DirichletBC(U, V_1, boundaries, params["inflow"]))  # in   u
+                        if "obstacle" in params:
+                            bcv.append(DirichletBC(U, V_1, boundaries, params["obstacle"]))  # ns   v
+                            bcu.append(DirichletBC(U, V_1, boundaries, params["obstacle"]))  # ns   u
+                        if "noslip" in params:
+                            bcv.append(DirichletBC(U, V_1, boundaries, params["noslip"]))  # ns   v
+                            bcu.append(DirichletBC(U, V_1, boundaries, params["noslip"]))  # ns   u
+                        if "noslip_obstacle" in params:
+                            bcv.append(DirichletBC(U, V_1, boundaries, params["noslip_obstacle"]))  # ns   v
+                            bcu.append(DirichletBC(U, V_1, boundaries, params["noslip_obstacle"]))  # ns   u
+                        for bc in bcu:
+                            bc.apply(u_p.vector())
                         u_p_inv = Function(U1)
                         u_p_inv.vector().axpy(-1.0, u_p.vector())
                         ALE.move(mesh, u_p)
                         vp = projectorU.project(v)
+                        for bc in bcv:
+                            bc.apply(vp.vector())
                         pp = projectorP.project(p)
                         write_to_xdmf.write(vp, pp, chfun, u_p, t)
                         u_p = ALE.move(mesh, u_p_inv)

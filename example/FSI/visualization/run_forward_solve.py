@@ -87,4 +87,4 @@ def run_forward(initial : bool, T : float, deltat : float, path_mesh : str, outp
 
 if __name__ == "__main__":
     T = 15.0
-    run_forward(initial=True, T=T, deltat=0.01, path_mesh="example/FSI/mesh3d", output_folder="3d_forward", point=[0.4, 0.2, 0.125], drag=True)
+    run_forward(initial=True, T=T, deltat=0.01, path_mesh="example/FSI/mesh3d", output_folder="3d_forward_3", point=[0.4, 0.2, 0.125], drag=True)

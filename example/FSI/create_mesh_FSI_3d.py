@@ -14,12 +14,12 @@ if not os.path.exists(str(here) + "/mesh3d"):
 gmsh.initialize()
 gmsh.model.add("3d FSI")
 
-L, H, B, r = 1.0, 0.41, 0.25, 0.05 #2.5, 0.41, 0.41, 0.05
-length_flap = 0.4
+L, H, B, r = 1.5, 0.41, 0.25, 0.05 #2.5, 0.41, 0.41, 0.05
+length_flap = 0.3
 channel = gmsh.model.occ.addBox(0, 0, 0, L, H, B)
 #
-left = (1-1/41)*B/4 + 1/41*B
-flap_width = 2 * left
+flap_width = B/3
+left = B/3
 center_cylinder = L/2.5*0.5
 flap = gmsh.model.occ.addBox(center_cylinder, 0.19, left, length_flap, 0.02, flap_width)
 cylinder = gmsh.model.occ.addCylinder(center_cylinder, 0.2, 0, 0, 0, B, r)
@@ -47,6 +47,7 @@ obstacles = []
 obstacle_solid = []
 interface = []
 fine_resolution_surface_ = []
+obstacle_resolution_surface_ = []
 for surface in surfaces:
     com = gmsh.model.occ.getCenterOfMass(surface[0], surface[1])
     if np.isclose(com[0], 0):
@@ -63,11 +64,11 @@ for surface in surfaces:
         fine_resolution_surface_.append(surface[1])
     elif  com[0] <= center_cylinder + r:
         obstacles.append(surface[1])
-        fine_resolution_surface_.append(surface[1])
+        obstacle_resolution_surface_.append(surface[1])
     else:
         interface.append(surface[1])
         fine_resolution_surface_.append(surface[1])
-#from IPython import embed; embed()
+
 gmsh.model.addPhysicalGroup(2, walls, wall_marker)
 gmsh.model.setPhysicalName(2, wall_marker, "Walls")
 gmsh.model.addPhysicalGroup(2, interface, interface_marker)
@@ -137,8 +138,9 @@ distance = gmsh.model.mesh.field.add("Distance")
 gmsh.model.mesh.field.setNumbers(distance, "FacesList", fine_resolution_surface_)
 #gmsh.model.mesh.field.setNumbers(distance, "FacesList", obstacle_solid)
 
-resolution = r/2
-alpha = 1
+resolution = r/6.25
+alpha = 1.85
+beta = 3.9
 threshold = gmsh.model.mesh.field.add("Threshold")
 gmsh.model.mesh.field.setNumber(threshold, "IField", distance)
 gmsh.model.mesh.field.setNumber(threshold, "LcMin", resolution)
@@ -155,9 +157,18 @@ gmsh.model.mesh.field.setNumber(inlet_thre, "LcMax", alpha*5*resolution)
 gmsh.model.mesh.field.setNumber(inlet_thre, "DistMin", 0.1)
 gmsh.model.mesh.field.setNumber(inlet_thre, "DistMax", 0.5)
 
+obstacle_dist = gmsh.model.mesh.field.add("Distance")
+gmsh.model.mesh.field.setNumbers(obstacle_dist, "FacesList", obstacle_resolution_surface_)
+obstacle_thre = gmsh.model.mesh.field.add("Threshold")
+gmsh.model.mesh.field.setNumber(obstacle_thre, "IField", obstacle_dist)
+gmsh.model.mesh.field.setNumber(obstacle_thre, "LcMin", beta*resolution)
+gmsh.model.mesh.field.setNumber(obstacle_thre, "LcMax", alpha*5*resolution)
+gmsh.model.mesh.field.setNumber(obstacle_thre, "DistMin", 0.5*r)
+gmsh.model.mesh.field.setNumber(obstacle_thre, "DistMax", 0.5)
+
 minimum = gmsh.model.mesh.field.add("Min")
 gmsh.model.mesh.field.setNumbers(
-    minimum, "FieldsList", [threshold, inlet_thre])
+    minimum, "FieldsList", [threshold, inlet_thre, obstacle_thre])
 gmsh.model.mesh.field.setAsBackgroundMesh(minimum)
 
 gmsh.model.occ.synchronize()

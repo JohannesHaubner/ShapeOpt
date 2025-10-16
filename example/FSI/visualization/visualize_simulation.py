@@ -1,6 +1,6 @@
 import pyvista
 import numpy as np
-from .colormaps import cmap_1, cmap_2
+from colormaps import cmap_1, cmap_2
 
 # specify output directory 
 from pathlib import Path
@@ -84,6 +84,6 @@ def make_movie(foldername : str, gifname : str):
     pass
 
 if __name__ == "__main__":
-    foldername = "Init"
+    foldername = "output"
     outname = "init_fsi.mp4"
     make_movie(foldername, outname)
