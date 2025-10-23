@@ -14,12 +14,12 @@ if not os.path.exists(str(here) + "/mesh3d"):
 gmsh.initialize()
 gmsh.model.add("3d FSI")
 
-L, H, B, r = 1.5, 0.41, 0.25, 0.05 #2.5, 0.41, 0.41, 0.05
-length_flap = 0.3
+L, H, B, r = 1.5, 0.41, 0.3, 0.05 #2.5, 0.41, 0.41, 0.05
+length_flap = 0.4
 channel = gmsh.model.occ.addBox(0, 0, 0, L, H, B)
 #
-flap_width = B/3
-left = B/3
+flap_width = B/9
+left = 4*B/9
 center_cylinder = L/2.5*0.5
 flap = gmsh.model.occ.addBox(center_cylinder, 0.19, left, length_flap, 0.02, flap_width)
 cylinder = gmsh.model.occ.addCylinder(center_cylinder, 0.2, 0, 0, 0, B, r)
@@ -138,9 +138,9 @@ distance = gmsh.model.mesh.field.add("Distance")
 gmsh.model.mesh.field.setNumbers(distance, "FacesList", fine_resolution_surface_)
 #gmsh.model.mesh.field.setNumbers(distance, "FacesList", obstacle_solid)
 
-resolution = r/6.25
-alpha = 1.85
-beta = 3.9
+resolution = r/4.5
+alpha = 3.4
+beta = 5
 threshold = gmsh.model.mesh.field.add("Threshold")
 gmsh.model.mesh.field.setNumber(threshold, "IField", distance)
 gmsh.model.mesh.field.setNumber(threshold, "LcMin", resolution)
