@@ -109,7 +109,7 @@ class FluidStructure(ReducedObjective):
         dxs = dX(mesh)(params['solid'], metadata={"quadrature_degree": 7})
 
         # function spaces
-        V2 = VectorElement("CG", mesh.ufl_cell(), dim)
+        V2 = VectorElement("CG", mesh.ufl_cell(), 2)
         V1 = VectorElement("CG", mesh.ufl_cell(), 1)
         S1 = FiniteElement("CG", mesh.ufl_cell(), 1)
         W  = FunctionSpace(mesh, MixedElement(V2, S1, V2, V2))
