@@ -14,7 +14,7 @@ if not os.path.exists(str(here) + "/mesh3d"):
 gmsh.initialize()
 gmsh.model.add("3d FSI")
 
-L, H, B, r = 1.5, 0.41, 0.3, 0.05 #2.5, 0.41, 0.41, 0.05
+L, H, B, r = 1.5, 0.5, 0.3, 0.05 #2.5, 0.41, 0.41, 0.05
 length_flap = 0.4
 channel = gmsh.model.occ.addBox(0, 0, 0, L, H, B)
 #
@@ -138,7 +138,7 @@ distance = gmsh.model.mesh.field.add("Distance")
 gmsh.model.mesh.field.setNumbers(distance, "FacesList", fine_resolution_surface_)
 #gmsh.model.mesh.field.setNumbers(distance, "FacesList", obstacle_solid)
 
-resolution = r/6.5
+resolution = r/6
 alpha = 1.5
 beta = 3.5 #43
 threshold = gmsh.model.mesh.field.add("Threshold")
