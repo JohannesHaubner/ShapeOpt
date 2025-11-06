@@ -218,14 +218,15 @@ class FluidStructure(ReducedObjective):
         # Expressions
         if dim == 2:
             (x, y) = SpatialCoordinate(mesh)
-            V_01 = Expression(("1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ 0.1681*0.5*(1-cos(pi/2*t))", "0.0"), Ubar=Ubar, \
+            V_01 = Expression(("(t < 2)*1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ 0.1681*0.5*(1-cos(pi/2*t)) +(1 - (t < 2))*1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ \
+                    0.1681", "0.0"), Ubar=Ubar, \
                             t=t, degree=2)
-            V_02 = Expression(("1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ \
-                    0.1681", "0.0"), Ubar=Ubar, t=t, degree=2)
+            #V_02 = Expression(("1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ \
+            #        0.1681", "0.0"), Ubar=Ubar, t=t, degree=2)
         elif dim == 3:
-            V_01 =  Expression(("Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)*0.5*(1-cos(pi/2*t))", "0.0", "0.0"), Ubar=Ubar, \
+            V_01 =  Expression(("(t < 2) * Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)*0.5*(1-cos(pi/2*t)) + (1-(t<2))*Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)", "0.0", "0.0"), Ubar=Ubar, \
                             H=param["H"], B=param["B"], t=t, degree=2)
-            V_02 = Expression(("Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)", "0.0", "0.0"), H=param["H"], B=param["B"], Ubar=Ubar, t=t, degree=2)
+            #V_02 = Expression(("Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)", "0.0", "0.0"), H=param["H"], B=param["B"], Ubar=Ubar, t=t, degree=2)
         V_1 = Constant([0.0]*dim)  
 
         # output files
@@ -403,24 +404,24 @@ class FluidStructure(ReducedObjective):
             bc2 = []
             if "inflow" in params:
               bc1.append(DirichletBC(W.sub(0), V_01, boundaries, params["inflow"]))  # in   v
-              bc2.append(DirichletBC(W.sub(0), V_02, boundaries, params["inflow"]))  # in   v
+              #bc2.append(DirichletBC(W.sub(0), V_02, boundaries, params["inflow"]))  # in   v
               bc1.append(DirichletBC(W.sub(2), V_1, boundaries, params["inflow"]))  # in   u
-              bc2.append(DirichletBC(W.sub(2), V_1, boundaries, params["inflow"]))  # in   u
+              #bc2.append(DirichletBC(W.sub(2), V_1, boundaries, params["inflow"]))  # in   u
             if "obstacle" in params:
                 bc1.append(DirichletBC(W.sub(0), V_1, boundaries, params["obstacle"]))  # ns   v
-                bc2.append(DirichletBC(W.sub(0), V_1, boundaries, params["obstacle"]))  # ns   v
+                #bc2.append(DirichletBC(W.sub(0), V_1, boundaries, params["obstacle"]))  # ns   v
                 bc1.append(DirichletBC(W.sub(2), V_1, boundaries, params["obstacle"]))  # ns   u
-                bc2.append(DirichletBC(W.sub(2), V_1, boundaries, params["obstacle"]))  # ns   u
+                #bc2.append(DirichletBC(W.sub(2), V_1, boundaries, params["obstacle"]))  # ns   u
             if "noslip" in params:
                 bc1.append(DirichletBC(W.sub(0), V_1, boundaries, params["noslip"]))  # ns   v
-                bc2.append(DirichletBC(W.sub(0), V_1, boundaries, params["noslip"]))  # ns   v
+                #bc2.append(DirichletBC(W.sub(0), V_1, boundaries, params["noslip"]))  # ns   v
                 bc1.append(DirichletBC(W.sub(2), V_1, boundaries, params["noslip"]))  # ns   u
-                bc2.append(DirichletBC(W.sub(2), V_1, boundaries, params["noslip"]))  # ns   u
+                #bc2.append(DirichletBC(W.sub(2), V_1, boundaries, params["noslip"]))  # ns   u
             if "noslip_obstacle" in params:
                 bc1.append(DirichletBC(W.sub(0), V_1, boundaries, params["noslip_obstacle"]))  # ns   v
                 bc1.append(DirichletBC(W.sub(2), V_1, boundaries, params["noslip_obstacle"]))  # ns   u
-                bc2.append(DirichletBC(W.sub(0), V_1, boundaries, params["noslip_obstacle"]))  # ns   v
-                bc2.append(DirichletBC(W.sub(2), V_1, boundaries, params["noslip_obstacle"]))  # ns   u
+                #bc2.append(DirichletBC(W.sub(0), V_1, boundaries, params["noslip_obstacle"]))  # ns   v
+                #bc2.append(DirichletBC(W.sub(2), V_1, boundaries, params["noslip_obstacle"]))  # ns   u
 
             # # pressure BC
             # class PressureB(SubDomain):
@@ -434,17 +435,17 @@ class FluidStructure(ReducedObjective):
             # update pressure boundary condition
             Jac = derivative(F, w)
             problem1 = NonlinearVariationalProblem(F, w, bc1, J=Jac)
-            problem2 = NonlinearVariationalProblem(F, w, bc2, J=Jac)
+            #problem2 = NonlinearVariationalProblem(F, w, bc2, J=Jac)
 
             solver1 = NonlinearVariationalSolver(problem1)
-            solver2 = NonlinearVariationalSolver(problem2) 
+            #solver2 = NonlinearVariationalSolver(problem2) 
 
             #list_linear_solver_methods()
 
             solver_parameters = {"nonlinear_solver": "newton", "newton_solver": {"maximum_iterations": 25, "linear_solver": "mumps"}}
 
             solver1.parameters.update(solver_parameters)
-            solver2.parameters.update(solver_parameters)
+            #solver2.parameters.update(solver_parameters)
 
             while t < T - 0.5 * deltat:
                 print("t = \t", t + deltat, "\n", flush=True)
@@ -452,12 +453,13 @@ class FluidStructure(ReducedObjective):
                 counter += 1
                 t += deltat
                 V_01.t = t
-                V_02.t = t
+                #V_02.t = t
 
-                if t <= 2.0:
-                    solver1.solve()
-                else:
-                    solver2.solve()
+                #if t <= 2.0:
+                solver1.solve()
+                #else:
+                #    del solver1
+                #    solver2.solve()
 
 
                 if visualize:
@@ -478,10 +480,10 @@ class FluidStructure(ReducedObjective):
                         bcv = []
                         bcu = []
                         if "inflow" in params:
-                            if t < 2. :
-                                bcv.append(DirichletBC(U, V_01, boundaries, params["inflow"]))  # in   v
-                            else: 
-                                bcv.append(DirichletBC(U, V_02, boundaries, params["inflow"]))  # in   v
+                            #if t < 2. :
+                            bcv.append(DirichletBC(U, V_01, boundaries, params["inflow"]))  # in   v
+                            #else: 
+                            #    bcv.append(DirichletBC(U, V_02, boundaries, params["inflow"]))  # in   v
                             bcu.append(DirichletBC(U, V_1, boundaries, params["inflow"]))  # in   u
                         if "obstacle" in params:
                             bcv.append(DirichletBC(U, V_1, boundaries, params["obstacle"]))  # ns   v
