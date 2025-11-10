@@ -14,12 +14,12 @@ if not os.path.exists(str(here) + "/mesh3d"):
 gmsh.initialize()
 gmsh.model.add("3d FSI")
 
-L, H, B, r = 1.5, 0.5, 0.3, 0.05 #2.5, 0.41, 0.41, 0.05
+L, H, B, r = 1.5, 0.41, 0.3, 0.05 #2.5, 0.41, 0.41, 0.05
 length_flap = 0.4
 channel = gmsh.model.occ.addBox(0, 0, 0, L, H, B)
 #
-flap_width = B/9
-left = 4*B/9
+flap_width = B/11
+left = 5*B/11
 center_cylinder = L/2.5*0.5
 flap = gmsh.model.occ.addBox(center_cylinder, 0.19, left, length_flap, 0.02, flap_width)
 cylinder = gmsh.model.occ.addCylinder(center_cylinder, 0.2, 0, 0, 0, B, r)
