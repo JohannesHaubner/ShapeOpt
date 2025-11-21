@@ -589,6 +589,12 @@ class FluidStructure(ReducedObjective):
                     opts.setValue(f'fieldsplit_{i}_pc_type', 'lu')
                     opts.setValue(f'fieldsplit_{i}_pc_factor_mat_solver_type', 'mumps')
 
+                opts.setValue('ksp_rtol', 1E-12)
+                opts.setValue('ksp_max_it', 1000)
+                opts.setValue('ksp_view_pre', None)
+                opts.setValue('ksp_monitor_true_residual', None)
+                opts.setValue('ksp_converged_reason', None)
+
                 pc.setFromOptions()
                 ksp.setFromOptions()
 
