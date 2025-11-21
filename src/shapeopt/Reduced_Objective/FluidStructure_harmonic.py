@@ -29,22 +29,18 @@ class SNESProblem():
         return
 
     def F(self, snes, x, F):
-        print('eval F')
         x = PETScVector(x)
         F = PETScVector(F)
         assemble(self.L, tensor=F)
         for bc in self.bcs:
             bc.apply(F, x)  
-        print('eval F finished')  
         return            
 
     def J(self, snes, x, J, P):
-        print('eval J')
         J = PETScMatrix(J)
         assemble(self.a, tensor=J)
         for bc in self.bcs:
             bc.apply(J)
-        print('eval J finished')
         return
 
 class Write_to_XDMF(object):
@@ -564,6 +560,8 @@ class FluidStructure(ReducedObjective):
                     return dof_bins
 
                 dof_bins = collect_dofs(dofs, bins, state, domain)
+                #from IPython import embed; embed()
+
 
                 b = PETScVector()  # same as b = PETSc.Vec()
                 J_mat = PETScMatrix()   
@@ -571,27 +569,28 @@ class FluidStructure(ReducedObjective):
                 solver1.setFunction(problem1.F, b.vec())
                 solver1.setJacobian(problem1.J, J_mat.mat())
 
-                ksp = solver1.getKSP()
-                ksp.getPC().setType('lu')
-                ksp.getPC().setFactorSolverType('mumps')
-                ksp.setType('preonly')
-
                 # ksp = solver1.getKSP()
-                # opts = PETSc.Options()
-                # pc = ksp.getPC()
-                # pc.setType(PETSc.PC.Type.FIELDSPLIT)
-                # pc.setFieldSplitIS(*[(str(i), dofs_i) for i, dofs_i in enumerate(dof_bins)])
+                # ksp.getPC().setType('lu')
+                # ksp.getPC().setFactorSolverType('mumps')
+                # ksp.setType('preonly')
 
-                # opts.setValue('pc_type', 'fieldsplit')
-                # opts.setValue('pc_fieldsplit_type', 'additive')
+                ksp = solver1.getKSP()
+                opts = PETSc.Options()
+                pc = ksp.getPC()
+                pc.setType(PETSc.PC.Type.FIELDSPLIT)
+                pc.setFieldSplitIS(*[(str(i), dofs_i.sort()) for i, dofs_i in enumerate(dof_bins)])
+                pc.setSPAIVerbose(3)
 
-                # for i in range(len(dofs)):
-                #     opts.setValue(f'fieldsplit_{i}_ksp_type', 'preonly')
-                #     opts.setValue(f'fieldsplit_{i}_pc_type', 'lu')
-                #     opts.setValue(f'fieldsplit_{i}_pc_factor_mat_solver_type', 'mumps')
+                opts.setValue('pc_type', 'fieldsplit')
+                opts.setValue('pc_fieldsplit_type', 'additive')
 
-                # pc.setFromOptions()
-                # ksp.setFromOptions()
+                for i in range(len(dof_bins)):
+                    opts.setValue(f'fieldsplit_{i}_ksp_type', 'preonly')
+                    opts.setValue(f'fieldsplit_{i}_pc_type', 'lu')
+                    opts.setValue(f'fieldsplit_{i}_pc_factor_mat_solver_type', 'mumps')
+
+                pc.setFromOptions()
+                ksp.setFromOptions()
 
 
 
