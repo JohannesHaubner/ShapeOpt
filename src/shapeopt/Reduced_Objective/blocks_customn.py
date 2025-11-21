@@ -7,7 +7,7 @@ except:
     import ufl
 from pyadjoint import Block
 from pyadjoint.enlisting import Enlist
-from ufl_legacy.formatting.ufl2unicode import ufl2unicode
+from ufl.formatting.ufl2unicode import ufl2unicode
 
 from fenics_adjoint.utils import function_from_vector, extract_subfunction, create_function, extract_mesh_from_form, linalg_solve
 from fenics_adjoint.blocks.assembly import assemble_adjoint_value
