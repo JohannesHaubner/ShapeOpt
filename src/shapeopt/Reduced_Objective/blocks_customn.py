@@ -38,8 +38,10 @@ class SolveVarFormBlock(GenericSolveBlock):
 
         adj_sol = create_function(self.function_space)
         solver = self.snes.getKSP()
-        solver.setOperators(dFdu.mat(), dFdu.mat())
+        solver.setOperators(dolfin.as_backend_type(dFdu).mat(), dolfin.as_backend_type(dFdu).mat())
+        print('solve with petsc')
         solver.solve(adj_sol.vector().vec(), dJdu.vec())
+        print('solve done')
 
         adj_sol_bdy = None
         if compute_bdy:
