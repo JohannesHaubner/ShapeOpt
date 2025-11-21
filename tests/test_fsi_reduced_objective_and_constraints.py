@@ -1,6 +1,7 @@
-import ufl_legacy
-import sys
-sys.modules['ufl'] = ufl_legacy
+try:
+    import ufl_legacy
+    import sys
+    sys.modules['ufl'] = ufl_legacy
 
 from dolfin import *
 from pyadjoint import *
