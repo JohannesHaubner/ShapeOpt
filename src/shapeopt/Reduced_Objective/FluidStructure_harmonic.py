@@ -26,6 +26,7 @@ class SNESProblem():
         self.a = derivative(F, u, du)
         self.bcs = bc
         self.u = u
+        self.du = du
         return
 
     def F(self, snes, x, F):
@@ -477,11 +478,6 @@ class FluidStructure(ReducedObjective):
                 problem1 = SNESProblem(F, w, bc1)
                 solver1 = PETSc.SNES().create(mesh.mpi_comm())
 
-
-                #solver_parameters = {"nonlinear_solver": "snes", "snes_solver": {"maximum_iterations": 25}}
-
-                #solver1.parameters.update(solver_parameters)
-
                 def get_dofs(W):
                     # sort dofs by states and subdomains
                     w = Function(W)
@@ -562,41 +558,60 @@ class FluidStructure(ReducedObjective):
                 dof_bins = collect_dofs(dofs, bins, state, domain)
                 #from IPython import embed; embed()
 
-
-                b = PETScVector()  # same as b = PETSc.Vec()
-                J_mat = PETScMatrix()   
-
-                solver1.setFunction(problem1.F, b.vec())
-                solver1.setJacobian(problem1.J, J_mat.mat())
-
-                # ksp = solver1.getKSP()
-                # ksp.getPC().setType('lu')
-                # ksp.getPC().setFactorSolverType('mumps')
-                # ksp.setType('preonly')
-
-                ksp = solver1.getKSP()
                 opts = PETSc.Options()
-                pc = ksp.getPC()
-                pc.setType(PETSc.PC.Type.FIELDSPLIT)
-                pc.setFieldSplitIS(*[(str(i), dofs_i.sort()) for i, dofs_i in enumerate(dof_bins)])
-                pc.setSPAIVerbose(3)
-
-                opts.setValue('pc_type', 'fieldsplit')
-                opts.setValue('pc_fieldsplit_type', 'additive')
-
-                for i in range(len(dof_bins)):
-                    opts.setValue(f'fieldsplit_{i}_ksp_type', 'preonly')
-                    opts.setValue(f'fieldsplit_{i}_pc_type', 'lu')
-                    opts.setValue(f'fieldsplit_{i}_pc_factor_mat_solver_type', 'mumps')
-
-                opts.setValue('ksp_rtol', 1E-12)
+                #opts.setValue('ksp_rtol', 1E-8)
+                opts.setValue('ksp_atol', 1E-8)
                 opts.setValue('ksp_max_it', 1000)
-                opts.setValue('ksp_view_pre', None)
-                opts.setValue('ksp_monitor_true_residual', None)
-                opts.setValue('ksp_converged_reason', None)
+                #opts.setValue('ksp_view_pre', None)
+                opts.setValue('snes_monitor', None)
+                #opts.setValue('snes_linesearch_monitor', None)
+                #opts.setValue('ksp_monitor_true_residual', None)
+                #opts.setValue('ksp_converged_reason', None)
+                opts.setValue('snes_converged_reason', None)
+                opts.setValue('snes_type', 'newtonls')
+                opts.setValue('snes_divergence_tolerance', 1e2)
+                opts.setValue('snes_linesearch_type', 'l2')
+                opts.setValue('snes_max_it', 30)
+                opts.setValue('ksp_monitor', None)
+                opts.setValue('snes_view', None)
 
-                pc.setFromOptions()
-                ksp.setFromOptions()
+                option_itsol = 0
+
+                if option_itsol == 0:
+
+                    solver1.setErrorIfNotConverged(True)
+                    ksp = solver1.getKSP()
+                    ksp.setType('preonly')
+                    ksp.getPC().setType('lu')
+                    ksp.getPC().setFactorSolverType('mumps')
+
+                    ksp.setFromOptions()
+                    solver1.setFromOptions()
+
+                elif option_itsol == 1:
+
+                    ksp = solver1.getKSP()
+                    pc = ksp.getPC()
+                    pc.setType(PETSc.PC.Type.FIELDSPLIT)
+                    pc.setFieldSplitIS(*[(str(i), dofs_i.sort()) for i, dofs_i in enumerate(dof_bins)])
+                    pc.setSPAIVerbose(3)
+
+                    opts.setValue('pc_type', 'fieldsplit')
+                    opts.setValue('pc_fieldsplit_type', 'additive')
+
+                    for i in range(len(dof_bins)):
+                        opts.setValue(f'fieldsplit_{i}_ksp_type', 'preonly')
+                        opts.setValue(f'fieldsplit_{i}_pc_type', 'lu')
+                        opts.setValue(f'fieldsplit_{i}_pc_factor_mat_solver_type', 'mumps')
+
+                    pc.setFromOptions()
+                    ksp.setFromOptions()
+                    solver1.setFromOptions()
+
+            b = PETScVector()  # same as b = PETSc.Vec()
+            J_mat = PETScMatrix()   
+            solver1.setFunction(problem1.F, b.vec())
+            solver1.setJacobian(problem1.J, J_mat.mat())
 
 
 
@@ -612,7 +627,10 @@ class FluidStructure(ReducedObjective):
                 if direct_solver:
                     solver1.solve()
                 else:
+                    #solver1.setFunction(problem1.F, b.vec())
+                    #solver1.setJacobian(problem1.J, J_mat.mat())
                     solver1.solve(None, problem1.u.vector().vec())
+                    from IPython import embed; embed()
                 #else:
                 #    del solver1
                 #    solver2.solve()
