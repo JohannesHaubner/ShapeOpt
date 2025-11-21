@@ -630,7 +630,7 @@ class FluidStructure(ReducedObjective):
                     #solver1.setFunction(problem1.F, b.vec())
                     #solver1.setJacobian(problem1.J, J_mat.mat())
                     solver1.solve(None, problem1.u.vector().vec())
-                    from IPython import embed; embed()
+                    
                 #else:
                 #    del solver1
                 #    solver2.solve()
