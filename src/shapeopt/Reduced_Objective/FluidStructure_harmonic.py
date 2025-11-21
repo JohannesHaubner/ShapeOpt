@@ -6,6 +6,7 @@ from pyadjoint.overloaded_type import create_overloaded_object
 import matplotlib.pyplot as plt
 from petsc4py import PETSc
 
+from .petsc_solver import SNESSolver
 from .ReducedObjective import ReducedObjective
 #from .newtonsolver import solver_setup, newton_solver
 
@@ -476,7 +477,8 @@ class FluidStructure(ReducedObjective):
                 #solver2.parameters.update(solver_parameters)
             else:
                 problem1 = SNESProblem(F, w, bc1)
-                solver1 = PETSc.SNES().create(mesh.mpi_comm())
+                solver1 = SNESSolver(PETSc.SNES().create(mesh.mpi_comm()), problem1)
+                from IPython import embed; embed()
 
                 def get_dofs(W):
                     # sort dofs by states and subdomains
@@ -573,24 +575,24 @@ class FluidStructure(ReducedObjective):
                 opts.setValue('snes_linesearch_type', 'l2')
                 opts.setValue('snes_max_it', 30)
                 opts.setValue('ksp_monitor', None)
-                opts.setValue('snes_view', None)
+                #opts.setValue('snes_view', None)
 
                 option_itsol = 0
 
                 if option_itsol == 0:
 
-                    solver1.setErrorIfNotConverged(True)
-                    ksp = solver1.getKSP()
+                    solver1.snes.setErrorIfNotConverged(True)
+                    ksp = solver1.snes.getKSP()
                     ksp.setType('preonly')
                     ksp.getPC().setType('lu')
                     ksp.getPC().setFactorSolverType('mumps')
 
                     ksp.setFromOptions()
-                    solver1.setFromOptions()
+                    solver1.snes.setFromOptions()
 
                 elif option_itsol == 1:
 
-                    ksp = solver1.getKSP()
+                    ksp = solver1.snes.getKSP()
                     pc = ksp.getPC()
                     pc.setType(PETSc.PC.Type.FIELDSPLIT)
                     pc.setFieldSplitIS(*[(str(i), dofs_i.sort()) for i, dofs_i in enumerate(dof_bins)])
@@ -606,12 +608,12 @@ class FluidStructure(ReducedObjective):
 
                     pc.setFromOptions()
                     ksp.setFromOptions()
-                    solver1.setFromOptions()
+                    solver1.snes.setFromOptions()
 
             b = PETScVector()  # same as b = PETSc.Vec()
             J_mat = PETScMatrix()   
-            solver1.setFunction(problem1.F, b.vec())
-            solver1.setJacobian(problem1.J, J_mat.mat())
+            solver1.snes.setFunction(problem1.F, b.vec())
+            solver1.snes.setJacobian(problem1.J, J_mat.mat())
 
 
 
@@ -708,7 +710,9 @@ class FluidStructure(ReducedObjective):
             write_to_xdmf.close()
 
         if flag:
+          print('compute dJ')
           dJ = compute_gradient(J, Control(tu))
+          print('end compute dJ')
 
         ## plot solution
         #import matplotlib.pyplot as plt
