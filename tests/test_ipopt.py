@@ -41,6 +41,9 @@ param = {"reg": 1e-2, # regularization parameter
          "det_lb": 2e-1, # lower bound for determinant of transformation gradient
          "maxiter_IPOPT": 50,
          "output_path": path_mesh + "/Output/", # folder where intermediate results are stored
+         "warmstart_write": False, # write results to warmstart_path
+         "warmstart_read": False, # read iterates obj func value from warmstart_path
+         "warmstart_path": path_mesh + '/warmstart/', # warmstart path
          }
 
 # specify boundary and extension operator (use Extension.print_options())

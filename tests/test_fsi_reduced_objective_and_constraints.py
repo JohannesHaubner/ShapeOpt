@@ -67,7 +67,7 @@ boundary_operator = boundary_operators[boundary_option](dmesh, dnormal, Constant
 extension_operator = extension_operators[extension_option](mesh, boundaries, params)
 dof_to_trafo = Extension(init_mfs, boundary_operator, extension_operator)
 # governing equations
-application = 'fluid_structure' #'fluid structure' needs to be tested: if no fluid domain assigned --> error since no fluid part of domain
+application = 'fluid_structure_harmonic' #'fluid structure' needs to be tested: if no fluid domain assigned --> error since no fluid part of domain
 
 # constraints
 ids = []

@@ -4,6 +4,7 @@ import numpy as np
 from pyadjoint import annotate_tape, stop_annotating
 from pyadjoint.overloaded_type import create_overloaded_object
 import matplotlib.pyplot as plt
+from petsc4py import PETSc
 
 from .ReducedObjective import ReducedObjective
 #from .newtonsolver import solver_setup, newton_solver
@@ -17,13 +18,34 @@ if not os.path.exists(save_directory):
 
 stop_annotating()
 
-PETScOptions.set("pc_type", "lu")
-PETScOptions.set("pc_factor_mat_solver_type", "mumps")
-#PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
-PETScOptions.set("mat_mumps_icntl_14", 400)
-PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
-PETScOptions.set("mat_mumps_icntl_35", 1)
-PETScOptions.set("mat_mumps_cntl_7", 1e-8)
+class SNESProblem():
+    def __init__(self, F, u, bc):
+        V = u.function_space()
+        du = TrialFunction(V)
+        self.L = F
+        self.a = derivative(F, u, du)
+        self.bcs = bc
+        self.u = u
+        return
+
+    def F(self, snes, x, F):
+        print('eval F')
+        x = PETScVector(x)
+        F = PETScVector(F)
+        assemble(self.L, tensor=F)
+        for bc in self.bcs:
+            bc.apply(F, x)  
+        print('eval F finished')  
+        return            
+
+    def J(self, snes, x, J, P):
+        print('eval J')
+        J = PETScMatrix(J)
+        assemble(self.a, tensor=J)
+        for bc in self.bcs:
+            bc.apply(J)
+        print('eval J finished')
+        return
 
 class Write_to_XDMF(object):
     def __init__(self, output_directory, mesh):
@@ -430,22 +452,148 @@ class FluidStructure(ReducedObjective):
             # pressureB = PressureB()
             # bc1.append(DirichletBC(W.sub(1), Constant(0.0), pressureB, method='pointwise'))
             # bc2.append(DirichletBC(W.sub(1), Constant(0.0), pressureB, method='pointwise'))
-            
+        
 
-            # update pressure boundary condition
-            Jac = derivative(F, w)
-            problem1 = NonlinearVariationalProblem(F, w, bc1, J=Jac)
-            #problem2 = NonlinearVariationalProblem(F, w, bc2, J=Jac)
+            direct_solver = False
 
-            solver1 = NonlinearVariationalSolver(problem1)
-            #solver2 = NonlinearVariationalSolver(problem2) 
+            if direct_solver:
+                Jac = derivative(F, w)
+                problem1 = NonlinearVariationalProblem(F, w, bc1, J=Jac)
+                #problem2 = NonlinearVariationalProblem(F, w, bc2, J=Jac)
+                PETScOptions.set("pc_type", "lu")
+                PETScOptions.set("pc_factor_mat_solver_type", "mumps")
+                #PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
+                PETScOptions.set("mat_mumps_icntl_14", 400)
+                PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
+                PETScOptions.set("mat_mumps_icntl_35", 1)
+                PETScOptions.set("mat_mumps_cntl_7", 1e-8)
 
-            #list_linear_solver_methods()
+                solver1 = NonlinearVariationalSolver(problem1)
+                #solver2 = NonlinearVariationalSolver(problem2) 
 
-            solver_parameters = {"nonlinear_solver": "newton", "newton_solver": {"maximum_iterations": 25, "linear_solver": "mumps"}}
+                #list_linear_solver_methods()
 
-            solver1.parameters.update(solver_parameters)
-            #solver2.parameters.update(solver_parameters)
+                solver_parameters = {"nonlinear_solver": "newton", "newton_solver": {"maximum_iterations": 25, "linear_solver": "mumps"}}
+
+                solver1.parameters.update(solver_parameters)
+                #solver2.parameters.update(solver_parameters)
+            else:
+                problem1 = SNESProblem(F, w, bc1)
+                solver1 = PETSc.SNES().create(mesh.mpi_comm())
+
+
+                #solver_parameters = {"nonlinear_solver": "snes", "snes_solver": {"maximum_iterations": 25}}
+
+                #solver1.parameters.update(solver_parameters)
+
+                def get_dofs(W):
+                    # sort dofs by states and subdomains
+                    w = Function(W)
+                    w = interpolate(Constant(('1.0', )*w.ufl_shape[0]), W)
+                    psi = TestFunction(W)
+
+                    (v, p, u) = split(w)
+                    (psiv, psip, psiu) = split(psi)
+                    psi_ = [psiv, psip, psiu]
+                    w_ = [v, p, u]
+
+                    state = {"velocity": 0, "pressure": 1, "deformation":2}
+                    domain = {"interface": 0, "fluid": 1, "solid": 2}
+
+                    interface_dofs = []
+                    fluid_dofs = []
+                    solid_dofs = []
+
+                    dsi = dS(mesh)(params['interface'])
+
+                    dofmap = W.dofmap()
+
+                    dx_ = [dxf, dxs]
+                    dofs_ = [fluid_dofs, solid_dofs]
+
+                    for i in range(W.num_sub_spaces()):
+                        # interface dofs
+                        vec = assemble(inner(avg(w_[i]), avg(psi_[i]))*dsi) # assemble vector which has nonzeros at interface
+                        indices = np.nonzero(vec)[0]
+                        interface_dofs.append(np.array(indices))
+
+                        for j in range(2):
+                            vec = assemble(inner(w_[i], psi_[i])*dx_[j]) # assemble vector which has nonzeros at interface, fluid+ interface, solid+interface
+                            indicesj = np.nonzero(vec)[0] # indices of vec which are nonzero
+                            dofs_[j].append(np.setdiff1d(indicesj, indices)) # substract interface dofs
+
+                    return [interface_dofs] + dofs_, state, domain
+
+                def __test1(W):
+                    indexset,_,_ = get_dofs(W)
+
+                    # test
+                    k = 0
+                    for j in range(len(indexset)):
+                        for i in range(len(indexset[j])):
+                            k += len(indexset[j][i])
+                    assert(k == len(w.vector()[:]))
+
+                def __test2(W):
+                    indexset,_, _ = get_dofs(W)
+
+                    k = []
+                    for j in range(len(indexset)):
+                        for i in range(len(indexset[j])):
+                            k = np.concatenate((k, indexset[j][i]), axis=0)
+                    l = len(set(k))
+                    assert(l == len(w.vector()[:]))
+
+                dofs, state, domain = get_dofs(W) #resort in other bins
+
+                bins = []
+                bins.append({"velocity": ["fluid", "interface"], "pressure": ["fluid", "interface"], "deformation": []})
+                bins.append({"velocity": ["solid"], "pressure": [], "deformation": ["solid", "interface"]})
+                bins.append({"velocity": [], "pressure": [], "deformation": ["fluid"]})
+                bins.append({"velocity": [], "pressure": ["solid"], "deformation": []})
+
+                def collect_dofs(dofs, bins, states, domains):
+                    dof_bins = []
+                    for i in range(len(bins)):
+                        bi = np.asarray([])
+                        for j in states:
+                            if len(bins[i][j])> 0:
+                                for k in bins[i][j]:
+                                    bi= np.concatenate((bi, dofs[states[j]][domains[k]]), axis = 0)
+                        dof_bins.append(PETSc.IS().createGeneral(bi.astype('int32')))
+                    return dof_bins
+
+                dof_bins = collect_dofs(dofs, bins, state, domain)
+
+                b = PETScVector()  # same as b = PETSc.Vec()
+                J_mat = PETScMatrix()   
+
+                solver1.setFunction(problem1.F, b.vec())
+                solver1.setJacobian(problem1.J, J_mat.mat())
+
+                ksp = solver1.getKSP()
+                ksp.getPC().setType('lu')
+                ksp.getPC().setFactorSolverType('mumps')
+                ksp.setType('preonly')
+
+                # ksp = solver1.getKSP()
+                # opts = PETSc.Options()
+                # pc = ksp.getPC()
+                # pc.setType(PETSc.PC.Type.FIELDSPLIT)
+                # pc.setFieldSplitIS(*[(str(i), dofs_i) for i, dofs_i in enumerate(dof_bins)])
+
+                # opts.setValue('pc_type', 'fieldsplit')
+                # opts.setValue('pc_fieldsplit_type', 'additive')
+
+                # for i in range(len(dofs)):
+                #     opts.setValue(f'fieldsplit_{i}_ksp_type', 'preonly')
+                #     opts.setValue(f'fieldsplit_{i}_pc_type', 'lu')
+                #     opts.setValue(f'fieldsplit_{i}_pc_factor_mat_solver_type', 'mumps')
+
+                # pc.setFromOptions()
+                # ksp.setFromOptions()
+
+
 
             while t < T - 0.5 * deltat:
                 print("t = \t", t + deltat, "\n", flush=True)
@@ -456,7 +604,10 @@ class FluidStructure(ReducedObjective):
                 #V_02.t = t
 
                 #if t <= 2.0:
-                solver1.solve()
+                if direct_solver:
+                    solver1.solve()
+                else:
+                    solver1.solve(None, problem1.u.vector().vec())
                 #else:
                 #    del solver1
                 #    solver2.solve()

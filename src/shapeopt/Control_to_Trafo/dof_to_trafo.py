@@ -145,12 +145,12 @@ class Extension():
       ds = 1.0*np.ones(xl)
       #ds = interpolate(Expression('0.2*x[0]', degree=1), self.Vd)
       y0 = self.dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x0))
-      j0 = assemble(0.5*inner(y0,y0)*self.dx)
+      j0 = assemble(0.5*inner(y0,y0)*dx)
       djy = y0
       djx = self.dof_to_deformation_precond_chainrule(djy, 1)
       epslist = [0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
       ylist = [self.dof_to_deformation_precond(self.Mesh_.vec_to_Vd(x0+eps*ds)) for eps in epslist]
-      jlist = [assemble(0.5*inner(y, y)*self.dx) for y in ylist]
+      jlist = [assemble(0.5*inner(y, y)*dx) for y in ylist]
       order, diff = perform_first_order_check(jlist, j0, djx, ds, epslist)
       return order, diff
 
