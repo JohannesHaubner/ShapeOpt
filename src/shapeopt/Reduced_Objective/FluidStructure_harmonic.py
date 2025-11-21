@@ -478,7 +478,7 @@ class FluidStructure(ReducedObjective):
             else:
                 problem1 = SNESProblem(F, w, bc1)
                 solver1 = SNESSolver(PETSc.SNES().create(mesh.mpi_comm()), problem1)
-                from IPython import embed; embed()
+                #from IPython import embed; embed()
 
                 def get_dofs(W):
                     # sort dofs by states and subdomains

@@ -22,7 +22,7 @@ class SNESSolver():
 
             sb_kwargs = SolveVarFormBlock.pop_kwargs(kwargs)
             block = SolveVarFormBlock(F == 0, u, bcs,
-                                      #solver_parameters={"newton_solver": self.parameters.copy()},
+                                      self.snes,
                                       ad_block_tag=ad_block_tag,
                                       **sb_kwargs)
             tape.add_block(block)
