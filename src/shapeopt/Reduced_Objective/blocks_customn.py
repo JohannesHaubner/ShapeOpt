@@ -1,6 +1,9 @@
 import dolfin
 import numpy
-import ufl_legacy as ufl
+try:
+    import ufl_legacy as ufl
+except:
+    import ufl
 from pyadjoint import Block
 from pyadjoint.enlisting import Enlist
 from ufl_legacy.formatting.ufl2unicode import ufl2unicode
