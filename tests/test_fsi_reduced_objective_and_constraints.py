@@ -2,6 +2,8 @@ try:
     import ufl_legacy
     import sys
     sys.modules['ufl'] = ufl_legacy
+except:
+    pass
 
 from dolfin import *
 from pyadjoint import *
