@@ -32,7 +32,7 @@ path_output = str(here) + "/obstacle_fsiII"
 boundary_option = 'laplace_beltrami_withbc'
 extension_option = 'linear_elasticity'
 # governing equations
-application = 'fluid_structure'
+application = 'fluid_structure_harmonic'
 # constraints
 constraint_ids = ['volume', 'barycenter'] #needs to be a list
 

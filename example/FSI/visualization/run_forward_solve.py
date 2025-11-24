@@ -8,7 +8,13 @@ here = Path(__file__).parent.resolve()
 import sys, os
 
 sys.path.insert(0, str(here.parent.parent.parent))
-from example.FSI.main3d import param, geom_prop, path_mesh, application
+
+application3d = False
+
+if application3d: 
+    from example.FSI.main3d import param, geom_prop, path_mesh, application
+else:
+    from example.FSI.main import param, geom_prop, path_mesh, application
 
 
 sys.path.insert(0, str(here.parent.parent.parent) + '/src')
@@ -87,5 +93,8 @@ def run_forward(initial : bool, T : float, deltat : float, path_mesh : str, outp
 
 if __name__ == "__main__":
     T = 15.0
-    run_forward(initial=True, T=T, deltat=0.01, path_mesh="example/FSI/mesh", output_folder="forward", point=[0.6, 0.2], drag=True)
-    #run_forward(initial=True, T=T, deltat=0.01, path_mesh="example/FSI/mesh3d", output_folder="3d_forward_3", point=[0.4, 0.2, 0.125], drag=True)
+    if application3d: 
+        run_forward(initial=True, T=T, deltat=0.01, path_mesh="example/FSI/mesh3d", output_folder="3d_forward_3", point=[0.4, 0.2, 0.125], drag=True)
+    else:
+        run_forward(initial=True, T=T, deltat=0.01, path_mesh="example/FSI/mesh", output_folder="forward", point=[0.6, 0.2], drag=True)
+    
