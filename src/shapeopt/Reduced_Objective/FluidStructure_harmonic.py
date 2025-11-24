@@ -8,7 +8,6 @@ from petsc4py import PETSc
 
 from .petsc_solver import SNESSolver
 from .ReducedObjective import ReducedObjective
-#from .newtonsolver import solver_setup, newton_solver
 
 from pathlib import Path
 here = Path(__file__).parent.resolve()
@@ -241,12 +240,11 @@ class FluidStructure(ReducedObjective):
             V_01 = Expression(("(t < 2)*1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ 0.1681*0.5*(1-cos(pi/2*t)) +(1 - (t < 2))*1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ \
                     0.1681", "0.0"), Ubar=Ubar, \
                             t=t, degree=2)
-            #V_02 = Expression(("1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ \
-            #        0.1681", "0.0"), Ubar=Ubar, t=t, degree=2)
+
         elif dim == 3:
             V_01 =  Expression(("(t < 2) * Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)*0.5*(1-cos(pi/2*t)) + (1-(t<2))*Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)", "0.0", "0.0"), Ubar=Ubar, \
                             H=param["H"], B=param["B"], t=t, degree=2)
-            #V_02 = Expression(("Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)", "0.0", "0.0"), H=param["H"], B=param["B"], Ubar=Ubar, t=t, degree=2)
+            
         V_1 = Constant([0.0]*dim)  
 
         # output files
@@ -423,25 +421,17 @@ class FluidStructure(ReducedObjective):
             bc1 = []
             bc2 = []
             if "inflow" in params:
-              bc1.append(DirichletBC(W.sub(0), V_01, boundaries, params["inflow"]))  # in   v
-              #bc2.append(DirichletBC(W.sub(0), V_02, boundaries, params["inflow"]))  # in   v
-              bc1.append(DirichletBC(W.sub(2), V_1, boundaries, params["inflow"]))  # in   u
-              #bc2.append(DirichletBC(W.sub(2), V_1, boundaries, params["inflow"]))  # in   u
+                bc1.append(DirichletBC(W.sub(0), V_01, boundaries, params["inflow"]))  # in   v
+                bc1.append(DirichletBC(W.sub(2), V_1, boundaries, params["inflow"]))  # in   u
             if "obstacle" in params:
                 bc1.append(DirichletBC(W.sub(0), V_1, boundaries, params["obstacle"]))  # ns   v
-                #bc2.append(DirichletBC(W.sub(0), V_1, boundaries, params["obstacle"]))  # ns   v
                 bc1.append(DirichletBC(W.sub(2), V_1, boundaries, params["obstacle"]))  # ns   u
-                #bc2.append(DirichletBC(W.sub(2), V_1, boundaries, params["obstacle"]))  # ns   u
             if "noslip" in params:
                 bc1.append(DirichletBC(W.sub(0), V_1, boundaries, params["noslip"]))  # ns   v
-                #bc2.append(DirichletBC(W.sub(0), V_1, boundaries, params["noslip"]))  # ns   v
                 bc1.append(DirichletBC(W.sub(2), V_1, boundaries, params["noslip"]))  # ns   u
-                #bc2.append(DirichletBC(W.sub(2), V_1, boundaries, params["noslip"]))  # ns   u
             if "noslip_obstacle" in params:
                 bc1.append(DirichletBC(W.sub(0), V_1, boundaries, params["noslip_obstacle"]))  # ns   v
                 bc1.append(DirichletBC(W.sub(2), V_1, boundaries, params["noslip_obstacle"]))  # ns   u
-                #bc2.append(DirichletBC(W.sub(0), V_1, boundaries, params["noslip_obstacle"]))  # ns   v
-                #bc2.append(DirichletBC(W.sub(2), V_1, boundaries, params["noslip_obstacle"]))  # ns   u
 
             # # pressure BC
             # class PressureB(SubDomain):
@@ -457,7 +447,6 @@ class FluidStructure(ReducedObjective):
             if direct_solver:
                 Jac = derivative(F, w)
                 problem1 = NonlinearVariationalProblem(F, w, bc1, J=Jac)
-                #problem2 = NonlinearVariationalProblem(F, w, bc2, J=Jac)
                 PETScOptions.set("pc_type", "lu")
                 PETScOptions.set("pc_factor_mat_solver_type", "mumps")
                 #PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
@@ -467,18 +456,15 @@ class FluidStructure(ReducedObjective):
                 PETScOptions.set("mat_mumps_cntl_7", 1e-8)
 
                 solver1 = NonlinearVariationalSolver(problem1)
-                #solver2 = NonlinearVariationalSolver(problem2) 
 
                 #list_linear_solver_methods()
 
                 solver_parameters = {"nonlinear_solver": "newton", "newton_solver": {"maximum_iterations": 25, "linear_solver": "mumps"}}
 
                 solver1.parameters.update(solver_parameters)
-                #solver2.parameters.update(solver_parameters)
             else:
                 problem1 = SNESProblem(F, w, bc1)
                 solver1 = SNESSolver(PETSc.SNES().create(mesh.mpi_comm()), problem1)
-                #from IPython import embed; embed()
 
                 def get_dofs(W):
                     # sort dofs by states and subdomains
@@ -629,13 +615,7 @@ class FluidStructure(ReducedObjective):
                 if direct_solver:
                     solver1.solve()
                 else:
-                    #solver1.setFunction(problem1.F, b.vec())
-                    #solver1.setJacobian(problem1.J, J_mat.mat())
                     solver1.solve(None, problem1.u.vector().vec())
-                    
-                #else:
-                #    del solver1
-                #    solver2.solve()
 
 
                 if visualize:
