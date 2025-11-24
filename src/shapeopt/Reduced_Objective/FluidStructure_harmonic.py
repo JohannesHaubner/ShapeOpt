@@ -6,7 +6,7 @@ from pyadjoint.overloaded_type import create_overloaded_object
 import matplotlib.pyplot as plt
 from petsc4py import PETSc
 
-from .petsc_solver import SNESSolver
+from .dolfin_adjoint_files.petsc_solver import SNESSolver
 from .ReducedObjective import ReducedObjective
 
 from pathlib import Path
