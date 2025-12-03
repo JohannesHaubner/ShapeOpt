@@ -552,7 +552,7 @@ class FluidStructure(ReducedObjective):
                 opts.setValue('ksp_atol', 1E-8)
                 opts.setValue('ksp_max_it', 1000)
                 #opts.setValue('ksp_view_pre', None)
-                opts.setValue('snes_monitor', None)
+                #opts.setValue('snes_monitor', None)
                 #opts.setValue('snes_linesearch_monitor', None)
                 #opts.setValue('ksp_monitor_true_residual', None)
                 #opts.setValue('ksp_converged_reason', None)
@@ -561,10 +561,10 @@ class FluidStructure(ReducedObjective):
                 opts.setValue('snes_divergence_tolerance', 1e2)
                 opts.setValue('snes_linesearch_type', 'l2')
                 opts.setValue('snes_max_it', 30)
-                opts.setValue('ksp_monitor', None)
+                #opts.setValue('ksp_monitor', None)
                 #opts.setValue('snes_view', None)
 
-                option_itsol = 1
+                option_itsol = 0
 
                 if option_itsol == 0:
 
