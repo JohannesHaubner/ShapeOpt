@@ -528,9 +528,10 @@ class FluidStructure(ReducedObjective):
 
                 bins = []
                 bins.append({"velocity": ["fluid", "interface"], "pressure": ["fluid", "interface"], "deformation": []})
-                bins.append({"velocity": ["solid"], "pressure": [], "deformation": ["solid", "interface"]})
-                bins.append({"velocity": [], "pressure": [], "deformation": ["fluid"]})
-                bins.append({"velocity": [], "pressure": ["solid"], "deformation": []})
+                #bins.append({"velocity": ["solid"], "pressure": [], "deformation": ["solid", "interface"]})
+                #bins.append({"velocity": [], "pressure": [], "deformation": ["fluid"]})
+                #bins.append({"velocity": [], "pressure": ["solid"], "deformation": []})
+                bins.append({"velocity": ["solid"], "pressure": ["solid"], "deformation": ["fluid", "solid", "interface"]})
 
                 def collect_dofs(dofs, bins, states, domains):
                     dof_bins = []
@@ -563,7 +564,7 @@ class FluidStructure(ReducedObjective):
                 opts.setValue('ksp_monitor', None)
                 #opts.setValue('snes_view', None)
 
-                option_itsol = 0
+                option_itsol = 1
 
                 if option_itsol == 0:
 
@@ -585,7 +586,7 @@ class FluidStructure(ReducedObjective):
                     pc.setSPAIVerbose(3)
 
                     opts.setValue('pc_type', 'fieldsplit')
-                    opts.setValue('pc_fieldsplit_type', 'additive')
+                    opts.setValue('pc_fieldsplit_type', 'schur')
 
                     for i in range(len(dof_bins)):
                         opts.setValue(f'fieldsplit_{i}_ksp_type', 'preonly')
@@ -596,10 +597,10 @@ class FluidStructure(ReducedObjective):
                     ksp.setFromOptions()
                     solver1.snes.setFromOptions()
 
-            b = PETScVector()  # same as b = PETSc.Vec()
-            J_mat = PETScMatrix()   
-            solver1.snes.setFunction(problem1.F, b.vec())
-            solver1.snes.setJacobian(problem1.J, J_mat.mat())
+                b = PETScVector()  # same as b = PETSc.Vec()
+                J_mat = PETScMatrix()   
+                solver1.snes.setFunction(problem1.F, b.vec())
+                solver1.snes.setJacobian(problem1.J, J_mat.mat())
 
 
 
