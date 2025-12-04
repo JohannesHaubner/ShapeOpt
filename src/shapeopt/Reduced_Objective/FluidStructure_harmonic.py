@@ -528,10 +528,9 @@ class FluidStructure(ReducedObjective):
 
                 bins = []
                 bins.append({"velocity": ["fluid", "interface"], "pressure": ["fluid", "interface"], "deformation": []})
-                #bins.append({"velocity": ["solid"], "pressure": [], "deformation": ["solid", "interface"]})
-                #bins.append({"velocity": [], "pressure": [], "deformation": ["fluid"]})
-                #bins.append({"velocity": [], "pressure": ["solid"], "deformation": []})
-                bins.append({"velocity": ["solid"], "pressure": ["solid"], "deformation": ["fluid", "solid", "interface"]})
+                bins.append({"velocity": ["solid"], "pressure": [], "deformation": ["solid", "interface"]})
+                bins.append({"velocity": [], "pressure": [], "deformation": ["fluid"]})
+                bins.append({"velocity": [], "pressure": ["solid"], "deformation": []})
 
                 def collect_dofs(dofs, bins, states, domains):
                     dof_bins = []
@@ -552,7 +551,7 @@ class FluidStructure(ReducedObjective):
                 opts.setValue('ksp_atol', 1E-8)
                 opts.setValue('ksp_max_it', 1000)
                 #opts.setValue('ksp_view_pre', None)
-                #opts.setValue('snes_monitor', None)
+                opts.setValue('snes_monitor_short', None)
                 #opts.setValue('snes_linesearch_monitor', None)
                 #opts.setValue('ksp_monitor_true_residual', None)
                 #opts.setValue('ksp_converged_reason', None)
@@ -561,10 +560,10 @@ class FluidStructure(ReducedObjective):
                 opts.setValue('snes_divergence_tolerance', 1e2)
                 opts.setValue('snes_linesearch_type', 'l2')
                 opts.setValue('snes_max_it', 30)
-                #opts.setValue('ksp_monitor', None)
-                #opts.setValue('snes_view', None)
+                opts.setValue('ksp_monitor', None)
+                opts.setValue('snes_view', None)
 
-                option_itsol = 0
+                option_itsol = 1
 
                 if option_itsol == 0:
 
@@ -580,18 +579,40 @@ class FluidStructure(ReducedObjective):
                 elif option_itsol == 1:
 
                     ksp = solver1.snes.getKSP()
+                    ksp.setType('fgmres')
                     pc = ksp.getPC()
                     pc.setType(PETSc.PC.Type.FIELDSPLIT)
-                    pc.setFieldSplitIS(*[(str(i), dofs_i.sort()) for i, dofs_i in enumerate(dof_bins)])
-                    pc.setSPAIVerbose(3)
+                    pc.setFieldSplitIS(*[(f"{i:d}", dofs_i.sort()) for i, dofs_i in enumerate(dof_bins)])
+                    #pc.setSPAIVerbose(3)
 
-                    opts.setValue('pc_type', 'fieldsplit')
-                    opts.setValue('pc_fieldsplit_type', 'schur')
+                    opt_schur = False
+                    if opt_schur:
+                        opts.setValue('pc_type', 'fieldsplit')
+                        opts.setValue('pc_fieldsplit_type', 'schur')
+                        opts.setValue('pc_fieldsplit_0_fields', '0,1,2')    # fields in split 0
+                        opts.setValue('pc_fieldsplit_1_fields', '3')    # fields in split 1
+                        opts.setValue('fieldsplit_0_ksp_type', 'preonly')
+                        opts.setValue('fieldsplit_0_pc_type', 'lu')
+                        opts.setValue('fieldsplit_1_ksp_type', 'preonly')
+                        opts.setValue('fieldsplit_1_pc_type', 'lu')
+                        #opts.setValue('fieldsplit_1_pc_type', 'fieldsplit')
+                        #opts.setValue('fieldsplit_1_pc_fieldsplit_type', 'schur')
+                        #opts.setValue('fieldsplit_1_pc_fieldsplit_0_fields', '1')
+                        #opts.setValue('fieldsplit_1_pc_fieldsplit_1_fields', '2,3')
+                        #opts.setValue('fieldsplit_1_pc_fieldsplit_0_ksp_type', 'preonly')
+                        #opts.setValue('fieldsplit_1_pc_fieldsplit_0_pc_type', 'lu')
+                        #opts.setValue('fieldsplit_1_pc_fieldsplit_0_pc_factor_mat_solver_type', 'mumps')
+                        #opts.setValue('fieldsplit_1_pc_fieldsplit_1_ksp_type', 'preonly')
+                        #opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_type', 'lu')
+                        #opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_factor_mat_solver_type', 'mumps')
+                    else:
+                        opts.setValue('pc_type', 'fieldsplit')
+                        opts.setValue('pc_fieldsplit_type', 'additive')
 
-                    for i in range(len(dof_bins)):
-                        opts.setValue(f'fieldsplit_{i}_ksp_type', 'preonly')
-                        opts.setValue(f'fieldsplit_{i}_pc_type', 'lu')
-                        opts.setValue(f'fieldsplit_{i}_pc_factor_mat_solver_type', 'mumps')
+                        for i in range(len(dof_bins)):
+                            opts.setValue(f'fieldsplit_{i}_ksp_type', 'preonly')
+                            opts.setValue(f'fieldsplit_{i}_pc_type', 'lu')
+                            opts.setValue(f'fieldsplit_{i}_pc_factor_mat_solver_type', 'mumps')
 
                     pc.setFromOptions()
                     ksp.setFromOptions()
