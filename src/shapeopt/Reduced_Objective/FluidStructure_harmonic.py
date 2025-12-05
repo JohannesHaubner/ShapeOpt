@@ -548,8 +548,6 @@ class FluidStructure(ReducedObjective):
 
                 opts = PETSc.Options()
                 #opts.setValue('ksp_rtol', 1E-8)
-                opts.setValue('ksp_atol', 1E-8)
-                opts.setValue('ksp_max_it', 1000)
                 #opts.setValue('ksp_view_pre', None)
                 opts.setValue('snes_monitor_short', None)
                 #opts.setValue('snes_linesearch_monitor', None)
@@ -560,8 +558,10 @@ class FluidStructure(ReducedObjective):
                 opts.setValue('snes_divergence_tolerance', 1e2)
                 opts.setValue('snes_linesearch_type', 'l2')
                 opts.setValue('snes_max_it', 30)
-                opts.setValue('ksp_monitor', None)
                 opts.setValue('snes_view', None)
+                opts.setValue('ksp_atol', 1E-8)
+                opts.setValue('ksp_max_it', 1000)
+                opts.setValue('ksp_monitor', None)
 
                 option_itsol = 1
 
@@ -581,16 +581,18 @@ class FluidStructure(ReducedObjective):
                     ksp = solver1.snes.getKSP()
                     ksp.setType('fgmres')
                     pc = ksp.getPC()
-                    pc.setType(PETSc.PC.Type.FIELDSPLIT)
                     pc.setFieldSplitIS(*[(f"{i:d}", dofs_i.sort()) for i, dofs_i in enumerate(dof_bins)])
+                    pc.setType(PETSc.PC.Type.FIELDSPLIT)
+                    pc.setFieldSplitType(PETSc.PC.CompositeType.SCHUR)
                     #pc.setSPAIVerbose(3)
+                    from IPython import embed; embed()
 
-                    opt_schur = False
+                    opt_schur = True
                     if opt_schur:
-                        opts.setValue('pc_type', 'fieldsplit')
-                        opts.setValue('pc_fieldsplit_type', 'schur')
-                        opts.setValue('pc_fieldsplit_0_fields', '0,1,2')    # fields in split 0
-                        opts.setValue('pc_fieldsplit_1_fields', '3')    # fields in split 1
+                        #opts.setValue('pc_type', 'fieldsplit')
+                        #opts.setValue('pc_fieldsplit_type', 'schur')
+                        opts.setValue('pc_fieldsplit_0_fields', '0')    # fields in split 0
+                        opts.setValue('pc_fieldsplit_1_fields', '1,2,3')    # fields in split 1
                         opts.setValue('fieldsplit_0_ksp_type', 'preonly')
                         opts.setValue('fieldsplit_0_pc_type', 'lu')
                         opts.setValue('fieldsplit_1_ksp_type', 'preonly')
