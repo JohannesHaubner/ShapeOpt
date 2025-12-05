@@ -549,7 +549,7 @@ class FluidStructure(ReducedObjective):
                 opts = PETSc.Options()
                 #opts.setValue('ksp_rtol', 1E-8)
                 #opts.setValue('ksp_view_pre', None)
-                opts.setValue('snes_monitor_short', None)
+                opts.setValue('snes_monitor', None)
                 #opts.setValue('snes_linesearch_monitor', None)
                 #opts.setValue('ksp_monitor_true_residual', None)
                 #opts.setValue('ksp_converged_reason', None)
@@ -583,11 +583,13 @@ class FluidStructure(ReducedObjective):
                     pc = ksp.getPC()
                     pc.setFieldSplitIS(*[(f"{i:d}", dofs_i.sort()) for i, dofs_i in enumerate(dof_bins)])
                     pc.setType(PETSc.PC.Type.FIELDSPLIT)
-                    pc.setFieldSplitType(PETSc.PC.CompositeType.SCHUR)
+                    #pc.setFieldSplitType(PETSc.PC.CompositeType.SCHUR)
                     pc.setSPAIVerbose(3)
 
                     opt_schur = True
                     if opt_schur:
+                        #pts.setValue('pc_type', 'fieldsplit')
+                        opts.setValue('fieldsplit_type', 'schur')
                         opts.setValue('pc_fieldsplit_0_fields', '0')    # fields in split 0
                         opts.setValue('pc_fieldsplit_1_fields', '1,2,3')    # fields in split 1
                         opts.setValue('fieldsplit_0_ksp_type', 'preonly')
@@ -603,6 +605,7 @@ class FluidStructure(ReducedObjective):
                         opts.setValue('fieldsplit_1_pc_fieldsplit_0_pc_factor_mat_solver_type', 'mumps')
                         opts.setValue('fieldsplit_1_pc_fieldsplit_1_ksp_type', 'preonly')
                         opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_type', 'lu')
+                        opts.setValue('fieldsplit_1_pc_fieldsplit_1_fieldsplit_type', 'additive')
                         opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_factor_mat_solver_type', 'mumps')
                         opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_0_fields', '2')
                         opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_1_fields', '3')
