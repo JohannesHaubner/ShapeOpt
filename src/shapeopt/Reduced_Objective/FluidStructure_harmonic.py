@@ -532,11 +532,12 @@ class FluidStructure(ReducedObjective):
 
                 bins = []
                 bins.append({"velocity": ["fluid", "interface"], "pressure": ["fluid", "interface"], "deformation": []})
+                #bins.append({"velocity": ["solid"], "pressure": ["solid"], "deformation": ["solid", "interface", "fluid"]})
                 bins.append({"velocity": ["solid"], "pressure": [], "deformation": ["solid", "interface"]})
                 bins.append({"velocity": [], "pressure": [], "deformation": ["fluid"]})
                 bins.append({"velocity": [], "pressure": ["solid"], "deformation": []})
 
-                nested_bins_ids = [0, [1, [2,3]]]
+                nested_bins_ids = [0, [1, [2,3]]] # [0, 1]
 
                 def collect_dofs(dofs, bins, states, domains, opt_schur=False):
                     dof_bins = []
@@ -593,14 +594,19 @@ class FluidStructure(ReducedObjective):
                     if len(is_fields_) == 2:
                         pc.setFieldSplitType(PETSc.PC.CompositeType.SCHUR)
                     else:
-                        print('not implemented')
-                        exit(0)
+                        pc.setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
+                        #print('not implemented')
+                        #exit(0)
                     is_fields = [is_fields_[i][0] for i in range(len(is_fields_))]
                     pc.setFieldSplitIS(*[(f"{i:d}", dofs_i) for i, dofs_i in enumerate(is_fields)])
                     pc.setUp()
-                    #pc.view()
+                    pc.view()
                     subksp = pc.getFieldSplitSchurGetSubKSP()
                     for j in range(len(is_fields_)):
+                        subksp[j].setType("preonly")
+                        subksp[j].pc.setType('lu')
+                        subksp[j].pc.setFactorSolverType('mumps')
+                        subksp[j].setUp()
                         if is_fields_[j][1] != []:
                             pcj = initialize_fieldsplit_pc(subksp[j], is_fields_[j][1])
                     pass
@@ -620,8 +626,9 @@ class FluidStructure(ReducedObjective):
                 #opts.setValue('snes_view', None)
                 opts.setValue('ksp_atol', 1E-8)
                 opts.setValue('ksp_max_it', 1000)
-                opts.setValue('ksp_monitor', None)
-                opts.setValue('ksp_view', None)
+                #opts.setValue('ksp_monitor', None)
+                #opts.setValue('ksp_error_if_not_converged', None)
+                #opts.setValue('ksp_view', None)
 
                 option_itsol = 1
 
@@ -641,18 +648,24 @@ class FluidStructure(ReducedObjective):
                     is_fields_ = collect_nested_dofs(nested_bins_ids, dofs, bins, state, domain)
                     #from IPython import embed; embed()
 
+                    solver1.snes.setFromOptions()
+
                     ksp = solver1.snes.getKSP()
                     ksp.setType('fgmres')
                     # assign dummy matrix
                     ksp.setOperators(A_, A_)
-                    ksp.setOptionsPrefix('')
+                    #ksp.setOptionsPrefix('')
      
                     initialize_fieldsplit_pc(ksp, is_fields_)
 
-                    opts = PETSc.Options()
-                    opts.setValue('pc_type', 'fieldsplit')
+                    #opts = PETSc.Options()
+                    #opts.setValue('pc_type', 'fieldsplit')
                     #opts.setValue('fieldsplit_0_ksp_type', 'preonly')
                     #opts.setValue('fieldsplit_1_ksp_type', 'preonly')
+                    #opts.setValue('fieldsplit_0_pc_type', 'lu')
+                    #opts.setValue('fieldsplit_1_pc_type', 'lu')
+                    #opts.setValue('fieldsplit_0_pc_factor_mat_solver_type', 'mumps')
+                    #opts.setValue('fieldsplit_1_pc_factor_mat_solver_type', 'mumps')
                     #opts.setValue('fieldsplit_1_pc_fieldsplit_0_ksp_type', 'preonly')
                     #opts.setValue('fieldsplit_1_pc_fieldsplit_1_ksp_type', 'preonly')
                     #opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_0_ksp_type', 'preonly')
@@ -663,7 +676,8 @@ class FluidStructure(ReducedObjective):
                     #opts.setValue('ksp_view', None)
                     #opts.setValue('ksp_monitor', None)
 
-                    solver1.snes.setFromOptions()
+                    #solver1.snes.setFromOptions()
+
                     #exit(0)
 
                 b = PETScVector()  # same as b = PETSc.Vec()
