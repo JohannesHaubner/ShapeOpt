@@ -1,4 +1,5 @@
 from dolfin import *
+from dolfin import as_backend_type as abt
 from dolfin_adjoint import *
 import numpy as np
 from pyadjoint import annotate_tape, stop_annotating
@@ -465,6 +466,9 @@ class FluidStructure(ReducedObjective):
             else:
                 problem1 = SNESProblem(F, w, bc1)
                 solver1 = SNESSolver(PETSc.SNES().create(mesh.mpi_comm()), problem1)
+                #assemble dummy matrix
+                A = assemble(problem1.a)
+                A_ = abt(A).mat()
 
                 def get_dofs(W):
                     # sort dofs by states and subdomains
@@ -527,12 +531,15 @@ class FluidStructure(ReducedObjective):
                 dofs, state, domain = get_dofs(W) #resort in other bins
 
                 bins = []
-                bins.append({"velocity": ["fluid", "interface"], "pressure": ["fluid", "interface"], "deformation": []})
+                bins.append({"velocity": ["fluid", "interface"], "pressure": [], "deformation": []})
+                bins.append({"velocity": [], "pressure": ["fluid", "interface"], "deformation": []})
                 bins.append({"velocity": ["solid"], "pressure": [], "deformation": ["solid", "interface"]})
                 bins.append({"velocity": [], "pressure": [], "deformation": ["fluid"]})
                 bins.append({"velocity": [], "pressure": ["solid"], "deformation": []})
 
-                def collect_dofs(dofs, bins, states, domains):
+                nested_bins_ids = [[0,1], [2, [3,4]]]
+
+                def collect_dofs(dofs, bins, states, domains, opt_schur=False):
                     dof_bins = []
                     for i in range(len(bins)):
                         bi = np.asarray([])
@@ -540,11 +547,63 @@ class FluidStructure(ReducedObjective):
                             if len(bins[i][j])> 0:
                                 for k in bins[i][j]:
                                     bi= np.concatenate((bi, dofs[states[j]][domains[k]]), axis = 0)
-                        dof_bins.append(PETSc.IS().createGeneral(bi.astype('int32')))
+                        if opt_schur == False:
+                            dof_bins.append(PETSc.IS().createGeneral(bi.astype('int32')))
+                        else:
+                            bi.sort()
+                            dof_bins.append(bi.astype('int32'))
                     return dof_bins
 
-                dof_bins = collect_dofs(dofs, bins, state, domain)
-                #from IPython import embed; embed()
+                def flatten_nested(nested_list, flattened_list=[]):
+                    flist = flattened_list
+                    if type(nested_list)!= list:
+                        flist.append(nested_list)
+                    else:
+                        for i in range(len(nested_list)):
+                            flatten_nested(nested_list[i], flattened_list=flist)
+                    return flist
+
+
+                def add_dofs(dof_bins, nested_bins_ids, **kwargs):
+                    bins = []
+                    if type(nested_bins_ids) != list:
+                        pass
+                    else:
+                        for i in range(len(nested_bins_ids)):
+                            bins_i = []
+                            ids = flatten_nested(nested_bins_ids[i], flattened_list=[])
+                            dofs = np.concatenate([dof_bins[j] for j in ids], axis = 0)
+                            dofs.sort()
+                            if 'reference_numbering' in kwargs:
+                                reference_numbering = kwargs['reference_numbering']
+                                bins_i.append(PETSc.IS().createGeneral(np.where(np.in1d(reference_numbering, dofs) == True)[0].astype('int32')))
+                            else: 
+                                bins_i.append(PETSc.IS().createGeneral(dofs.astype('int32')))
+                            bins_i.append(add_dofs(dof_bins, nested_bins_ids[i], reference_numbering=dofs))
+                            bins.append(bins_i)
+                    return bins
+
+                def collect_nested_dofs(nested_bins_ids, dofs, bins, states, domains):
+                    collected_dofs = collect_dofs(dofs, bins, states, domains, opt_schur=True)
+                    dofs = add_dofs(collected_dofs, nested_bins_ids)
+                    return dofs
+
+                def initialize_fieldsplit_pc(ksp, is_fields_):
+                    pc = ksp.getPC()
+                    pc.setType("fieldsplit")
+                    if len(is_fields_) == 2:
+                        pc.setFieldSplitType(PETSc.PC.CompositeType.SCHUR)
+                    else:
+                        print('not implemented')
+                        exit(0)
+                    is_fields = [is_fields_[i][0] for i in range(len(is_fields_))]
+                    pc.setFieldSplitIS(*[(f"{i:d}", dofs_i) for i, dofs_i in enumerate(is_fields)])
+                    pc.setUp()
+                    subksp = pc.getFieldSplitSchurGetSubKSP()
+                    for j in range(len(is_fields_)):
+                        if is_fields_[j][1] != []:
+                            pcj = initialize_fieldsplit_pc(subksp[j], is_fields_[j][1])
+                    pass
 
                 opts = PETSc.Options()
                 #opts.setValue('ksp_rtol', 1E-8)
@@ -562,6 +621,7 @@ class FluidStructure(ReducedObjective):
                 opts.setValue('ksp_atol', 1E-8)
                 opts.setValue('ksp_max_it', 1000)
                 opts.setValue('ksp_monitor', None)
+                opts.setValue('ksp_view', None)
 
                 option_itsol = 1
 
@@ -578,54 +638,21 @@ class FluidStructure(ReducedObjective):
 
                 elif option_itsol == 1:
 
+                    is_fields_ = collect_nested_dofs(nested_bins_ids, dofs, bins, state, domain)
+                    #from IPython import embed; embed()
+
                     ksp = solver1.snes.getKSP()
                     ksp.setType('fgmres')
-                    pc = ksp.getPC()
-                    pc.setFieldSplitIS(*[(f"{i:d}", dofs_i.sort()) for i, dofs_i in enumerate(dof_bins)])
-                    pc.setType(PETSc.PC.Type.FIELDSPLIT)
-                    #pc.setFieldSplitType(PETSc.PC.CompositeType.SCHUR)
-                    pc.setSPAIVerbose(3)
+                    # assign dummy matrix
+                    ksp.setOperators(A_, A_)
+                    ksp.setOptionsPrefix('')
+     
+                    initialize_fieldsplit_pc(ksp, is_fields_)
 
-                    opt_schur = True
-                    if opt_schur:
-                        #pts.setValue('pc_type', 'fieldsplit')
-                        opts.setValue('fieldsplit_type', 'schur')
-                        opts.setValue('pc_fieldsplit_0_fields', '0')    # fields in split 0
-                        opts.setValue('pc_fieldsplit_1_fields', '1,2,3')    # fields in split 1
-                        opts.setValue('fieldsplit_0_ksp_type', 'preonly')
-                        opts.setValue('fieldsplit_0_pc_type', 'lu')
-                        opts.setValue('fieldsplit_1_ksp_type', 'preonly')
-                        opts.setValue('fieldsplit_1_pc_type', 'lu')
-                        opts.setValue('fieldsplit_1_pc_type', 'fieldsplit')
-                        opts.setValue('fieldsplit_1_pc_fieldsplit_type', 'schur')
-                        opts.setValue('fieldsplit_1_pc_fieldsplit_0_fields', '1')
-                        opts.setValue('fieldsplit_1_pc_fieldsplit_1_fields', '2,3')
-                        opts.setValue('fieldsplit_1_pc_fieldsplit_0_ksp_type', 'preonly')
-                        opts.setValue('fieldsplit_1_pc_fieldsplit_0_pc_type', 'lu')
-                        opts.setValue('fieldsplit_1_pc_fieldsplit_0_pc_factor_mat_solver_type', 'mumps')
-                        opts.setValue('fieldsplit_1_pc_fieldsplit_1_ksp_type', 'preonly')
-                        opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_type', 'lu')
-                        opts.setValue('fieldsplit_1_pc_fieldsplit_1_fieldsplit_type', 'additive')
-                        opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_factor_mat_solver_type', 'mumps')
-                        opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_0_fields', '2')
-                        opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_1_fields', '3')
-                        opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_0_ksp_type', 'preonly')
-                        opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_0_pc_type', 'lu')
-                        opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_0_pc_factor_mat_solver_type', 'mumps')
-                        opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_1_ksp_type', 'preonly')
-                        opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_1_pc_type', 'lu')
-                        opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_1_pc_factor_mat_solver_type', 'mumps')
-                    else:
-                        opts.setValue('pc_type', 'fieldsplit')
-                        opts.setValue('pc_fieldsplit_type', 'additive')
-
-                        for i in range(len(dof_bins)):
-                            opts.setValue(f'fieldsplit_{i}_ksp_type', 'preonly')
-                            opts.setValue(f'fieldsplit_{i}_pc_type', 'lu')
-                            opts.setValue(f'fieldsplit_{i}_pc_factor_mat_solver_type', 'mumps')
-
-                    pc.setFromOptions()
+                    opts = PETSc.Options()
+                    opts.setValue('ksp_view', None)
                     ksp.setFromOptions()
+
                     solver1.snes.setFromOptions()
 
                 b = PETScVector()  # same as b = PETSc.Vec()
