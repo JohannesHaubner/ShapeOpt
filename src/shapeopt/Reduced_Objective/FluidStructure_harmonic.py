@@ -531,13 +531,12 @@ class FluidStructure(ReducedObjective):
                 dofs, state, domain = get_dofs(W) #resort in other bins
 
                 bins = []
-                bins.append({"velocity": ["fluid", "interface"], "pressure": [], "deformation": []})
-                bins.append({"velocity": [], "pressure": ["fluid", "interface"], "deformation": []})
+                bins.append({"velocity": ["fluid", "interface"], "pressure": ["fluid", "interface"], "deformation": []})
                 bins.append({"velocity": ["solid"], "pressure": [], "deformation": ["solid", "interface"]})
                 bins.append({"velocity": [], "pressure": [], "deformation": ["fluid"]})
                 bins.append({"velocity": [], "pressure": ["solid"], "deformation": []})
 
-                nested_bins_ids = [[0,1], [2, [3,4]]]
+                nested_bins_ids = [0, [1, [2,3]]]
 
                 def collect_dofs(dofs, bins, states, domains, opt_schur=False):
                     dof_bins = []
@@ -599,7 +598,7 @@ class FluidStructure(ReducedObjective):
                     is_fields = [is_fields_[i][0] for i in range(len(is_fields_))]
                     pc.setFieldSplitIS(*[(f"{i:d}", dofs_i) for i, dofs_i in enumerate(is_fields)])
                     pc.setUp()
-                    pc.view()
+                    #pc.view()
                     subksp = pc.getFieldSplitSchurGetSubKSP()
                     for j in range(len(is_fields_)):
                         if is_fields_[j][1] != []:
@@ -609,16 +608,16 @@ class FluidStructure(ReducedObjective):
                 opts = PETSc.Options()
                 #opts.setValue('ksp_rtol', 1E-8)
                 #opts.setValue('ksp_view_pre', None)
-                opts.setValue('snes_monitor', None)
+                #opts.setValue('snes_monitor', None)
                 #opts.setValue('snes_linesearch_monitor', None)
                 #opts.setValue('ksp_monitor_true_residual', None)
-                #opts.setValue('ksp_converged_reason', None)
-                opts.setValue('snes_converged_reason', None)
+                opts.setValue('ksp_converged_reason', None)
+                #opts.setValue('snes_converged_reason', None)
                 opts.setValue('snes_type', 'newtonls')
                 opts.setValue('snes_divergence_tolerance', 1e2)
                 opts.setValue('snes_linesearch_type', 'l2')
                 opts.setValue('snes_max_it', 30)
-                opts.setValue('snes_view', None)
+                #opts.setValue('snes_view', None)
                 opts.setValue('ksp_atol', 1E-8)
                 opts.setValue('ksp_max_it', 1000)
                 opts.setValue('ksp_monitor', None)
@@ -651,30 +650,18 @@ class FluidStructure(ReducedObjective):
                     initialize_fieldsplit_pc(ksp, is_fields_)
 
                     opts = PETSc.Options()
-                    opts.setValue('ksp_view', None)
-                    ksp.setFromOptions()
-                    opts.setValue('fieldsplit_0_ksp_type', 'preonly')
-                    opts.setValue('fieldsplit_0_pc_type', 'lu')
-                    opts.setValue('fieldsplit_1_ksp_type', 'preonly')
-                    opts.setValue('fieldsplit_1_pc_type', 'lu')
-                    opts.setValue('fieldsplit_0_pc_fieldsplit_0_ksp_type', 'preonly')
-                    opts.setValue('fieldsplit_0_pc_fieldsplit_0_pc_type', 'lu')
-                    opts.setValue('fieldsplit_0_pc_fieldsplit_0_pc_factor_mat_solver_type', 'mumps')
-                    opts.setValue('fieldsplit_0_pc_fieldsplit_1_ksp_type', 'preonly')
-                    opts.setValue('fieldsplit_0_pc_fieldsplit_1_pc_type', 'lu')
-                    opts.setValue('fieldsplit_0_pc_fieldsplit_1_pc_factor_mat_solver_type', 'mumps')
-                    opts.setValue('fieldsplit_1_pc_fieldsplit_0_ksp_type', 'preonly')
-                    opts.setValue('fieldsplit_1_pc_fieldsplit_0_pc_type', 'lu')
-                    opts.setValue('fieldsplit_1_pc_fieldsplit_0_pc_factor_mat_solver_type', 'mumps')
-                    opts.setValue('fieldsplit_1_pc_fieldsplit_1_ksp_type', 'preonly')
-                    opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_type', 'lu')
-                    opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_factor_mat_solver_type', 'mumps')
-                    opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_0_ksp_type', 'preonly')
-                    opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_0_pc_type', 'lu')
-                    opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_0_pc_factor_mat_solver_type', 'mumps')
-                    opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_1_ksp_type', 'preonly')
-                    opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_1_pc_type', 'lu')
-                    opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_1_pc_factor_mat_solver_type', 'mumps')
+                    opts.setValue('pc_type', 'fieldsplit')
+                    #opts.setValue('fieldsplit_0_ksp_type', 'preonly')
+                    #opts.setValue('fieldsplit_1_ksp_type', 'preonly')
+                    #opts.setValue('fieldsplit_1_pc_fieldsplit_0_ksp_type', 'preonly')
+                    #opts.setValue('fieldsplit_1_pc_fieldsplit_1_ksp_type', 'preonly')
+                    #opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_0_ksp_type', 'preonly')
+                    #opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_0_pc_type', 'ilu')
+                    #opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_1_ksp_type', 'preonly')
+                    #opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_1_pc_type', 'ilu')
+
+                    #opts.setValue('ksp_view', None)
+                    #opts.setValue('ksp_monitor', None)
 
                     solver1.snes.setFromOptions()
                     #exit(0)
