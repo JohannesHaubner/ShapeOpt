@@ -28,6 +28,11 @@ class SNESProblem():
         self.bcs = bc
         self.u = u
         self.du = du
+        # initialize
+        self.Mat = PETScMatrix(u.function_space().mesh().mpi_comm())
+        self.vec = PETScVector(u.function_space().mesh().mpi_comm())
+        assemble(self.L, tensor = self.vec)
+        assemble(self.a, tensor = self.Mat)
         return
 
     def F(self, snes, x, F):
@@ -466,9 +471,11 @@ class FluidStructure(ReducedObjective):
             else:
                 problem1 = SNESProblem(F, w, bc1)
                 solver1 = SNESSolver(PETSc.SNES().create(mesh.mpi_comm()), problem1)
+                solver1.snes.setFunction(problem1.F, problem1.vec.vec())
+                solver1.snes.setJacobian(problem1.J, problem1.Mat.mat(), problem1.Mat.mat())
                 #assemble dummy matrix
-                A = assemble(problem1.a)
-                A_ = abt(A).mat()
+                #A = assemble(problem1.a)
+                #A_ = abt(A).mat()
 
                 def get_dofs(W):
                     # sort dofs by states and subdomains
@@ -614,7 +621,7 @@ class FluidStructure(ReducedObjective):
                 opts = PETSc.Options()
                 #opts.setValue('ksp_rtol', 1E-8)
                 #opts.setValue('ksp_view_pre', None)
-                #opts.setValue('snes_monitor', None)
+                opts.setValue('snes_monitor', None)
                 #opts.setValue('snes_linesearch_monitor', None)
                 #opts.setValue('ksp_monitor_true_residual', None)
                 opts.setValue('ksp_converged_reason', None)
@@ -646,14 +653,13 @@ class FluidStructure(ReducedObjective):
                 elif option_itsol == 1:
 
                     is_fields_ = collect_nested_dofs(nested_bins_ids, dofs, bins, state, domain)
-                    #from IPython import embed; embed()
 
                     solver1.snes.setFromOptions()
 
                     ksp = solver1.snes.getKSP()
                     ksp.setType('fgmres')
                     # assign dummy matrix
-                    ksp.setOperators(A_, A_)
+                    #ksp.setOperators(A_, A_)
                     #ksp.setOptionsPrefix('')
      
                     initialize_fieldsplit_pc(ksp, is_fields_)
