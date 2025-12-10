@@ -6,6 +6,7 @@ from pyadjoint import annotate_tape, stop_annotating
 from pyadjoint.overloaded_type import create_overloaded_object
 import matplotlib.pyplot as plt
 from petsc4py import PETSc
+from mpi4py import MPI
 
 from .dolfin_adjoint_files.petsc_solver import SNESSolver
 from .ReducedObjective import ReducedObjective
@@ -586,7 +587,7 @@ class FluidStructure(ReducedObjective):
                             dofs.sort()
                             if 'reference_numbering' in kwargs:
                                 reference_numbering = kwargs['reference_numbering']
-                                bins_i.append(PETSc.IS().createGeneral(np.where(np.in1d(reference_numbering, dofs) == True)[0].astype('int32')))
+                                bins_i.append(PETSc.IS().createGeneral(np.where(np.in1d(np.concatenate(MPI.COMM_WORLD.allgather(reference_numbering)), dofs) == True)[0].astype('int32')))
                             else: 
                                 bins_i.append(PETSc.IS().createGeneral(dofs.astype('int32')))
                             bins_i.append(add_dofs(dof_bins, nested_bins_ids[i], reference_numbering=dofs))
