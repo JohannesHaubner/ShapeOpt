@@ -17,6 +17,8 @@ import os
 if not os.path.exists(save_directory):
     os.makedirs(save_directory)
 
+parameters["ghost_mode"] = "shared_facet"
+
 stop_annotating()
 
 class SNESProblem():
@@ -497,7 +499,7 @@ class FluidStructure(ReducedObjective):
 
                     dsi = dS(mesh)(params['interface'])
 
-                    dofmap = W.dofmap()
+                    offset = W.dofmap().ownership_range()[0]
 
                     dx_ = [dxf, dxs]
                     dofs_ = [fluid_dofs, solid_dofs]
@@ -511,6 +513,7 @@ class FluidStructure(ReducedObjective):
                         for j in range(2):
                             vec = assemble(inner(w_[i], psi_[i])*dx_[j]) # assemble vector which has nonzeros at interface, fluid+ interface, solid+interface
                             indicesj = np.nonzero(vec)[0] # indices of vec which are nonzero
+                            indicesj = indicesj + offset
                             dofs_[j].append(np.setdiff1d(indicesj, indices)) # substract interface dofs
 
                     return [interface_dofs] + dofs_, state, domain
@@ -606,6 +609,9 @@ class FluidStructure(ReducedObjective):
                         #exit(0)
                     is_fields = [is_fields_[i][0] for i in range(len(is_fields_))]
                     pc.setFieldSplitIS(*[(f"{i:d}", dofs_i) for i, dofs_i in enumerate(is_fields)])
+                    print(len(is_fields_[0][0].array), len(is_fields_[1][0].array))
+                    print('next line produces error')
+                    exit(0)
                     pc.setUp()
                     pc.view()
                     subksp = pc.getFieldSplitSchurGetSubKSP()
@@ -661,6 +667,7 @@ class FluidStructure(ReducedObjective):
                     # assign dummy matrix
                     #ksp.setOperators(A_, A_)
                     #ksp.setOptionsPrefix('')
+
      
                     initialize_fieldsplit_pc(ksp, is_fields_)
 
