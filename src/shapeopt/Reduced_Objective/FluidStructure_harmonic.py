@@ -507,7 +507,7 @@ class FluidStructure(ReducedObjective):
                     for i in range(W.num_sub_spaces()):
                         # interface dofs
                         vec = assemble(inner(avg(w_[i]), avg(psi_[i]))*dsi) # assemble vector which has nonzeros at interface
-                        indices = np.nonzero(vec)[0]
+                        indices = np.nonzero(vec)[0] + offset
                         interface_dofs.append(np.array(indices))
 
                         for j in range(2):
@@ -609,9 +609,6 @@ class FluidStructure(ReducedObjective):
                         #exit(0)
                     is_fields = [is_fields_[i][0] for i in range(len(is_fields_))]
                     pc.setFieldSplitIS(*[(f"{i:d}", dofs_i) for i, dofs_i in enumerate(is_fields)])
-                    print(len(is_fields_[0][0].array), len(is_fields_[1][0].array))
-                    print('next line produces error')
-                    exit(0)
                     pc.setUp()
                     pc.view()
                     subksp = pc.getFieldSplitSchurGetSubKSP()
