@@ -22,11 +22,11 @@ class SolveVarFormBlock(GenericSolveBlock):
     def __init__(self, equation, func, bcs=[], snes=None, *args, **kwargs):
         lhs = equation.lhs
         rhs = equation.rhs
-        self.snes = snes
         super().__init__(lhs, rhs, func, bcs, *args, **kwargs)
+        self.snes = snes
 
     def _init_solver_parameters(self, args, kwargs):
-        super()._init_solver_parameters(args, kwargs)
+        #super()._init_solver_parameters(args, kwargs)
         pass
 
     def _assemble_and_solve_adj_eq(self, dFdu_adj_form, dJdu, compute_bdy=True):

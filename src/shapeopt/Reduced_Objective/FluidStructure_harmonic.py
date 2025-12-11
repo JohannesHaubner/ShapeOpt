@@ -104,6 +104,7 @@ class FluidStructure(ReducedObjective):
         super().__init__()
         self.drag = drag
         self.min = min
+        self.setUp = False
 
     def meanflow_function(self, mesh, boundaries, params, drag):
         # compute function that is (1, 0) on the obstacles boundary and 0 on the outer boundary
@@ -153,26 +154,8 @@ class FluidStructure(ReducedObjective):
 
         return u
 
-
-    def eval(self, mesh, domains, boundaries, params, param, flag=False, red_func=False, control=False, add_penalty=True, visualize=False, vis_folder=str(), fallback_strategy=False, point=[0.6, 0.2]):
-        # mesh generated
-        # params dictionary, includes labels for boundary parts:
-        # params.inflow
-        # params.outflow
-        # params.noslip
-        # params.obstacle
-
-        print("Use FluidStructure to compute reduced objective",flush=True)
-
-        ##parameters["adjoint"]["stop_annotating"] = False
-        #parameters["form_compiler"]["cpp_optimize"] = True
-        #parameters["form_compiler"]["optimize"] = True
-
-        ##parameters['form_compiler']['cpp_optimize_flags'] = '-O3 -fno-math-errno -march=native'        
-        ##parameters['form_compiler']['quadrature_degree'] = 20   
-
-        # compute help function for evaluation of objective
-
+    def __set_up(self, mesh, domains, boundaries, params, param, flag=False, red_func=False, control=False, add_penalty=True, visualize=False, vis_folder=str(), fallback_strategy=False, point=[0.6, 0.2]):
+        self.setUp = True
         dX = Measure('dx', domain=mesh, subdomain_data=domains, metadata={"quadrature_degree": 7})
         dS = Measure('dS', domain=mesh, subdomain_data=boundaries, metadata={"quadrature_degree": 7})
         ds = Measure('ds', domain=mesh, subdomain_data=boundaries, metadata={"quadrature_degree": 7})
@@ -186,33 +169,23 @@ class FluidStructure(ReducedObjective):
         V2 = VectorElement("CG", mesh.ufl_cell(), 2)
         V1 = VectorElement("CG", mesh.ufl_cell(), 1)
         S1 = FiniteElement("CG", mesh.ufl_cell(), 1)
-        W  = FunctionSpace(mesh, MixedElement(V2, S1, V2))
+        self.W  = FunctionSpace(mesh, MixedElement(V2, S1, V2))
         WE = FunctionSpace(mesh, MixedElement(V1, V1))
         U1 = FunctionSpace(mesh, V1)
         VC = FunctionSpace(mesh, V1)
         U = FunctionSpace(mesh, V1)
         P = FunctionSpace(mesh, S1)
 
+        if dim == 2:
+            tu = interpolate(Expression(("0.0","0.0"), name = 'Control', degree =1), VC) 
+        elif dim == 3:
+            tu = interpolate(Expression(("0.0","0.0","0.0"), name = 'Control', degree =1), VC)
+
         phiv = self.meanflow_function(mesh, boundaries, params, drag=self.drag)
 
         func = interpolate(Constant(1.0), P)
         bc_inter = DirichletBC(P, Constant(0.0), boundaries, params["interface"])
         bc_inter.apply(func.vector())
-
-        
-        # charFunc
-        if visualize:
-            C = FunctionSpace(mesh, "DG", 0)
-            chfun = Function(C, name="charfunc")
-            psi = TestFunction(C)
-            u = TrialFunction(C)
-            L = Constant(1.0)*psi*dxs + Constant(0.0)*psi*dxf
-            a = u * psi *dX(mesh)
-            solve(a == L, chfun, [])
-
-        stop_annotating()
-        set_working_tape(Tape())
-        annotate_tape()
 
         # parameters
         Ubar = Constant(1.0)
@@ -241,474 +214,492 @@ class FluidStructure(ReducedObjective):
         auhat = Constant(1e-9)
         aphat = Constant(1e-9)
 
-        t = 0.0
+        self.t = 0.0
+        t = self.t
         T = param["T"]
-        deltat = param["deltat"]
-        k = Constant(deltat)
-        theta = Constant(0.5 + 0.5 * deltat)
+        self.T = T
+        self.deltat = param["deltat"]
+        k = Constant(self.deltat)
+        theta = Constant(0.5 + 0.5 * self.deltat)
 
         INH = False
 
         # Expressions
         if dim == 2:
             (x, y) = SpatialCoordinate(mesh)
-            V_01 = Expression(("(t < 2)*1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ 0.1681*0.5*(1-cos(pi/2*t)) +(1 - (t < 2))*1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ \
+            self.V_01 = Expression(("(t < 2)*1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ 0.1681*0.5*(1-cos(pi/2*t)) +(1 - (t < 2))*1.5*Ubar*4.0*x[1]*(0.41 -x[1])/ \
                     0.1681", "0.0"), Ubar=Ubar, \
                             t=t, degree=2)
 
         elif dim == 3:
-            V_01 =  Expression(("(t < 2) * Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)*0.5*(1-cos(pi/2*t)) + (1-(t<2))*Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)", "0.0", "0.0"), Ubar=Ubar, \
+            self.V_01 =  Expression(("(t < 2) * Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)*0.5*(1-cos(pi/2*t)) + (1-(t<2))*Ubar*x[1]*(H -x[1])*x[2]*(B - x[2])/ (0.001764)", "0.0", "0.0"), Ubar=Ubar, \
                             H=param["H"], B=param["B"], t=t, degree=2)
             
         V_1 = Constant([0.0]*dim)  
 
-        # output files
-        if visualize:
-            save_directory = str(here.parent.parent.parent) + "/example/FSI/Output/Forward" + vis_folder
-            write_to_xdmf = Write_to_XDMF(save_directory, mesh)
-            dstring = save_directory + '/displacementy.txt'
-            tstring = save_directory + '/times.txt'
-            displacementy = []
-            times = []
+        # test and trial functions
+        self.w = Function(self.W, name="state")
+        (v, p, u) = split(self.w)
 
-        # run forward model
-        counter = -1
+        self.w_ = Function(self.W, name="old_state")
+        (v_, p_, u_) = split(self.w_)
 
-        J = 0
+        psi = TestFunction(self.W)
+        (psiv, psip, psiu) = split(psi)
 
-        if dim == 2:
-            tu = interpolate(Expression(("0.0","0.0"), name = 'Control', degree =1), VC) 
-        elif dim == 3:
-            tu = interpolate(Expression(("0.0","0.0","0.0"), name = 'Control', degree =1), VC)
-        if control:
-            tu.vector().set_local(control.vector().get_local())
-            tu.vector().apply("")
-            if flag == True:
-                #print(tu.vector().get_local(),flush=True)
+        # weak form
+        I = Identity(dim)
+        tFhat = I + grad(tu)
+        tFhatt = tFhat.T
+        tFhati = inv(tFhat)
+        tFhatti = tFhati.T
+        tJhat = det(tFhat)
+        Fhat = I + grad(u) * tFhati
+        Fhatt = Fhat.T
+        Fhati = inv(Fhat)
+        Fhatti = Fhati.T
+        Ehat = 0.5 * (Fhatt * Fhat - I)
+        Jhat = det(Fhat)
+
+        # stress tensors
+        def sigmafp(p):
+            return -p * I
+
+        def sigmafv(v):
+            return rhof * nyf * (grad(v) * tFhati * Fhati + Fhatti * tFhatti \
+                                * grad(v).T)
+
+        def sigmasp(p):
+            if INH:
+                return -p * I  # INH
+            else:
+                return Constant(0.0)  # STVK
+
+        def sigmasv(v):
+            if INH:
+                return mys * (Fhat * Fhatt - I)  # INH
+            else:
+                return inv(Jhat) * Fhat * (lambdas * tr(Ehat) * I \
+                                        + 2.0 * (mys) * Ehat) * Fhatt  # STVK
+
+        # INH or STVK setting for solid material
+        if INH == False:
+            inh_f = Constant(0.0)
+        else:
+            inh_f = Constant(1.0)
+
+        # variables for previous time-step
+        Fhat_ = I + grad(u_) * tFhati
+        Fhatt_ = Fhat_.T
+        Fhati_ = inv(Fhat_)
+        Fhatti_ = Fhati_.T
+        Ehat_ = 0.5 * (Fhatt_ * Fhat_ - I)
+        Jhat_ = det(Fhat_)
+        Jhattheta = theta * Jhat + (1.0 - theta) * Jhat_
+
+        def sigmafv_(v_):
+            return rhof * nyf * (grad(v_) * tFhati * Fhati_ + Fhatti_ * tFhatti \
+                                * grad(v_).T)
+
+        def sigmasv_(v_):
+            if INH:
+                return mys * (Fhat_ * Fhatt_ - I)  # INH
+            else:
+                return inv(Jhat_) * Fhat_ * (lambdas * tr(Ehat_) * I \
+                                            + 2.0 * (mys) * Ehat_) * Fhatt_  # STVK
+
+        # terms with time derivatives
+        A_T = (1.0 / k * inner(rhof * Jhattheta * tJhat * (v - v_), psiv) * dxf
+            - 1.0 / k * inner(rhof * Jhat * tJhat * grad(v) * tFhati * Fhati * (u - u_), psiv)
+            * dxf + 1.0 / k * inner(tJhat * rhos * (v - v_), psiv) * dxs
+            + 1.0 / k * inner( tJhat * rhos * (u - u_), psiu) * dxs)
+
+        # pressure terms
+        A_P = (inner(tJhat * Jhat * tFhati * Fhati * sigmafp(p),
+                    grad(psiv).T) * dxf + inh_f * inner(tJhat * Jhat * tFhati * Fhati * sigmasp(p)
+                                                                        , grad(psiv)) * dxs)
+
+        # implicit terms (e.g. incompressibiliy)
+        A_I = (
+                #- inner(azhat * tJhat("+") * grad(z)("+") * tFhati("+") * tFhati("+") * n("+"), psiz("+"))*dS(mesh)(params["interface"]) 
+                + inh_f * inner(Jhat - Constant(1.0), psip) * dxs
+                + inner(tJhat * tr(tFhatti * grad(Jhat * Fhati * v).T), psip) * dxf
+                + inner(aphat * tJhat * tFhati * tFhatti * (grad(p)), (grad(psip))) * dxs
+                + inner(aphat * tJhat * p, psip) * dxs
+                )
+
+        # remaining explicit terms
+        A_E = (inner(auhat * tJhat * tFhati * tFhatti * grad(u).T, grad(func * psiu).T) * dxf
+                #- inner(auhat* tJhat("-") * grad(z)("-")* tFhati("-") * tFhatti("-") * n("-"), psiu("-"))*dS(mesh)(params["interface"]) #  grad(u) = Du
+            + inner(rhof * tJhat * Jhat * grad(v) * tFhati * Fhati * v, psiv) * dxf
+            + inner(tJhat * Jhat * tFhati * Fhati * sigmafv(v), grad(psiv).T)
+            * dxf - inner( tJhat * rhos * v, psiu) * dxs
+            + inner(tJhat * Jhat * tFhati * Fhati * sigmasv(v), grad(psiv).T)
+            * dxs)
+
+        # explicit terms of previous time-step
+        A_E_rhs = (inner(auhat * tJhat * tFhati * tFhatti * grad(u_).T, grad(func * psiu).T) * dxf
+                    #- inner(auhat * tJhat("-") * grad(z_)("-") * tFhati("-") * tFhatti("-") * n("-"), psiu("-"))*dS(mesh)(params["interface"]) 
+                + inner(rhof * tJhat * Jhat_ * grad(v_) * tFhati * Fhati_ * v_, psiv)
+                * dxf + inner(tJhat * Jhat_ * tFhati * Fhati_ * sigmafv_(v_),grad(psiv).T) * dxf
+                - inner( tJhat * rhos * v_, psiu) * dxs + inner(tJhat * Jhat_ * tFhati * Fhati_ * sigmasv_(v_)
+                                                                        , grad(psiv).T) * dxs)
+
+        # shifted crank nicolson scheme
+        self.F = A_T + A_P + A_I + theta * A_E + (Constant(1.0) - theta) * A_E_rhs
+
+        class Projector():
+            def __init__(self, V):
+                self.v = TestFunction(V)
+                u = TrialFunction(V)
+                form = inner(u, self.v)*dX(mesh)
+                self.A = assemble(form, annotate=False)
+                self.solver = LUSolver(self.A)
+                self.func = Function(V)
+            def project(self, f):
+                L = inner(f, self.v)*dX(mesh)
+                b = assemble(L, annotate=False)
+                self.solver.solve(self.func.vector(), b)
+                return self.func
+
+        self.projectorU = Projector(U)
+        self.projectorU1 = Projector(U1)
+        self.projectorP = Projector(P)
+
+        # boundary conditions
+        bc1 = []
+        if "inflow" in params:
+            bc1.append(DirichletBC(self.W.sub(0), self.V_01, boundaries, params["inflow"]))  # in   v
+            bc1.append(DirichletBC(self.W.sub(2), V_1, boundaries, params["inflow"]))  # in   u
+        if "obstacle" in params:
+            bc1.append(DirichletBC(self.W.sub(0), V_1, boundaries, params["obstacle"]))  # ns   v
+            bc1.append(DirichletBC(self.W.sub(2), V_1, boundaries, params["obstacle"]))  # ns   u
+        if "noslip" in params:
+            bc1.append(DirichletBC(self.W.sub(0), V_1, boundaries, params["noslip"]))  # ns   v
+            bc1.append(DirichletBC(self.W.sub(2), V_1, boundaries, params["noslip"]))  # ns   u
+        if "noslip_obstacle" in params:
+            bc1.append(DirichletBC(self.W.sub(0), V_1, boundaries, params["noslip_obstacle"]))  # ns   v
+            bc1.append(DirichletBC(self.W.sub(2), V_1, boundaries, params["noslip_obstacle"]))  # ns   u
+
+        self.bc = bc1
+
+        # # pressure BC
+        # class PressureB(SubDomain):
+        #     def inside(self, x, on_boundary):
+        #         return near(x[0], (0.0)) and near(x[1], (0.0))
+        # pressureB = PressureB()
+        # bc1.append(DirichletBC(W.sub(1), Constant(0.0), pressureB, method='pointwise'))
+        # bc2.append(DirichletBC(W.sub(1), Constant(0.0), pressureB, method='pointwise'))
+    
+
+        self.direct_solver = False
+
+        if self.direct_solver:
+            Jac = derivative(F, w)
+            problem1 = NonlinearVariationalProblem(F, w, bc1, J=Jac)
+            PETScOptions.set("pc_type", "lu")
+            PETScOptions.set("pc_factor_mat_solver_type", "mumps")
+            #PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
+            #PETScOptions.set("mat_mumps_icntl_14", 400)
+            #PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
+            PETScOptions.set("mat_mumps_icntl_35", 1)
+            PETScOptions.set("mat_mumps_cntl_7", 1e-8)
+
+            solver1 = NonlinearVariationalSolver(problem1)
+
+            #list_linear_solver_methods()
+
+            solver_parameters = {"nonlinear_solver": "newton", "newton_solver": {"maximum_iterations": 25, "linear_solver": "mumps"}}
+
+            solver1.parameters.update(solver_parameters)
+
+        else:
+            problem1 = SNESProblem(self.F, self.w, self.bc)
+            solver1 = SNESSolver(PETSc.SNES().create(mesh.mpi_comm()), problem1)
+            opts = PETSc.Options()
+            #opts.setValue('ksp_rtol', 1E-8)
+            #opts.setValue('ksp_view_pre', None)
+            opts.setValue('snes_monitor', None)
+            #opts.setValue('snes_linesearch_monitor', None)
+            #opts.setValue('ksp_monitor_true_residual', None)
+            opts.setValue('ksp_converged_reason', None)
+            opts.setValue('snes_converged_reason', None)
+            opts.setValue('snes_type', 'newtonls')
+            opts.setValue('snes_divergence_tolerance', 1e5)
+            opts.setValue('snes_linesearch_type', 'l2')
+            opts.setValue('snes_max_it', 30)
+            #opts.setValue('snes_atol', 1e-10)
+            #opts.setValue('snes_rtol', 1e-10)
+            solver1.snes.setFromOptions()
+            solver1.snes.setFunction(problem1.F, problem1.vec.vec())
+            solver1.snes.setJacobian(problem1.J, problem1.Mat.mat(), problem1.Mat.mat())
+            solver1.snes.setErrorIfNotConverged(True)
+
+            def get_dofs(W):
+                # sort dofs by states and subdomains
+                w = Function(W)
+                w = interpolate(Constant(('1.0', )*w.ufl_shape[0]), W)
+                psi = TestFunction(W)
+
+                (v, p, u) = split(w)
+                (psiv, psip, psiu) = split(psi)
+                psi_ = [psiv, psip, psiu]
+                w_ = [v, p, u]
+
+                state = {"velocity": 0, "pressure": 1, "deformation":2}
+                domain = {"interface": 0, "fluid": 1, "solid": 2}
+
+                interface_dofs = []
+                fluid_dofs = []
+                solid_dofs = []
+
+                dsi = dS(mesh)(params['interface'])
+
+                offset = W.dofmap().ownership_range()[0]
+
+                dx_ = [dxf, dxs]
+                dofs_ = [fluid_dofs, solid_dofs]
+
+                for i in range(W.num_sub_spaces()):
+                    # interface dofs
+                    vec = assemble(inner(avg(w_[i]), avg(psi_[i]))*dsi) # assemble vector which has nonzeros at interface
+                    indices = np.nonzero(vec)[0] + offset
+                    interface_dofs.append(np.array(indices))
+
+                    for j in range(2):
+                        vec = assemble(inner(w_[i], psi_[i])*dx_[j]) # assemble vector which has nonzeros at interface, fluid+ interface, solid+interface
+                        indicesj = np.nonzero(vec)[0] # indices of vec which are nonzero
+                        indicesj = indicesj + offset
+                        dofs_[j].append(np.setdiff1d(indicesj, indices)) # substract interface dofs
+
+                return [interface_dofs] + dofs_, state, domain
+
+            def __test1(W):
+                indexset,_,_ = get_dofs(W)
+
+                # test
+                k = 0
+                for j in range(len(indexset)):
+                    for i in range(len(indexset[j])):
+                        k += len(indexset[j][i])
+                assert(k == len(w.vector()[:]))
+
+            def __test2(W):
+                indexset,_, _ = get_dofs(W)
+
+                k = []
+                for j in range(len(indexset)):
+                    for i in range(len(indexset[j])):
+                        k = np.concatenate((k, indexset[j][i]), axis=0)
+                l = len(set(k))
+                assert(l == len(w.vector()[:]))
+
+            dofs, state, domain = get_dofs(self.W) #resort in other bins
+
+            bins = []
+            bins.append({"velocity": ["fluid", "interface"], "pressure": ["fluid", "interface"], "deformation": []})
+            bins.append({"velocity": ["solid"], "pressure": [], "deformation": ["solid", "interface"]})
+            bins.append({"velocity": [], "pressure": [], "deformation": ["fluid"]})
+            bins.append({"velocity": [], "pressure": ["solid"], "deformation": []})
+
+            solver_options = []
+            solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins0
+            solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins1
+            solver_options.append({'ksp_type': 'preonly', 'pc_type': 'hypre'}) #bins2                
+            solver_options.append({'ksp_type': 'preonly', 'pc_type': 'hypre'}) #bins3
+
+            nested_bins_ids =  [0, [1, [2,3]]] # [0, 1]
+
+            def collect_dofs(dofs, bins, states, domains, opt_schur=False):
+                dof_bins = []
+                for i in range(len(bins)):
+                    bi = np.asarray([])
+                    for j in states:
+                        if len(bins[i][j])> 0:
+                            for k in bins[i][j]:
+                                bi= np.concatenate((bi, dofs[states[j]][domains[k]]), axis = 0)
+                    if opt_schur == False:
+                        dof_bins.append(PETSc.IS().createGeneral(bi.astype('int32')))
+                    else:
+                        bi.sort()
+                        dof_bins.append(bi.astype('int32'))
+                return dof_bins
+
+            def flatten_nested(nested_list, flattened_list=[]):
+                flist = flattened_list
+                if type(nested_list)!= list:
+                    flist.append(nested_list)
+                else:
+                    for i in range(len(nested_list)):
+                        flatten_nested(nested_list[i], flattened_list=flist)
+                return flist
+
+
+            def add_dofs(dof_bins, nested_bins_ids, **kwargs):
+                bins = []
+                if type(nested_bins_ids) != list:
+                    pass
+                else:
+                    for i in range(len(nested_bins_ids)):
+                        bins_i = []
+                        ids = flatten_nested(nested_bins_ids[i], flattened_list=[])
+                        dofs = np.concatenate([dof_bins[j] for j in ids], axis = 0)
+                        dofs.sort()
+                        if 'reference_numbering' in kwargs:
+                            reference_numbering = kwargs['reference_numbering']
+                            bins_i.append(PETSc.IS().createGeneral(np.where(np.in1d(np.concatenate(MPI.COMM_WORLD.allgather(reference_numbering)), dofs) == True)[0].astype('int32')))
+                        else: 
+                            bins_i.append(PETSc.IS().createGeneral(dofs.astype('int32')))
+                        bins_i.append(add_dofs(dof_bins, nested_bins_ids[i], reference_numbering=dofs))
+                        bins.append(bins_i)
+                return bins
+
+            def collect_nested_dofs(nested_bins_ids, dofs, bins, states, domains):
+                collected_dofs = collect_dofs(dofs, bins, states, domains, opt_schur=True)
+                dofs = add_dofs(collected_dofs, nested_bins_ids)
+                return dofs
+
+            def initialize_fieldsplit_pc(ksp, is_fields_, solver_options, nested_bins_ids):
+                pc = ksp.getPC()
+                pc.setType("fieldsplit")
+                if len(is_fields_) == 2:
+                    pc.setFieldSplitType(PETSc.PC.CompositeType.SCHUR)
+                else:
+                    pc.setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
+                    #print('not implemented')
+                    #exit(0)
+                is_fields = [is_fields_[i][0] for i in range(len(is_fields_))]
+                pc.setFieldSplitIS(*[(f"{i:d}", dofs_i) for i, dofs_i in enumerate(is_fields)])
+                pc.setUp()
+                pc.view()
+                subksp = pc.getFieldSplitSchurGetSubKSP()
+                for j in range(len(is_fields_)):
+                    if is_fields_[j][1] != []:
+                        subksp[j].setType("preonly")
+                        subksp[j].setUp()
+                        pcj = initialize_fieldsplit_pc(subksp[j], is_fields_[j][1], solver_options, nested_bins_ids[j])
+                    else:
+                        i = nested_bins_ids[j]
+                        subksp[j].setType(solver_options[i]["ksp_type"])
+                        subksp[j].setUp()
+                        pcj = subksp[j].getPC()
+                        pcj.setType(solver_options[i]["pc_type"])
+                        if "pc_factor_solver_type" in solver_options[i]:
+                            pcj.setFactorSolverType(solver_options[i]["pc_factor_solver_type"])
+                        pcj.setUp()
+                        pcj.view()
                 pass
 
-        if not fallback_strategy:
+            #opts.setValue('snes_view', None)
+            opts.setValue('ksp_atol', 1E-8)
+            opts.setValue('ksp_max_it', 1000)
+            opts.setValue('ksp_monitor', None)
+            opts.setValue('ksp_error_if_not_converged', None)
+            #opts.setValue('ksp_view', None)
 
-            # test and trial functions
-            w = Function(W, name="state")
-            (v, p, u) = split(w)
+            option_itsol = 0
 
-            w_ = Function(W, name="old_state")
-            (v_, p_, u_) = split(w_)
+            if option_itsol == 0:
 
-            psi = TestFunction(W)
-            (psiv, psip, psiu) = split(psi)
-
-            # weak form
-            I = Identity(dim)
-            tFhat = I + grad(tu)
-            tFhatt = tFhat.T
-            tFhati = inv(tFhat)
-            tFhatti = tFhati.T
-            tJhat = det(tFhat)
-            Fhat = I + grad(u) * tFhati
-            Fhatt = Fhat.T
-            Fhati = inv(Fhat)
-            Fhatti = Fhati.T
-            Ehat = 0.5 * (Fhatt * Fhat - I)
-            Jhat = det(Fhat)
-
-            # stress tensors
-            def sigmafp(p):
-                return -p * I
-
-            def sigmafv(v):
-                return rhof * nyf * (grad(v) * tFhati * Fhati + Fhatti * tFhatti \
-                                    * grad(v).T)
-
-            def sigmasp(p):
-                if INH:
-                    return -p * I  # INH
-                else:
-                    return Constant(0.0)  # STVK
-
-            def sigmasv(v):
-                if INH:
-                    return mys * (Fhat * Fhatt - I)  # INH
-                else:
-                    return inv(Jhat) * Fhat * (lambdas * tr(Ehat) * I \
-                                            + 2.0 * (mys) * Ehat) * Fhatt  # STVK
-
-            # INH or STVK setting for solid material
-            if INH == False:
-                inh_f = Constant(0.0)
-            else:
-                inh_f = Constant(1.0)
-
-            # variables for previous time-step
-            Fhat_ = I + grad(u_) * tFhati
-            Fhatt_ = Fhat_.T
-            Fhati_ = inv(Fhat_)
-            Fhatti_ = Fhati_.T
-            Ehat_ = 0.5 * (Fhatt_ * Fhat_ - I)
-            Jhat_ = det(Fhat_)
-            Jhattheta = theta * Jhat + (1.0 - theta) * Jhat_
-
-            def sigmafv_(v_):
-                return rhof * nyf * (grad(v_) * tFhati * Fhati_ + Fhatti_ * tFhatti \
-                                    * grad(v_).T)
-
-            def sigmasv_(v_):
-                if INH:
-                    return mys * (Fhat_ * Fhatt_ - I)  # INH
-                else:
-                    return inv(Jhat_) * Fhat_ * (lambdas * tr(Ehat_) * I \
-                                                + 2.0 * (mys) * Ehat_) * Fhatt_  # STVK
-
-            # terms with time derivatives
-            A_T = (1.0 / k * inner(rhof * Jhattheta * tJhat * (v - v_), psiv) * dxf
-                - 1.0 / k * inner(rhof * Jhat * tJhat * grad(v) * tFhati * Fhati * (u - u_), psiv)
-                * dxf + 1.0 / k * inner(tJhat * rhos * (v - v_), psiv) * dxs
-                + 1.0 / k * inner( tJhat * rhos * (u - u_), psiu) * dxs)
-
-            # pressure terms
-            A_P = (inner(tJhat * Jhat * tFhati * Fhati * sigmafp(p),
-                        grad(psiv).T) * dxf + inh_f * inner(tJhat * Jhat * tFhati * Fhati * sigmasp(p)
-                                                                            , grad(psiv)) * dxs)
-
-            # implicit terms (e.g. incompressibiliy)
-            A_I = (
-                    #- inner(azhat * tJhat("+") * grad(z)("+") * tFhati("+") * tFhati("+") * n("+"), psiz("+"))*dS(mesh)(params["interface"]) 
-                    + inh_f * inner(Jhat - Constant(1.0), psip) * dxs
-                    + inner(tJhat * tr(tFhatti * grad(Jhat * Fhati * v).T), psip) * dxf
-                    + inner(aphat * tJhat * tFhati * tFhatti * (grad(p)), (grad(psip))) * dxs
-                    + inner(aphat * tJhat * p, psip) * dxs
-                    )
-
-            # remaining explicit terms
-            A_E = (inner(auhat * tJhat * tFhati * tFhatti * grad(u).T, grad(func * psiu).T) * dxf
-                   #- inner(auhat* tJhat("-") * grad(z)("-")* tFhati("-") * tFhatti("-") * n("-"), psiu("-"))*dS(mesh)(params["interface"]) #  grad(u) = Du
-                + inner(rhof * tJhat * Jhat * grad(v) * tFhati * Fhati * v, psiv) * dxf
-                + inner(tJhat * Jhat * tFhati * Fhati * sigmafv(v), grad(psiv).T)
-                * dxf - inner( tJhat * rhos * v, psiu) * dxs
-                + inner(tJhat * Jhat * tFhati * Fhati * sigmasv(v), grad(psiv).T)
-                * dxs)
-
-            # explicit terms of previous time-step
-            A_E_rhs = (inner(auhat * tJhat * tFhati * tFhatti * grad(u_).T, grad(func * psiu).T) * dxf
-                       #- inner(auhat * tJhat("-") * grad(z_)("-") * tFhati("-") * tFhatti("-") * n("-"), psiu("-"))*dS(mesh)(params["interface"]) 
-                    + inner(rhof * tJhat * Jhat_ * grad(v_) * tFhati * Fhati_ * v_, psiv)
-                    * dxf + inner(tJhat * Jhat_ * tFhati * Fhati_ * sigmafv_(v_),grad(psiv).T) * dxf
-                    - inner( tJhat * rhos * v_, psiu) * dxs + inner(tJhat * Jhat_ * tFhati * Fhati_ * sigmasv_(v_)
-                                                                            , grad(psiv).T) * dxs)
-
-            # shifted crank nicolson scheme
-            F = A_T + A_P + A_I + theta * A_E + (Constant(1.0) - theta) * A_E_rhs
-
-            class Projector():
-                def __init__(self, V):
-                    self.v = TestFunction(V)
-                    u = TrialFunction(V)
-                    form = inner(u, self.v)*dX(mesh)
-                    self.A = assemble(form, annotate=False)
-                    self.solver = LUSolver(self.A)
-                    self.func = Function(V)
-                def project(self, f):
-                    L = inner(f, self.v)*dX(mesh)
-                    b = assemble(L, annotate=False)
-                    self.solver.solve(self.func.vector(), b)
-                    return self.func
-
-            projectorU = Projector(U)
-            projectorU1 = Projector(U1)
-            projectorP = Projector(P)
-
-            # run forward model
-            counter = -1
-            if visualize:
-                # append displacementy
-                u_p = projectorU1.project(u)
-                u_p.rename("projection", "projection")
-                try:
-                    displacementy.append(u_p(Point(point[0], point[1]))[1])
-                    times.append(t)
-                    np.savetxt(dstring, displacementy)
-                    np.savetxt(tstring, times)
-                except:
-                    pass
-
-            # boundary conditions
-            bc1 = []
-            bc2 = []
-            if "inflow" in params:
-                bc1.append(DirichletBC(W.sub(0), V_01, boundaries, params["inflow"]))  # in   v
-                bc1.append(DirichletBC(W.sub(2), V_1, boundaries, params["inflow"]))  # in   u
-            if "obstacle" in params:
-                bc1.append(DirichletBC(W.sub(0), V_1, boundaries, params["obstacle"]))  # ns   v
-                bc1.append(DirichletBC(W.sub(2), V_1, boundaries, params["obstacle"]))  # ns   u
-            if "noslip" in params:
-                bc1.append(DirichletBC(W.sub(0), V_1, boundaries, params["noslip"]))  # ns   v
-                bc1.append(DirichletBC(W.sub(2), V_1, boundaries, params["noslip"]))  # ns   u
-            if "noslip_obstacle" in params:
-                bc1.append(DirichletBC(W.sub(0), V_1, boundaries, params["noslip_obstacle"]))  # ns   v
-                bc1.append(DirichletBC(W.sub(2), V_1, boundaries, params["noslip_obstacle"]))  # ns   u
-
-            # # pressure BC
-            # class PressureB(SubDomain):
-            #     def inside(self, x, on_boundary):
-            #         return near(x[0], (0.0)) and near(x[1], (0.0))
-            # pressureB = PressureB()
-            # bc1.append(DirichletBC(W.sub(1), Constant(0.0), pressureB, method='pointwise'))
-            # bc2.append(DirichletBC(W.sub(1), Constant(0.0), pressureB, method='pointwise'))
-        
-
-            direct_solver = False
-
-            if direct_solver:
-                Jac = derivative(F, w)
-                problem1 = NonlinearVariationalProblem(F, w, bc1, J=Jac)
-                PETScOptions.set("pc_type", "lu")
-                PETScOptions.set("pc_factor_mat_solver_type", "mumps")
-                #PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
-                #PETScOptions.set("mat_mumps_icntl_14", 400)
-                #PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
-                PETScOptions.set("mat_mumps_icntl_35", 1)
-                PETScOptions.set("mat_mumps_cntl_7", 1e-8)
-
-                solver1 = NonlinearVariationalSolver(problem1)
-
-                #list_linear_solver_methods()
-
-                solver_parameters = {"nonlinear_solver": "newton", "newton_solver": {"maximum_iterations": 25, "linear_solver": "mumps"}}
-
-                solver1.parameters.update(solver_parameters)
-            else:
-                problem1 = SNESProblem(F, w, bc1)
-                solver1 = SNESSolver(PETSc.SNES().create(mesh.mpi_comm()), problem1)
-                opts = PETSc.Options()
-                #opts.setValue('ksp_rtol', 1E-8)
-                #opts.setValue('ksp_view_pre', None)
-                opts.setValue('snes_monitor', None)
-                #opts.setValue('snes_linesearch_monitor', None)
-                #opts.setValue('ksp_monitor_true_residual', None)
-                opts.setValue('ksp_converged_reason', None)
-                opts.setValue('snes_converged_reason', None)
-                opts.setValue('snes_type', 'newtonls')
-                opts.setValue('snes_divergence_tolerance', 1e5)
-                opts.setValue('snes_linesearch_type', 'l2')
-                opts.setValue('snes_max_it', 30)
-                #opts.setValue('snes_atol', 1e-10)
-                #opts.setValue('snes_rtol', 1e-10)
-                solver1.snes.setFromOptions()
-                solver1.snes.setFunction(problem1.F, problem1.vec.vec())
-                solver1.snes.setJacobian(problem1.J, problem1.Mat.mat(), problem1.Mat.mat())
                 solver1.snes.setErrorIfNotConverged(True)
+                ksp = solver1.snes.getKSP()
+                ksp.setType('preonly')
+                ksp.getPC().setType('lu')
+                ksp.getPC().setFactorSolverType('mumps')
 
-                def get_dofs(W):
-                    # sort dofs by states and subdomains
-                    w = Function(W)
-                    w = interpolate(Constant(('1.0', )*w.ufl_shape[0]), W)
-                    psi = TestFunction(W)
+                ksp.setFromOptions()
 
-                    (v, p, u) = split(w)
-                    (psiv, psip, psiu) = split(psi)
-                    psi_ = [psiv, psip, psiu]
-                    w_ = [v, p, u]
+            elif option_itsol == 1:
 
-                    state = {"velocity": 0, "pressure": 1, "deformation":2}
-                    domain = {"interface": 0, "fluid": 1, "solid": 2}
+                is_fields_ = collect_nested_dofs(nested_bins_ids, dofs, bins, state, domain)
 
-                    interface_dofs = []
-                    fluid_dofs = []
-                    solid_dofs = []
+                solver1.snes.setFromOptions()
 
-                    dsi = dS(mesh)(params['interface'])
+                ksp = solver1.snes.getKSP()
+                ksp.setType('fgmres')
 
-                    offset = W.dofmap().ownership_range()[0]
+                initialize_fieldsplit_pc(ksp, is_fields_, solver_options, nested_bins_ids)  
 
-                    dx_ = [dxf, dxs]
-                    dofs_ = [fluid_dofs, solid_dofs]
+            b = PETScVector()  # same as b = PETSc.Vec()
+            J_mat = PETScMatrix()   
+            solver1.snes.setFunction(problem1.F, b.vec())
+            solver1.snes.setJacobian(problem1.J, J_mat.mat())
 
-                    for i in range(W.num_sub_spaces()):
-                        # interface dofs
-                        vec = assemble(inner(avg(w_[i]), avg(psi_[i]))*dsi) # assemble vector which has nonzeros at interface
-                        indices = np.nonzero(vec)[0] + offset
-                        interface_dofs.append(np.array(indices))
+        self.solver = solver1
+        self.problem = problem1
+        deltat = self.deltat
+        self.delta_J = float(deltat)*(-1.0 / T * (inner(tJhat * Jhat * rhof * (
+                        (v - v_) / float(deltat) + ((grad(v) * tFhati * Fhati * (v - (u - u_) / float(deltat))))), phiv) * dxf
+                                        - Jhat * tJhat * p * tr(grad(phiv) * tFhati * Fhati) * dxf)
+                        + 2.0 * nyf * inner(Jhat * tJhat * (grad(v) * tFhati * Fhati + Fhatti * tFhatti * grad(v).T),
+                        (grad(phiv) * tFhati * Fhati + Fhatti * tFhatti * grad(phiv).T)) * dxf)
+        self.J_penalty = 0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["det_lb"]))*dX(mesh)
+        self.J_fallback = (tu[0] + tu[1]) * 10e9 * dX(mesh) + 0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["det_lb"]))*dX(mesh)
+        self.tu = tu
 
-                        for j in range(2):
-                            vec = assemble(inner(w_[i], psi_[i])*dx_[j]) # assemble vector which has nonzeros at interface, fluid+ interface, solid+interface
-                            indicesj = np.nonzero(vec)[0] # indices of vec which are nonzero
-                            indicesj = indicesj + offset
-                            dofs_[j].append(np.setdiff1d(indicesj, indices)) # substract interface dofs
+    def eval(self, mesh, domains, boundaries, params, param, flag=False, red_func=False, control=False, add_penalty=True, visualize=False, vis_folder=str(), fallback_strategy=False, point=[0.6, 0.2]):
+        # mesh generated
+        # params dictionary, includes labels for boundary parts:
+        # params.inflow
+        # params.outflow
+        # params.noslip
+        # params.obstacle
 
-                    return [interface_dofs] + dofs_, state, domain
+        if self.setUp == False:
+            self.__set_up(mesh, domains, boundaries, params, param, flag=flag, red_func=red_func, control=control, add_penalty=add_penalty, visualize=visualize, vis_folder=vis_folder, fallback_strategy=fallback_strategy, point=[0.6, 0.2])
 
-                def __test1(W):
-                    indexset,_,_ = get_dofs(W)
+        print("Use FluidStructure to compute reduced objective",flush=True)
 
-                    # test
-                    k = 0
-                    for j in range(len(indexset)):
-                        for i in range(len(indexset[j])):
-                            k += len(indexset[j][i])
-                    assert(k == len(w.vector()[:]))
+        ##parameters["adjoint"]["stop_annotating"] = False
+        #parameters["form_compiler"]["cpp_optimize"] = True
+        #parameters["form_compiler"]["optimize"] = True
 
-                def __test2(W):
-                    indexset,_, _ = get_dofs(W)
+        ##parameters['form_compiler']['cpp_optimize_flags'] = '-O3 -fno-math-errno -march=native'        
+        ##parameters['form_compiler']['quadrature_degree'] = 20   
 
-                    k = []
-                    for j in range(len(indexset)):
-                        for i in range(len(indexset[j])):
-                            k = np.concatenate((k, indexset[j][i]), axis=0)
-                    l = len(set(k))
-                    assert(l == len(w.vector()[:]))
+        if not flag: #forward solve
+        
+            # charFunc
+            if visualize:
+                C = FunctionSpace(mesh, "DG", 0)
+                chfun = Function(C, name="charfunc")
+                psi = TestFunction(C)
+                u = TrialFunction(C)
+                L = Constant(1.0)*psi*dxs + Constant(0.0)*psi*dxf
+                a = u * psi *dX(mesh)
+                solve(a == L, chfun, [])
 
-                dofs, state, domain = get_dofs(W) #resort in other bins
+            stop_annotating()
+            set_working_tape(Tape())
+            annotate_tape()
 
-                bins = []
-                bins.append({"velocity": ["fluid", "interface"], "pressure": ["fluid", "interface"], "deformation": []})
-                bins.append({"velocity": ["solid"], "pressure": [], "deformation": ["solid", "interface"]})
-                bins.append({"velocity": [], "pressure": [], "deformation": ["fluid"]})
-                bins.append({"velocity": [], "pressure": ["solid"], "deformation": []})
-
-                solver_options = []
-                solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins0
-                solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins1
-                solver_options.append({'ksp_type': 'preonly', 'pc_type': 'hypre'}) #bins2                
-                solver_options.append({'ksp_type': 'preonly', 'pc_type': 'hypre'}) #bins3
-
-                nested_bins_ids =  [0, [1, [2,3]]] # [0, 1]
-
-                def collect_dofs(dofs, bins, states, domains, opt_schur=False):
-                    dof_bins = []
-                    for i in range(len(bins)):
-                        bi = np.asarray([])
-                        for j in states:
-                            if len(bins[i][j])> 0:
-                                for k in bins[i][j]:
-                                    bi= np.concatenate((bi, dofs[states[j]][domains[k]]), axis = 0)
-                        if opt_schur == False:
-                            dof_bins.append(PETSc.IS().createGeneral(bi.astype('int32')))
-                        else:
-                            bi.sort()
-                            dof_bins.append(bi.astype('int32'))
-                    return dof_bins
-
-                def flatten_nested(nested_list, flattened_list=[]):
-                    flist = flattened_list
-                    if type(nested_list)!= list:
-                        flist.append(nested_list)
-                    else:
-                        for i in range(len(nested_list)):
-                            flatten_nested(nested_list[i], flattened_list=flist)
-                    return flist
+            # output files
+            if visualize:
+                save_directory = str(here.parent.parent.parent) + "/example/FSI/Output/Forward" + vis_folder
+                write_to_xdmf = Write_to_XDMF(save_directory, mesh)
+                dstring = save_directory + '/displacementy.txt'
+                tstring = save_directory + '/times.txt'
+                displacementy = []
+                times = []
 
 
-                def add_dofs(dof_bins, nested_bins_ids, **kwargs):
-                    bins = []
-                    if type(nested_bins_ids) != list:
-                        pass
-                    else:
-                        for i in range(len(nested_bins_ids)):
-                            bins_i = []
-                            ids = flatten_nested(nested_bins_ids[i], flattened_list=[])
-                            dofs = np.concatenate([dof_bins[j] for j in ids], axis = 0)
-                            dofs.sort()
-                            if 'reference_numbering' in kwargs:
-                                reference_numbering = kwargs['reference_numbering']
-                                bins_i.append(PETSc.IS().createGeneral(np.where(np.in1d(np.concatenate(MPI.COMM_WORLD.allgather(reference_numbering)), dofs) == True)[0].astype('int32')))
-                            else: 
-                                bins_i.append(PETSc.IS().createGeneral(dofs.astype('int32')))
-                            bins_i.append(add_dofs(dof_bins, nested_bins_ids[i], reference_numbering=dofs))
-                            bins.append(bins_i)
-                    return bins
+            self.J = 0
+            t = 0
 
-                def collect_nested_dofs(nested_bins_ids, dofs, bins, states, domains):
-                    collected_dofs = collect_dofs(dofs, bins, states, domains, opt_schur=True)
-                    dofs = add_dofs(collected_dofs, nested_bins_ids)
-                    return dofs
-
-                def initialize_fieldsplit_pc(ksp, is_fields_, solver_options, nested_bins_ids):
-                    pc = ksp.getPC()
-                    pc.setType("fieldsplit")
-                    if len(is_fields_) == 2:
-                        pc.setFieldSplitType(PETSc.PC.CompositeType.SCHUR)
-                    else:
-                        pc.setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
-                        #print('not implemented')
-                        #exit(0)
-                    is_fields = [is_fields_[i][0] for i in range(len(is_fields_))]
-                    pc.setFieldSplitIS(*[(f"{i:d}", dofs_i) for i, dofs_i in enumerate(is_fields)])
-                    pc.setUp()
-                    pc.view()
-                    subksp = pc.getFieldSplitSchurGetSubKSP()
-                    for j in range(len(is_fields_)):
-                        if is_fields_[j][1] != []:
-                            subksp[j].setType("preonly")
-                            subksp[j].setUp()
-                            pcj = initialize_fieldsplit_pc(subksp[j], is_fields_[j][1], solver_options, nested_bins_ids[j])
-                        else:
-                            i = nested_bins_ids[j]
-                            subksp[j].setType(solver_options[i]["ksp_type"])
-                            subksp[j].setUp()
-                            pcj = subksp[j].getPC()
-                            pcj.setType(solver_options[i]["pc_type"])
-                            if "pc_factor_solver_type" in solver_options[i]:
-                                pcj.setFactorSolverType(solver_options[i]["pc_factor_solver_type"])
-                            pcj.setUp()
-                            pcj.view()
+            if control:
+                self.tu.vector().set_local(control.vector().get_local())
+                self.tu.vector().apply("")
+                if flag == True:
+                    #print(tu.vector().get_local(),flush=True)
                     pass
 
-                #opts.setValue('snes_view', None)
-                opts.setValue('ksp_atol', 1E-8)
-                opts.setValue('ksp_max_it', 1000)
-                opts.setValue('ksp_monitor', None)
-                opts.setValue('ksp_error_if_not_converged', None)
-                #opts.setValue('ksp_view', None)
+            if not fallback_strategy:
 
-                option_itsol = 1
-
-                if option_itsol == 0:
-
-                    solver1.snes.setErrorIfNotConverged(True)
-                    ksp = solver1.snes.getKSP()
-                    ksp.setType('preonly')
-                    ksp.getPC().setType('lu')
-                    ksp.getPC().setFactorSolverType('mumps')
-
-                    ksp.setFromOptions()
-
-                elif option_itsol == 1:
-
-                    is_fields_ = collect_nested_dofs(nested_bins_ids, dofs, bins, state, domain)
-
-                    solver1.snes.setFromOptions()
-
-                    ksp = solver1.snes.getKSP()
-                    ksp.setType('fgmres')
-
-                    initialize_fieldsplit_pc(ksp, is_fields_, solver_options, nested_bins_ids)
-
-                b = PETScVector()  # same as b = PETSc.Vec()
-                J_mat = PETScMatrix()   
-                solver1.snes.setFunction(problem1.F, b.vec())
-                solver1.snes.setJacobian(problem1.J, J_mat.mat())
-
-
-
-            while t < T - 0.5 * deltat:
-                print("t = \t", t + deltat, "\n", flush=True)
-                w_.assign(w)
-                counter += 1
-                t += deltat
-                V_01.t = t
-                #V_02.t = t
-
-                #if t <= 2.0:
-                if direct_solver:
-                    solver1.solve()
-                else:
-                    solver1.solve(None, problem1.u.vector().vec())
-
-
+                # run forward model
+                counter = -1
                 if visualize:
                     # append displacementy
-                    u_p = projectorU1.project(u)
+                    u_p = self.projectorU1.project(u)
                     u_p.rename("projection", "projection")
                     try:
                         displacementy.append(u_p(Point(point[0], point[1]))[1])
@@ -718,68 +709,86 @@ class FluidStructure(ReducedObjective):
                     except:
                         pass
 
-                    # plot transformed mesh
-                    if abs(counter / 4.0 - int(counter / 4.0)) == 0:
-                        # take care of bc that might not be fulfilled by projection
-                        bcv = []
-                        bcu = []
-                        if "inflow" in params:
-                            #if t < 2. :
-                            bcv.append(DirichletBC(U, V_01, boundaries, params["inflow"]))  # in   v
-                            #else: 
-                            #    bcv.append(DirichletBC(U, V_02, boundaries, params["inflow"]))  # in   v
-                            bcu.append(DirichletBC(U, V_1, boundaries, params["inflow"]))  # in   u
-                        if "obstacle" in params:
-                            bcv.append(DirichletBC(U, V_1, boundaries, params["obstacle"]))  # ns   v
-                            bcu.append(DirichletBC(U, V_1, boundaries, params["obstacle"]))  # ns   u
-                        if "noslip" in params:
-                            bcv.append(DirichletBC(U, V_1, boundaries, params["noslip"]))  # ns   v
-                            bcu.append(DirichletBC(U, V_1, boundaries, params["noslip"]))  # ns   u
-                        if "noslip_obstacle" in params:
-                            bcv.append(DirichletBC(U, V_1, boundaries, params["noslip_obstacle"]))  # ns   v
-                            bcu.append(DirichletBC(U, V_1, boundaries, params["noslip_obstacle"]))  # ns   u
-                        for bc in bcu:
-                            bc.apply(u_p.vector())
-                        u_p_inv = Function(U1)
-                        u_p_inv.vector().axpy(-1.0, u_p.vector())
-                        ALE.move(mesh, u_p)
-                        vp = projectorU.project(v)
-                        for bc in bcv:
-                            bc.apply(vp.vector())
-                        pp = projectorP.project(p)
-                        write_to_xdmf.write(vp, pp, chfun, u_p, t)
-                        u_p = ALE.move(mesh, u_p_inv)
 
-                    ##########################
-                J += assemble(float(deltat)*(-1.0 / T * (inner(tJhat * Jhat * rhof * (
-                        (v - v_) / float(deltat) + ((grad(v) * tFhati * Fhati * (v - (u - u_) / float(deltat))))), phiv) * dxf
-                                        - Jhat * tJhat * p * tr(grad(phiv) * tFhati * Fhati) * dxf)
-                        + 2.0 * nyf * inner(Jhat * tJhat * (grad(v) * tFhati * Fhati + Fhatti * tFhatti * grad(v).T),
-                        (grad(phiv) * tFhati * Fhati + Fhatti * tFhatti * grad(phiv).T)) * dxf ))
+                while t < self.T - 0.5 * self.deltat:
+                    print("t = \t", t + self.deltat, "\n", flush=True)
+                    self.w_.assign(self.w)
+                    counter += 1
+                    t += self.deltat
+                    self.V_01.t = t
+                    #V_02.t = t
 
-            def smoothmax(r, eps=1e-4):
-                return conditional(gt(r, eps), r - eps / 2, conditional(lt(r, 0), 0, r ** 2 / (2 * eps)))
+                    #if t <= 2.0:
+                    if self.direct_solver:
+                        self.solver.solve()
+                    else:
+                        self.solver.solve(None, self.problem.u.vector().vec())
 
-            #objective function
-            if add_penalty:
-                print("Objective value without penalization is ", J)
-                J += assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["det_lb"]))*dX(mesh))
+
+                    if visualize:
+                        # append displacementy
+                        u_p = self.projectorU1.project(u)
+                        u_p.rename("projection", "projection")
+                        try:
+                            displacementy.append(u_p(Point(point[0], point[1]))[1])
+                            times.append(t)
+                            np.savetxt(dstring, displacementy)
+                            np.savetxt(tstring, times)
+                        except:
+                            pass
+
+                        # plot transformed mesh
+                        if abs(counter / 4.0 - int(counter / 4.0)) == 0:
+                            # take care of bc that might not be fulfilled by projection
+                            bcv = []
+                            bcu = []
+                            if "inflow" in params:
+                                #if t < 2. :
+                                bcv.append(DirichletBC(U, self.V_01, boundaries, params["inflow"]))  # in   v
+                                #else: 
+                                #    bcv.append(DirichletBC(U, V_02, boundaries, params["inflow"]))  # in   v
+                                bcu.append(DirichletBC(self.U, self.V_1, boundaries, params["inflow"]))  # in   u
+                            if "obstacle" in params:
+                                bcv.append(DirichletBC(self.U, self.V_1, boundaries, params["obstacle"]))  # ns   v
+                                bcu.append(DirichletBC(self.U, self.V_1, boundaries, params["obstacle"]))  # ns   u
+                            if "noslip" in params:
+                                bcv.append(DirichletBC(self.U, self.V_1, boundaries, params["noslip"]))  # ns   v
+                                bcu.append(DirichletBC(self.U, self.V_1, boundaries, params["noslip"]))  # ns   u
+                            if "noslip_obstacle" in params:
+                                bcv.append(DirichletBC(self.U, self.V_1, boundaries, params["noslip_obstacle"]))  # ns   v
+                                bcu.append(DirichletBC(self.U, self.V_1, boundaries, params["noslip_obstacle"]))  # ns   u
+                            for bc in bcu:
+                                bc.apply(u_p.vector())
+                            u_p_inv = Function(self.U1)
+                            u_p_inv.vector().axpy(-1.0, u_p.vector())
+                            ALE.move(mesh, u_p)
+                            vp = projectorU.project(v)
+                            for bc in bcv:
+                                bc.apply(vp.vector())
+                            pp = projectorP.project(p)
+                            write_to_xdmf.write(vp, pp, chfun, u_p, t)
+                            u_p = ALE.move(mesh, u_p_inv)
+
+                        ##########################
+                    self.J += assemble(self.delta_J )
+
+                def smoothmax(r, eps=1e-4):
+                    return conditional(gt(r, eps), r - eps / 2, conditional(lt(r, 0), 0, r ** 2 / (2 * eps)))
+
+                #objective function
+                if add_penalty:
+                    print("Objective value without penalization is ", self.J)
+                    self.J += assemble(self.J_penalty)
+
+            else:
+                self.J += assemble(self.J_fallback) # fallback strategy if ipopt wants to evaluate on mesh with bad qualities
+
+            if visualize:
+                write_to_xdmf.close()
 
         else:
-            I = Identity(2)
-            tFhat = I + grad(tu)
-            tFhatt = tFhat.T
-            tFhati = inv(tFhat)
-            tFhatti = tFhati.T
-            tJhat = det(tFhat)
-            J += assemble((tu[0] + tu[1]) * 10e9 * dX(mesh)) + assemble(0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["det_lb"]))*dX(mesh)) # fallback strategy if ipopt wants to evaluate on mesh with bad qualities
-
-        if visualize:
-            write_to_xdmf.close()
-
-        if flag:
           print('compute dJ')
-          dJ = compute_gradient(J, Control(tu))
+          dJ = compute_gradient(self.J, Control(self.tu))
           print('end compute dJ')
 
         ## plot solution
@@ -793,13 +802,13 @@ class FluidStructure(ReducedObjective):
         #plot(u[0], zorder=1)
         #plt.axis("off")
         #plt.savefig("Output/ReducedObjective/initial.png", dpi=800, bbox_inches="tight", pad_inches=0)
-        stop_annotating
+        stop_annotating()
         if red_func:
-          m = Control(tu)
-          return ReducedFunctional(J, m)
+          m = Control(self.tu)
+          return ReducedFunctional(self.J, m)
         else:
           if flag:
-            return J, dJ
+            return self.J, dJ
           else:
-            return J
+            return self.J
 
