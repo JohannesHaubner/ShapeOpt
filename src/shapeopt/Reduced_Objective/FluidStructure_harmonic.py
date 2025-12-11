@@ -39,6 +39,8 @@ class SNESProblem():
         return
 
     def F(self, snes, x, F):
+        # update ghost nodes
+        x.ghostUpdate()
         x = PETScVector(x)
         F = PETScVector(F)
         assemble(self.L, tensor=F)
@@ -48,6 +50,8 @@ class SNESProblem():
         return            
 
     def J(self, snes, x, J, P):
+        # update ghost nodes
+        x.ghostUpdate()
         J = PETScMatrix(J)
         assemble(self.a, tensor=J)
         self.Mat = J
