@@ -42,6 +42,7 @@ class SNESProblem():
         x = PETScVector(x)
         F = PETScVector(F)
         assemble(self.L, tensor=F)
+        self.vec = F
         for bc in self.bcs:
             bc.apply(F, x)  
         return            
@@ -49,6 +50,7 @@ class SNESProblem():
     def J(self, snes, x, J, P):
         J = PETScMatrix(J)
         assemble(self.a, tensor=J)
+        self.Mat = J
         for bc in self.bcs:
             bc.apply(J)
         return
@@ -474,11 +476,21 @@ class FluidStructure(ReducedObjective):
             else:
                 problem1 = SNESProblem(F, w, bc1)
                 solver1 = SNESSolver(PETSc.SNES().create(mesh.mpi_comm()), problem1)
+                opts = PETSc.Options()
+                #opts.setValue('ksp_rtol', 1E-8)
+                #opts.setValue('ksp_view_pre', None)
+                opts.setValue('snes_monitor', None)
+                #opts.setValue('snes_linesearch_monitor', None)
+                #opts.setValue('ksp_monitor_true_residual', None)
+                opts.setValue('ksp_converged_reason', None)
+                opts.setValue('snes_converged_reason', None)
+                opts.setValue('snes_type', 'newtonls')
+                opts.setValue('snes_divergence_tolerance', 1e5)
+                opts.setValue('snes_linesearch_type', 'l2')
+                opts.setValue('snes_max_it', 30)
+                solver1.snes.setFromOptions()
                 solver1.snes.setFunction(problem1.F, problem1.vec.vec())
                 solver1.snes.setJacobian(problem1.J, problem1.Mat.mat(), problem1.Mat.mat())
-                #assemble dummy matrix
-                #A = assemble(problem1.a)
-                #A_ = abt(A).mat()
 
                 def get_dofs(W):
                     # sort dofs by states and subdomains
@@ -621,23 +633,11 @@ class FluidStructure(ReducedObjective):
                             pcj = initialize_fieldsplit_pc(subksp[j], is_fields_[j][1])
                     pass
 
-                opts = PETSc.Options()
-                #opts.setValue('ksp_rtol', 1E-8)
-                #opts.setValue('ksp_view_pre', None)
-                opts.setValue('snes_monitor', None)
-                #opts.setValue('snes_linesearch_monitor', None)
-                #opts.setValue('ksp_monitor_true_residual', None)
-                opts.setValue('ksp_converged_reason', None)
-                opts.setValue('snes_converged_reason', None)
-                opts.setValue('snes_type', 'newtonls')
-                opts.setValue('snes_divergence_tolerance', 1e5)
-                #opts.setValue('snes_linesearch_type', 'l2')
-                opts.setValue('snes_max_it', 30)
                 #opts.setValue('snes_view', None)
                 opts.setValue('ksp_atol', 1E-8)
                 opts.setValue('ksp_max_it', 1000)
                 #opts.setValue('ksp_monitor', None)
-                #opts.setValue('ksp_error_if_not_converged', None)
+                opts.setValue('ksp_error_if_not_converged', None)
                 #opts.setValue('ksp_view', None)
 
                 option_itsol = 1
@@ -651,7 +651,6 @@ class FluidStructure(ReducedObjective):
                     ksp.getPC().setFactorSolverType('mumps')
 
                     ksp.setFromOptions()
-                    solver1.snes.setFromOptions()
 
                 elif option_itsol == 1:
 
@@ -661,34 +660,8 @@ class FluidStructure(ReducedObjective):
 
                     ksp = solver1.snes.getKSP()
                     ksp.setType('fgmres')
-                    # assign dummy matrix
-                    #ksp.setOperators(A_, A_)
-                    #ksp.setOptionsPrefix('')
 
-     
                     initialize_fieldsplit_pc(ksp, is_fields_)
-
-                    #opts = PETSc.Options()
-                    #opts.setValue('pc_type', 'fieldsplit')
-                    #opts.setValue('fieldsplit_0_ksp_type', 'preonly')
-                    #opts.setValue('fieldsplit_1_ksp_type', 'preonly')
-                    #opts.setValue('fieldsplit_0_pc_type', 'lu')
-                    #opts.setValue('fieldsplit_1_pc_type', 'lu')
-                    #opts.setValue('fieldsplit_0_pc_factor_mat_solver_type', 'mumps')
-                    #opts.setValue('fieldsplit_1_pc_factor_mat_solver_type', 'mumps')
-                    #opts.setValue('fieldsplit_1_pc_fieldsplit_0_ksp_type', 'preonly')
-                    #opts.setValue('fieldsplit_1_pc_fieldsplit_1_ksp_type', 'preonly')
-                    #opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_0_ksp_type', 'preonly')
-                    #opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_0_pc_type', 'ilu')
-                    #opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_1_ksp_type', 'preonly')
-                    #opts.setValue('fieldsplit_1_pc_fieldsplit_1_pc_fieldsplit_1_pc_type', 'ilu')
-
-                    #opts.setValue('ksp_view', None)
-                    #opts.setValue('ksp_monitor', None)
-
-                    #solver1.snes.setFromOptions()
-
-                    #exit(0)
 
                 b = PETScVector()  # same as b = PETSc.Vec()
                 J_mat = PETScMatrix()   
