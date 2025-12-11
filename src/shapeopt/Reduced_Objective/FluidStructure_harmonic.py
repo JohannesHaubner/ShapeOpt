@@ -569,8 +569,8 @@ class FluidStructure(ReducedObjective):
                 solver_options = []
                 solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins0
                 solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins1
-                solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins2                
-                solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins3
+                solver_options.append({'ksp_type': 'preonly', 'pc_type': 'hypre'}) #bins2                
+                solver_options.append({'ksp_type': 'preonly', 'pc_type': 'hypre'}) #bins3
 
                 nested_bins_ids =  [0, [1, [2,3]]] # [0, 1]
 
@@ -648,7 +648,8 @@ class FluidStructure(ReducedObjective):
                             subksp[j].setUp()
                             pcj = subksp[j].getPC()
                             pcj.setType(solver_options[i]["pc_type"])
-                            pcj.setFactorSolverType(solver_options[i]["pc_factor_solver_type"])
+                            if "pc_factor_solver_type" in solver_options[i]:
+                                pcj.setFactorSolverType(solver_options[i]["pc_factor_solver_type"])
                             pcj.setUp()
                             pcj.view()
                     pass
