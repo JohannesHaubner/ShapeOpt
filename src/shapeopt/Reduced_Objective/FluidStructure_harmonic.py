@@ -636,6 +636,9 @@ class FluidStructure(ReducedObjective):
         self.J_penalty = 0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["det_lb"]))*dX(mesh)
         self.J_fallback = (tu[0] + tu[1]) * 10e9 * dX(mesh) + 0.5*Constant(param["gammaP"]) * 1.0/(tJhat - Constant(param["det_lb"]))*dX(mesh)
         self.tu = tu
+        self.U = U
+        self.U1 = U1
+        self.V_1 = V_1
 
     def eval(self, mesh, domains, boundaries, params, param, flag=False, red_func=False, control=False, add_penalty=True, visualize=False, vis_folder=str(), fallback_strategy=False, point=[0.6, 0.2]):
         # mesh generated
@@ -697,6 +700,7 @@ class FluidStructure(ReducedObjective):
 
                 # run forward model
                 counter = -1
+                self.w = Function(self.W)
                 if visualize:
                     # append displacementy
                     u_p = self.projectorU1.project(u)
