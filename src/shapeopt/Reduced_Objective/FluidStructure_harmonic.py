@@ -543,12 +543,11 @@ class FluidStructure(ReducedObjective):
 
                 bins = []
                 bins.append({"velocity": ["fluid", "interface"], "pressure": ["fluid", "interface"], "deformation": []})
-                #bins.append({"velocity": ["solid"], "pressure": ["solid"], "deformation": ["solid", "interface", "fluid"]})
                 bins.append({"velocity": ["solid"], "pressure": [], "deformation": ["solid", "interface"]})
                 bins.append({"velocity": [], "pressure": [], "deformation": ["fluid"]})
                 bins.append({"velocity": [], "pressure": ["solid"], "deformation": []})
 
-                nested_bins_ids = [0, [1, [2,3]]] # [0, 1]
+                nested_bins_ids =  [0, [1, [2,3]]] # [0, 1]
 
                 def collect_dofs(dofs, bins, states, domains, opt_schur=False):
                     dof_bins = []
@@ -629,10 +628,10 @@ class FluidStructure(ReducedObjective):
                 #opts.setValue('snes_linesearch_monitor', None)
                 #opts.setValue('ksp_monitor_true_residual', None)
                 opts.setValue('ksp_converged_reason', None)
-                #opts.setValue('snes_converged_reason', None)
+                opts.setValue('snes_converged_reason', None)
                 opts.setValue('snes_type', 'newtonls')
-                opts.setValue('snes_divergence_tolerance', 1e2)
-                opts.setValue('snes_linesearch_type', 'l2')
+                opts.setValue('snes_divergence_tolerance', 1e5)
+                #opts.setValue('snes_linesearch_type', 'l2')
                 opts.setValue('snes_max_it', 30)
                 #opts.setValue('snes_view', None)
                 opts.setValue('ksp_atol', 1E-8)
