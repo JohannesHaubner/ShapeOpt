@@ -593,11 +593,11 @@ class FluidStructure(ReducedObjective):
             #opts.setValue('snes_view', None)
             opts.setValue('ksp_atol', 1E-8)
             opts.setValue('ksp_max_it', 1000)
-            opts.setValue('ksp_monitor', None)
+            #opts.setValue('ksp_monitor', None)
             opts.setValue('ksp_error_if_not_converged', None)
             #opts.setValue('ksp_view', None)
 
-            option_itsol = 0
+            option_itsol = 1
 
             if option_itsol == 0:
 

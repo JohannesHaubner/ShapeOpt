@@ -42,9 +42,6 @@ class SolveVarFormBlock(GenericSolveBlock):
 
         adj_sol = create_function(self.function_space)
         solver = self.snes.getKSP()
-        opts = PETSc.Options()
-        opts.setValue('ksp_monitor', None)
-        solver.setFromOptions()
         solver.setOperators(dolfin.as_backend_type(dFdu).mat(), dolfin.as_backend_type(dFdu).mat())
         print('solve with petsc')
         solver.solve(adj_sol.vector().vec(), dolfin.as_backend_type(dJdu).vec())
