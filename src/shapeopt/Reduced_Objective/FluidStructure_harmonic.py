@@ -566,6 +566,12 @@ class FluidStructure(ReducedObjective):
                 bins.append({"velocity": [], "pressure": [], "deformation": ["fluid"]})
                 bins.append({"velocity": [], "pressure": ["solid"], "deformation": []})
 
+                solver_options = []
+                solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins0
+                solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins1
+                solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins2                
+                solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins3
+
                 nested_bins_ids =  [0, [1, [2,3]]] # [0, 1]
 
                 def collect_dofs(dofs, bins, states, domains, opt_schur=False):
@@ -617,7 +623,7 @@ class FluidStructure(ReducedObjective):
                     dofs = add_dofs(collected_dofs, nested_bins_ids)
                     return dofs
 
-                def initialize_fieldsplit_pc(ksp, is_fields_):
+                def initialize_fieldsplit_pc(ksp, is_fields_, solver_options, nested_bins_ids):
                     pc = ksp.getPC()
                     pc.setType("fieldsplit")
                     if len(is_fields_) == 2:
@@ -632,14 +638,17 @@ class FluidStructure(ReducedObjective):
                     pc.view()
                     subksp = pc.getFieldSplitSchurGetSubKSP()
                     for j in range(len(is_fields_)):
-                        subksp[j].setType("preonly")
-                        subksp[j].setUp()
                         if is_fields_[j][1] != []:
-                            pcj = initialize_fieldsplit_pc(subksp[j], is_fields_[j][1])
+                            subksp[j].setType("preonly")
+                            subksp[j].setUp()
+                            pcj = initialize_fieldsplit_pc(subksp[j], is_fields_[j][1], solver_options, nested_bins_ids[j])
                         else:
+                            i = nested_bins_ids[j]
+                            subksp[j].setType(solver_options[i]["ksp_type"])
+                            subksp[j].setUp()
                             pcj = subksp[j].getPC()
-                            pcj.setType('lu')
-                            pcj.setFactorSolverType('mumps')
+                            pcj.setType(solver_options[i]["pc_type"])
+                            pcj.setFactorSolverType(solver_options[i]["pc_factor_solver_type"])
                             pcj.setUp()
                             pcj.view()
                     pass
@@ -672,7 +681,7 @@ class FluidStructure(ReducedObjective):
                     ksp = solver1.snes.getKSP()
                     ksp.setType('fgmres')
 
-                    initialize_fieldsplit_pc(ksp, is_fields_)
+                    initialize_fieldsplit_pc(ksp, is_fields_, solver_options, nested_bins_ids)
 
                 b = PETScVector()  # same as b = PETSc.Vec()
                 J_mat = PETScMatrix()   
