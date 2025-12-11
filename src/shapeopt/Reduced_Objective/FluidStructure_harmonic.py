@@ -633,21 +633,25 @@ class FluidStructure(ReducedObjective):
                     subksp = pc.getFieldSplitSchurGetSubKSP()
                     for j in range(len(is_fields_)):
                         subksp[j].setType("preonly")
-                        subksp[j].pc.setType('lu')
-                        subksp[j].pc.setFactorSolverType('mumps')
                         subksp[j].setUp()
                         if is_fields_[j][1] != []:
                             pcj = initialize_fieldsplit_pc(subksp[j], is_fields_[j][1])
+                        else:
+                            pcj = subksp[j].getPC()
+                            pcj.setType('lu')
+                            pcj.setFactorSolverType('mumps')
+                            pcj.setUp()
+                            pcj.view()
                     pass
 
                 #opts.setValue('snes_view', None)
                 opts.setValue('ksp_atol', 1E-8)
                 opts.setValue('ksp_max_it', 1000)
-                #opts.setValue('ksp_monitor', None)
+                opts.setValue('ksp_monitor', None)
                 opts.setValue('ksp_error_if_not_converged', None)
                 #opts.setValue('ksp_view', None)
 
-                option_itsol = 0
+                option_itsol = 1
 
                 if option_itsol == 0:
 
