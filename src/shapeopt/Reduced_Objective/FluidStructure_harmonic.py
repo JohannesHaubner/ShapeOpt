@@ -461,8 +461,8 @@ class FluidStructure(ReducedObjective):
                 PETScOptions.set("pc_type", "lu")
                 PETScOptions.set("pc_factor_mat_solver_type", "mumps")
                 #PETScOptions.set("mat_mumps_icntl_4", 3) #verbosity
-                PETScOptions.set("mat_mumps_icntl_14", 400)
-                PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
+                #PETScOptions.set("mat_mumps_icntl_14", 400)
+                #PETScOptions.set("mat_mumps_icntl_28", 2) #parallel ordering
                 PETScOptions.set("mat_mumps_icntl_35", 1)
                 PETScOptions.set("mat_mumps_cntl_7", 1e-8)
 
@@ -488,9 +488,12 @@ class FluidStructure(ReducedObjective):
                 opts.setValue('snes_divergence_tolerance', 1e5)
                 opts.setValue('snes_linesearch_type', 'l2')
                 opts.setValue('snes_max_it', 30)
+                #opts.setValue('snes_atol', 1e-10)
+                #opts.setValue('snes_rtol', 1e-10)
                 solver1.snes.setFromOptions()
                 solver1.snes.setFunction(problem1.F, problem1.vec.vec())
                 solver1.snes.setJacobian(problem1.J, problem1.Mat.mat(), problem1.Mat.mat())
+                solver1.snes.setErrorIfNotConverged(True)
 
                 def get_dofs(W):
                     # sort dofs by states and subdomains
@@ -640,7 +643,7 @@ class FluidStructure(ReducedObjective):
                 opts.setValue('ksp_error_if_not_converged', None)
                 #opts.setValue('ksp_view', None)
 
-                option_itsol = 1
+                option_itsol = 0
 
                 if option_itsol == 0:
 
