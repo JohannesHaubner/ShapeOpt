@@ -497,7 +497,8 @@ class FluidStructure(ReducedObjective):
             dofs, state, domain = get_dofs(self.W) #resort in other bins
 
             bins = []
-            bins.append({"velocity": ["fluid", "interface"], "pressure": ["fluid", "interface"], "deformation": []})
+            bins.append({"velocity": ["fluid", "interface"], "pressure": [], "deformation": []})
+            bins.append({"velocity": [], "pressure": ["fluid", "interface"], "deformation": []})
             bins.append({"velocity": ["solid"], "pressure": [], "deformation": ["solid", "interface"]})
             bins.append({"velocity": [], "pressure": [], "deformation": ["fluid"]})
             bins.append({"velocity": [], "pressure": ["solid"], "deformation": []})
@@ -505,10 +506,11 @@ class FluidStructure(ReducedObjective):
             solver_options = []
             solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins0
             solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins1
-            solver_options.append({'ksp_type': 'preonly', 'pc_type': 'hypre'}) #bins2                
-            solver_options.append({'ksp_type': 'preonly', 'pc_type': 'hypre'}) #bins3
+            solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins2
+            solver_options.append({'ksp_type': 'preonly', 'pc_type': 'hypre'}) #bins3               
+            solver_options.append({'ksp_type': 'preonly', 'pc_type': 'hypre'}) #bins4
 
-            nested_bins_ids =  [0, [1, [2,3]]] # [0, 1]
+            nested_bins_ids =  [[0, 1], [2, [3, 4]]] # [0, 1]
 
             def collect_dofs(dofs, bins, states, domains, opt_schur=False):
                 dof_bins = []
@@ -561,6 +563,7 @@ class FluidStructure(ReducedObjective):
 
             def initialize_fieldsplit_pc(ksp, is_fields_, solver_options, nested_bins_ids):
                 pc = ksp.getPC()
+                ksp.setType("fgmres")
                 pc.setType("fieldsplit")
                 if len(is_fields_) == 2:
                     pc.setFieldSplitType(PETSc.PC.CompositeType.SCHUR)
@@ -568,14 +571,17 @@ class FluidStructure(ReducedObjective):
                     pc.setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
                     #print('not implemented')
                     #exit(0)
+                pc.setFieldSplitSchurFactType(PETSc.PC.SchurFactType.LOWER)
                 is_fields = [is_fields_[i][0] for i in range(len(is_fields_))]
                 pc.setFieldSplitIS(*[(f"{i:d}", dofs_i) for i, dofs_i in enumerate(is_fields)])
                 pc.setUp()
-                pc.view()
+                #from IPython import embed; embed()
+                #pc.view()
                 subksp = pc.getFieldSplitSchurGetSubKSP()
                 for j in range(len(is_fields_)):
                     if is_fields_[j][1] != []:
                         subksp[j].setType("preonly")
+                        subksp[j].max_it = 2
                         subksp[j].setUp()
                         pcj = initialize_fieldsplit_pc(subksp[j], is_fields_[j][1], solver_options, nested_bins_ids[j])
                     else:
@@ -587,13 +593,13 @@ class FluidStructure(ReducedObjective):
                         if "pc_factor_solver_type" in solver_options[i]:
                             pcj.setFactorSolverType(solver_options[i]["pc_factor_solver_type"])
                         pcj.setUp()
-                        pcj.view()
+                        #pcj.view()
                 pass
 
             #opts.setValue('snes_view', None)
             opts.setValue('ksp_atol', 1E-8)
             opts.setValue('ksp_max_it', 1000)
-            #opts.setValue('ksp_monitor', None)
+            opts.setValue('ksp_monitor', None)
             opts.setValue('ksp_error_if_not_converged', None)
             #opts.setValue('ksp_view', None)
 
