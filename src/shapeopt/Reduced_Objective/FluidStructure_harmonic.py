@@ -582,7 +582,7 @@ class FluidStructure(ReducedObjective):
                     if is_fields_[j][1] != []:
                         #if counter == 1 and j == 0:
                         subksp[j].setType("fgmres")
-                        subksp[j].max_it = 10 #
+                        subksp[j].max_it = 25 #
                         #else:
                         #    subksp[j].setType("preonly")
                         subksp[j].max_it = 2

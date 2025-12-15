@@ -86,7 +86,7 @@ def run_forward(initial : bool, T : float, deltat : float, path_mesh : str, outp
     set_working_tape(Tape())
     #param["reg"] = reg
 
-    Jred = reduced_objectives[application](drag).eval(mesh, domains, boundaries, params, param, red_func=True, visualize=True, vis_folder=folder_name, point=point)
+    Jred = reduced_objectives[application](drag).eval(mesh, domains, boundaries, params, param, red_func=True, visualize=False, vis_folder=folder_name, point=point)
 
     print('simulation finished')
     pass
@@ -96,5 +96,5 @@ if __name__ == "__main__":
     if application3d: 
         run_forward(initial=True, T=T, deltat=0.01, path_mesh=str(here.parent.parent.parent) + "/example/FSI/mesh3d", output_folder="3d_forward_3", point=[0.4, 0.2, 0.125], drag=True)
     else:
-        run_forward(initial=True, T=T, deltat=0.01, path_mesh=str(here.parent.parent.parent) + "/example/FSI/mesh", output_folder="forward", point=[0.6, 0.2], drag=True)
+        run_forward(initial=True, T=T, deltat=0.005, path_mesh=str(here.parent.parent.parent) + "/example/FSI/mesh", output_folder="forward", point=[0.6, 0.2], drag=True)
     
