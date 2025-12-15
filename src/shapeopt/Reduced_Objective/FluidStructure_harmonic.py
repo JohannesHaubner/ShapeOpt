@@ -561,9 +561,8 @@ class FluidStructure(ReducedObjective):
                 dofs = add_dofs(collected_dofs, nested_bins_ids)
                 return dofs
 
-            def initialize_fieldsplit_pc(ksp, is_fields_, solver_options, nested_bins_ids):
+            def initialize_fieldsplit_pc(ksp, is_fields_, solver_options, nested_bins_ids, counter=-1):
                 pc = ksp.getPC()
-                ksp.setType("fgmres")
                 pc.setType("fieldsplit")
                 if len(is_fields_) == 2:
                     pc.setFieldSplitType(PETSc.PC.CompositeType.SCHUR)
@@ -571,19 +570,24 @@ class FluidStructure(ReducedObjective):
                     pc.setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
                     #print('not implemented')
                     #exit(0)
-                pc.setFieldSplitSchurFactType(PETSc.PC.SchurFactType.LOWER)
+                pc.setFieldSplitSchurFactType(PETSc.PC.SchurFactType.LOWER) 
                 is_fields = [is_fields_[i][0] for i in range(len(is_fields_))]
                 pc.setFieldSplitIS(*[(f"{i:d}", dofs_i) for i, dofs_i in enumerate(is_fields)])
                 pc.setUp()
                 #from IPython import embed; embed()
                 #pc.view()
+                counter += 1
                 subksp = pc.getFieldSplitSchurGetSubKSP()
                 for j in range(len(is_fields_)):
                     if is_fields_[j][1] != []:
-                        subksp[j].setType("preonly")
+                        #if counter == 1 and j == 0:
+                        subksp[j].setType("fgmres")
+                        subksp[j].max_it = 10 #
+                        #else:
+                        #    subksp[j].setType("preonly")
                         subksp[j].max_it = 2
                         subksp[j].setUp()
-                        pcj = initialize_fieldsplit_pc(subksp[j], is_fields_[j][1], solver_options, nested_bins_ids[j])
+                        pcj = initialize_fieldsplit_pc(subksp[j], is_fields_[j][1], solver_options, nested_bins_ids[j], counter=counter)
                     else:
                         i = nested_bins_ids[j]
                         subksp[j].setType(solver_options[i]["ksp_type"])
@@ -598,6 +602,7 @@ class FluidStructure(ReducedObjective):
 
             #opts.setValue('snes_view', None)
             opts.setValue('ksp_atol', 1E-8)
+            opts.setValue('ksp_rtol', 1E-2)
             opts.setValue('ksp_max_it', 1000)
             opts.setValue('ksp_monitor', None)
             opts.setValue('ksp_error_if_not_converged', None)
