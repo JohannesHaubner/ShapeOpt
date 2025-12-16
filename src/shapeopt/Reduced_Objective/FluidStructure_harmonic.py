@@ -165,6 +165,10 @@ class FluidStructure(ReducedObjective):
         dxf = dX(mesh)(params['fluid'], metadata={"quadrature_degree": 7})
         dxs = dX(mesh)(params['solid'], metadata={"quadrature_degree": 7})
 
+        self.dxf = dxf
+        self.dxs = dxs
+        self.dX = dX
+
         # function spaces
         V2 = VectorElement("CG", mesh.ufl_cell(), 2)
         V1 = VectorElement("CG", mesh.ufl_cell(), 1)
@@ -678,9 +682,9 @@ class FluidStructure(ReducedObjective):
                 C = FunctionSpace(mesh, "DG", 0)
                 chfun = Function(C, name="charfunc")
                 psi = TestFunction(C)
-                u = TrialFunction(C)
-                L = Constant(1.0)*psi*dxs + Constant(0.0)*psi*dxf
-                a = u * psi *dX(mesh)
+                ut = TrialFunction(C)
+                L = Constant(1.0)*psi*self.dxs + Constant(0.0)*psi*self.dxf
+                a = ut * psi *self.dX(mesh)
                 solve(a == L, chfun, [])
 
             stop_annotating()
@@ -714,6 +718,7 @@ class FluidStructure(ReducedObjective):
                 self.w = Function(self.W)
                 if visualize:
                     # append displacementy
+                    (v, p, u) = split(self.w)
                     u_p = self.projectorU1.project(u)
                     u_p.rename("projection", "projection")
                     try:
