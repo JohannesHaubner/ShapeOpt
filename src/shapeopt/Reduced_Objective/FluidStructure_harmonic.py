@@ -764,7 +764,7 @@ class FluidStructure(ReducedObjective):
                             bcu = []
                             if "inflow" in params:
                                 #if t < 2. :
-                                bcv.append(DirichletBC(U, self.V_01, boundaries, params["inflow"]))  # in   v
+                                bcv.append(DirichletBC(self.U, self.V_01, boundaries, params["inflow"]))  # in   v
                                 #else: 
                                 #    bcv.append(DirichletBC(U, V_02, boundaries, params["inflow"]))  # in   v
                                 bcu.append(DirichletBC(self.U, self.V_1, boundaries, params["inflow"]))  # in   u
