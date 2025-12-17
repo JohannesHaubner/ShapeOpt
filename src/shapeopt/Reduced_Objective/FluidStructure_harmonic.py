@@ -19,6 +19,7 @@ if not os.path.exists(save_directory):
     os.makedirs(save_directory)
 
 parameters["ghost_mode"] = "shared_facet"
+parameters["reorder_dofs_serial"] = False
 
 stop_annotating()
 
@@ -509,7 +510,7 @@ class FluidStructure(ReducedObjective):
 
             solver_options = []
             solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins0
-            solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins1
+            solver_options.append({'ksp_type': 'fgmres', 'pc_type': 'ilu'}) #bins1
             solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins2
             solver_options.append({'ksp_type': 'preonly', 'pc_type': 'hypre'}) #bins3               
             solver_options.append({'ksp_type': 'preonly', 'pc_type': 'hypre'}) #bins4
@@ -586,10 +587,10 @@ class FluidStructure(ReducedObjective):
                     if is_fields_[j][1] != []:
                         #if counter == 1 and j == 0:
                         subksp[j].setType("fgmres")
-                        subksp[j].max_it = 25 #
+                        #subksp[j].max_it = 25 #
                         #else:
                         #    subksp[j].setType("preonly")
-                        subksp[j].max_it = 2
+                        subksp[j].max_it = 7
                         subksp[j].setUp()
                         pcj = initialize_fieldsplit_pc(subksp[j], is_fields_[j][1], solver_options, nested_bins_ids[j], counter=counter)
                     else:
@@ -600,6 +601,8 @@ class FluidStructure(ReducedObjective):
                         pcj.setType(solver_options[i]["pc_type"])
                         if "pc_factor_solver_type" in solver_options[i]:
                             pcj.setFactorSolverType(solver_options[i]["pc_factor_solver_type"])
+                        if "pc_factor_solver_type" != "preonly":
+                            subksp[j].max_it = 7
                         pcj.setUp()
                         #pcj.view()
                 pass
