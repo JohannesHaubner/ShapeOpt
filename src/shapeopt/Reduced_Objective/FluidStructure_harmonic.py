@@ -782,10 +782,10 @@ class FluidStructure(ReducedObjective):
                             u_p_inv = Function(self.U1)
                             u_p_inv.vector().axpy(-1.0, u_p.vector())
                             ALE.move(mesh, u_p)
-                            vp = projectorU.project(v)
+                            vp = self.projectorU.project(v)
                             for bc in bcv:
                                 bc.apply(vp.vector())
-                            pp = projectorP.project(p)
+                            pp = self.projectorP.project(p)
                             write_to_xdmf.write(vp, pp, chfun, u_p, t)
                             u_p = ALE.move(mesh, u_p_inv)
 
