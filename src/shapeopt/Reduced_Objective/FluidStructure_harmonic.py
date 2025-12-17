@@ -510,7 +510,7 @@ class FluidStructure(ReducedObjective):
 
             solver_options = []
             solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins0
-            solver_options.append({'ksp_type': 'fgmres', 'pc_type': 'ilu'}) #bins1
+            solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #{'ksp_type': 'fgmres', 'pc_type': 'hypre'}) #bins1
             solver_options.append({'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_solver_type': 'mumps'}) #bins2
             solver_options.append({'ksp_type': 'preonly', 'pc_type': 'hypre'}) #bins3               
             solver_options.append({'ksp_type': 'preonly', 'pc_type': 'hypre'}) #bins4
@@ -603,6 +603,8 @@ class FluidStructure(ReducedObjective):
                             pcj.setFactorSolverType(solver_options[i]["pc_factor_solver_type"])
                         if "pc_factor_solver_type" != "preonly":
                             subksp[j].max_it = 7
+                        if solver_options[i]["pc_type"] == "hypre":
+                            pcj.setHYPREType("pilut")
                         pcj.setUp()
                         #pcj.view()
                 pass
